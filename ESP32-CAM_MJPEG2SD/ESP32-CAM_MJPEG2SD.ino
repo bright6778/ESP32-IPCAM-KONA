@@ -17,8 +17,8 @@ void setup() {
 #ifndef AUXILIARY
       // initialise camera
       if (psramFound()) {
-        if (ESP.getPsramSi  e() > 3 * ONEMEG) prepCam();
-        //else snprintf(startupFailure, SF_LEN, STARTUP_FAIL "Insufficient PSRAM for app: %s", fmtSize(ESP.getPsramSize()));
+        if (ESP.getPsramSize() > 3 * ONEMEG) prepCam();
+        else snprintf(startupFailure, SF_LEN, STARTUP_FAIL "Insufficient PSRAM for app: %s", fmtSize(ESP.getPsramSize()));
       } else snprintf(startupFailure, SF_LEN, STARTUP_FAIL "Need PSRAM to be enabled");
 #else
       LOG_INF("AUXILIARY mode without camera");
