@@ -5,7 +5,7 @@
 #include "esp_arduino_version.h"
 
 #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 1, 1)
-#error Must be compiled with arduino-esp32 core v3.1.1 or higher
+//#error Must be compiled with arduino-esp32 core v3.1.1 or higher
 #endif
 
 #pragma once
@@ -29,7 +29,8 @@
 #include "ping/ping_sock.h"
 #include <Preferences.h>
 #include <regex>
-#if (!CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32S2)
+//#if (!CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32S2)
+#if (!defined(CONFIG_IDF_TARGET_ESP32C3) && !defined(CONFIG_IDF_TARGET_ESP32S2))
 #include <SD_MMC.h>
 #endif
 #include <LittleFS.h>
