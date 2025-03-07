@@ -41,6 +41,7 @@
 #include <NetworkClientSecure.h> 
 #include <esp_http_server.h>
 #include <esp_https_server.h>
+#include "konaCrypto.h"
 
 // ADC
 #define ADC_ATTEN ADC_11db

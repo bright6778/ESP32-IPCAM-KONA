@@ -10,6 +10,10 @@
 void setup() {
   logSetup();
   LOG_INF("Selected board %s", CAM_BOARD);
+#ifdef SIM_CAM_V1_3
+  pinMode(PWR_ON_PIN, OUTPUT);
+  digitalWrite(PWR_ON_PIN, HIGH);
+#endif
   // prep storage
   if (startStorage()) {
     // Load saved user configuration
@@ -84,5 +88,6 @@ void loop() {
   // confirm not blocked in setup
   LOG_INF("=============== Total tasks: %u ===============\n", uxTaskGetNumberOfTasks() - 1);
   delay(1000);
+  aesTest();
   vTaskDelete(NULL); // free 8k ram
 }

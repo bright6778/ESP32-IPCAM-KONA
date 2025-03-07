@@ -31,7 +31,7 @@
 
 // User's ESP32S3 cam board
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
-#define CAMERA_MODEL_FREENOVE_ESP32S3_CAM
+//#define CAMERA_MODEL_FREENOVE_ESP32S3_CAM
 //#define CAMERA_MODEL_XIAO_ESP32S3 
 //#define CAMERA_MODEL_NEW_ESPS3_RE1_0
 //#define CAMERA_MODEL_M5STACK_CAMS3_UNIT
@@ -41,6 +41,7 @@
 //#define CAMERA_MODEL_DFRobot_Romeo_ESP32S3
 //#define CAMERA_MODEL_XENOIONEX
 //#define AUXILIARY
+//#define SIM_CAM_V1_3
 #endif
 
 /***************************************************************
@@ -299,6 +300,9 @@ size_t updateWavHeader();
 size_t writeAviIndex(byte* clientBuf, size_t buffSize, bool isTL = false);
 bool writeUart(uint8_t cmd, uint32_t outputData);
 size_t writeWavFile(byte* clientBuf, size_t buffSize);
+
+// kona app specific functions
+void aesTest();
 
 /******************** Global app declarations *******************/
 

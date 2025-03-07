@@ -514,6 +514,56 @@
 
 #define NO_SD
 
+#elif defined(SIM_CAM_V1_2) || defined(SIM_CAM_V1_3)
+#define CAM_BOARD "T-SIMCAM"
+
+// PIN
+// Define SD Pins
+#define SD_MMC_CLK 39 
+#define SD_MMC_CMD 38
+#define SD_MMC_D0 40
+#define SD_MMC_D3 47
+
+#define PCIE_PWR_PIN     48
+#define PCIE_TX_PIN      45
+#define PCIE_RX_PIN      46
+#define PCIE_LED_PIN     21
+#define MIC_IIS_WS_PIN   42
+#define MIC_IIS_SCK_PIN  41
+#define MIC_IIS_DATA_PIN 2
+
+#define PWDN_GPIO_NUM -1  //CAM_PWDN_PIN     -1
+#define RESET_GPIO_NUM -1 //CAM_RESET_PIN    -1
+#define XCLK_GPIO_NUM 14  //CAM_XCLK_PIN     14
+#define SIOD_GPIO_NUM 4   //CAM_SIOD_PIN     4
+#define SIOC_GPIO_NUM 5   //CAM_SIOC_PIN     5
+
+#define Y2_GPIO_NUM 11  //CAM_Y2_PIN       11
+#define Y3_GPIO_NUM 9   //CAM_Y3_PIN       9
+#define Y4_GPIO_NUM 8   //CAM_Y4_PIN       8
+#define Y5_GPIO_NUM 10  //CAM_Y5_PIN       10
+#define Y6_GPIO_NUM 12  //CAM_Y6_PIN       12
+#define Y7_GPIO_NUM 17  //CAM_Y7_PIN       17
+#define Y8_GPIO_NUM 16  //CAM_Y8_PIN       16
+#define Y9_GPIO_NUM 15  //CAM_Y9_PIN       15
+
+#define VSYNC_GPIO_NUM 6  //CAM_VSYNC_PIN    6
+#define HREF_GPIO_NUM 7   //CAM_HREF_PIN     7
+#define PCLK_GPIO_NUM 13  //CAM_PCLK_PIN     13
+
+#define BUTTON_PIN       0
+#define PWR_ON_PIN       1
+#define SERIAL_RX_PIN    44
+#define SERIAL_TX_PIN    43
+#define BAT_VOLT_PIN     -1
+
+#if defined(SIM_CAM_V1_3)
+#define CAM_IR_PIN       18
+#define RESET_GPIO_NUM    -1
+#else
+#define RESET_GPIO_NUM    18
+#endif
+
 #else
 #error "Camera model not selected"
 #endif
