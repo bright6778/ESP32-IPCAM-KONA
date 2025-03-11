@@ -41,6 +41,7 @@
 //#define CAMERA_MODEL_DFRobot_Romeo_ESP32S3
 //#define CAMERA_MODEL_XENOIONEX
 //#define AUXILIARY
+//#define SIM_CAM_V1_3
 #endif
 
 /***************************************************************
@@ -299,6 +300,9 @@ size_t updateWavHeader();
 size_t writeAviIndex(byte* clientBuf, size_t buffSize, bool isTL = false);
 bool writeUart(uint8_t cmd, uint32_t outputData);
 size_t writeWavFile(byte* clientBuf, size_t buffSize);
+
+// kona app specific functions
+// void aesTest();
 
 /******************** Global app declarations *******************/
 
