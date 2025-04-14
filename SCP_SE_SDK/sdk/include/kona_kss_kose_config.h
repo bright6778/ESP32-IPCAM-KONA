@@ -24,6 +24,7 @@ extern "C" {
 
 #define KSS_SESSION_MAX_CONTEXT_SIZE 100
 #define CONNECT_SE_UART 1
+#define DEBUG_PRINT
 
 #if CONNECT_SE_UART
 /////////////////////////////////////////////////////////////////////////////

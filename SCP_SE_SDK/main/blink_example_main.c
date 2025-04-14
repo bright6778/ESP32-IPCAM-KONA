@@ -151,7 +151,8 @@ void uart_command_task(void *arg)
     kss_kose_uart_ctx_t se_uart_init;
 
     // session variables
-    kss_kose_session_t *session = NULL;
+    kss_kose_session_t *session = malloc(sizeof(kss_kose_session_t));
+    memset(session, 0, sizeof(kss_kose_session_t));
     kss_type_t subsystem = kType_KSS_mbedTLS;
     uint32_t application_id = 0;
     kss_connection_type_t connection_type = kKSS_ConnectionType_Plain;
@@ -197,8 +198,8 @@ void uart_command_task(void *arg)
                     ESP_LOGI(TAG, "End kss_kose_session_create");
                 }
                 else if (strcmp((char*)buf, "session_open") == 0 || strcmp((char*)buf, "2.2") == 0) {    // kss_kose_session_open
-                    session->s_ctx.conn_ctx = &se_uart_init;
                     ESP_LOGI(TAG, "Start kss_kose_session_open");
+                    session->s_ctx.conn_ctx = &se_uart_init;
                     ret = kss_kose_session_open(session, subsystem, application_id, connection_type, connectionData);
                     ESP_LOGI(TAG, "kss_kose_session_open return : %d", ret);
                     ESP_LOGI(TAG, "End kss_kose_session_open");

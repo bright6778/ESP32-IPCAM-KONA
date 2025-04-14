@@ -19,10 +19,14 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include "debug.h"
 #include "kona_kss_kose_config.h"
 #include "kose_tlv.h"
 #include "kss_kose_uart.h"
+
+#ifdef DEBUG_PRINT
+#include "esp_log.h"
+#include "debug.h"
+#endif
 
 #define AX_UNUSED_ARG(x) (void)(x)
 

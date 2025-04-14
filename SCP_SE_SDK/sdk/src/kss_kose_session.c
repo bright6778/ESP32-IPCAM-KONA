@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+static const char *TAG = "kss_kose_session.c";
+
 kss_status_t kss_kose_session_create(kss_kose_session_t *session,
     kss_type_t subsystem,
     uint32_t application_id,
@@ -55,8 +57,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     memset(session, 0, sizeof(*session));
 
     //ENSURE_OR_GO_EXIT(connectionData);
-    debug_printf("Test");
-    //kss_kose_uart_ctx_t se_uart_init;
+    kss_kose_uart_ctx_t se_uart_init;
     set_se_uart_init_default(&se_uart_init);
     if(kss_kose_uart_init(se_uart_init) == false){
         retval = kStatus_KSS_Fail;
@@ -369,7 +370,9 @@ void kss_kose_session_close(kss_kose_session_t *session){
     }
     memset(session, 0, sizeof(*session));
     */
+   ESP_LOGI(TAG, "kss_kose_uart_init start");
    kss_kose_uart_init(se_uart_init);
+   ESP_LOGI(TAG, "kss_kose_uart_init end");
    memset(session, 0, sizeof(*session));
 }
 #ifdef __cplusplus
