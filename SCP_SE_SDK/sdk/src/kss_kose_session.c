@@ -6,6 +6,7 @@
  */
 
 #include "kss_kose_session.h"
+#include "debug.h"
 
 /** @file */
 #ifdef __cplusplus
@@ -59,7 +60,6 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
 #ifdef CONNECT_SE_UART
     //ENSURE_OR_GO_EXIT(connectionData);
     if(koseSession->conn_ctx == NULL){
-        ESP_LOGI(TAG, "set_se_uart_init_default");
         set_se_uart_init_default(koseSession->conn_ctx);
     }
     //kss_kose_uart_ctx_t se_uart_init;
@@ -375,10 +375,7 @@ void kss_kose_session_close(kss_kose_session_t *session){
     }
     memset(session, 0, sizeof(*session));
     */
-   ESP_LOGI(TAG, "kss_kose_uart_init start");
-   //kss_kose_uart_init(se_uart_init);
    kss_kose_uart_close();
-   ESP_LOGI(TAG, "kss_kose_uart_init end");
    memset(session, 0, sizeof(*session));
 }
 #ifdef __cplusplus

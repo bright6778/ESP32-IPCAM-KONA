@@ -1,14 +1,13 @@
+
 #include "driver/uart.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "debug.h"
 
-
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-
 static const char *TAG = "DBG";
-static bool flag_debug = true;
+//static bool flag_debug = true;
 
 /////////////////////////////////////////////////////////////////////////////
 //! @brief 디버그 메세지를 UART로 출력한다.
@@ -18,7 +17,7 @@ static bool flag_debug = true;
 
 void debug_printf(const char *format, ...)
 {
-	if (flag_debug) {
+	#ifdef DEBUG 
 		va_list ap;
 		char string[128];
 
@@ -30,9 +29,10 @@ void debug_printf(const char *format, ...)
             if (string[len - 1] == '\n') string[len - 1] = 0;
             if (string[len - 2] == '\r') string[len - 2] = 0;
         }
-        ESP_LOGI(TAG, "%s", string);
+        //ESP_LOGI(TAG, "%s", string);
+        LOGI(TAG, "%s", string);
 		va_end(ap);
-	}
+    #endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -40,15 +40,7 @@ void debug_printf(const char *format, ...)
 
 void debug_showframe(char *title, uint8_t *buf, int len)
 {
-    {
-        //printf("%s = [", title);
-        //for (int i = 0; i < len; i++) {
-        //    printf(i ? " %02x" : "%02x", buf[i]);
-        //}
-        //printf("](%d)\n", len);
-    }
-
-    if (flag_debug) {
+    #ifdef DEBUG 
         #define MAX_BUF_SIZE (128)
         char tmpbuf[MAX_BUF_SIZE + 8];
         int count = 0;
@@ -56,15 +48,18 @@ void debug_showframe(char *title, uint8_t *buf, int len)
         for (int i = 0; i < len; i++) {
             count += sprintf(&tmpbuf[count], i ? " %02x" : "%02x", buf[i]);
             if (count >= MAX_BUF_SIZE) {
-                ESP_LOGI(TAG, "%s", tmpbuf);
+                //ESP_LOGI(TAG, "%s", tmpbuf);
+                LOGI(TAG, "%s", tmpbuf);
                 count = 0;
             }
         }
         if (count > 0) {
-            ESP_LOGI(TAG, "%s](%d)", tmpbuf, len);
+            //ESP_LOGI(TAG, "%s](%d)", tmpbuf, len);
+            LOGI(TAG, "%s](%d)", tmpbuf, len);
         }
         else {
-            ESP_LOGI(TAG, "](%d)", len);
+            //ESP_LOGI(TAG, "](%d)", len);
+            LOGI(TAG, "](%d)", len);
         }
-    }
+    #endif
 }

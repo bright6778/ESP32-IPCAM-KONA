@@ -165,7 +165,7 @@ void set_session_variables_dafault(kss_kose_session_t *session,
     void *connectionData){
 }
 
-void uart_command_task(void *arg)
+void command_task(void *arg)
 {
     uint8_t byte;
     bool ret;
@@ -257,9 +257,9 @@ void uart_command_task(void *arg)
     }
 }
 
-void uart_command_task_create(void)
+void command_task_create(void)
 {
-    xTaskCreate(uart_command_task, "uart_command_task", 4096, NULL, 1, NULL);
+    xTaskCreate(command_task, "command_task", 4096, NULL, 1, NULL);
 }
 
 void app_main(void)
@@ -281,7 +281,7 @@ void app_main(void)
 
     /* Configure the peripheral according to the LED type */
     configure_led();
-    uart_command_task_create();
+    command_task_create();
     //smartcard_task_create();
 
     /* Initialize NVS partition */
