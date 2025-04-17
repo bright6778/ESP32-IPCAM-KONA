@@ -325,6 +325,9 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 					debug_showframe("r-tpdu", rcvbuf, 0);
 					return false;
 				}
+				else if(len == -1){
+					return false;
+				}
 			}
 		}
 		// (3) send command data

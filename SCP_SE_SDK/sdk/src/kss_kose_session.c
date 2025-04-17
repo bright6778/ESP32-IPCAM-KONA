@@ -56,10 +56,15 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     koseSession = &session->s_ctx;
     memset(session, 0, sizeof(*session));
 
+#ifdef CONNECT_SE_UART
     //ENSURE_OR_GO_EXIT(connectionData);
-    kss_kose_uart_ctx_t se_uart_init;
-    set_se_uart_init_default(&se_uart_init);
-    if(kss_kose_uart_init(se_uart_init) == false){
+    if(koseSession->conn_ctx == NULL){
+        ESP_LOGI(TAG, "set_se_uart_init_default");
+        set_se_uart_init_default(koseSession->conn_ctx);
+    }
+    //kss_kose_uart_ctx_t se_uart_init;
+    //set_se_uart_init_default(&se_uart_init);
+    if(kss_kose_uart_init(koseSession->conn_ctx) == false){
         retval = kStatus_KSS_Fail;
         goto exit;
     }
@@ -71,7 +76,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
         retval = kStatus_KSS_Fail;
         goto exit;
     }
-    
+#endif
     #if 0
 
     pAuthCtx = (Kose_Connect_Ctx_t *)connectionData;
@@ -371,7 +376,8 @@ void kss_kose_session_close(kss_kose_session_t *session){
     memset(session, 0, sizeof(*session));
     */
    ESP_LOGI(TAG, "kss_kose_uart_init start");
-   kss_kose_uart_init(se_uart_init);
+   //kss_kose_uart_init(se_uart_init);
+   kss_kose_uart_close();
    ESP_LOGI(TAG, "kss_kose_uart_init end");
    memset(session, 0, sizeof(*session));
 }

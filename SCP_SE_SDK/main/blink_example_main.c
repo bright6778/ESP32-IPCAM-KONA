@@ -10,6 +10,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#include "esp_system.h"
+#include "nvs_flash.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "protocol_examples_common.h"
+#include "demo_config.h"
+
 #include "esp_log.h"
 #include "led_strip.h"
 #include "sdkconfig.h"
@@ -17,6 +24,21 @@
 #include "kona_kss_api.h"
 //#include "kss_kose_uart.h"
 //#include "smartcard.h"
+
+///////////////////////////////////////////////////////////////
+// Define
+///////////////////////////////////////////////////////////////
+#define UART_INIT                   "kss_kose_uart_init"
+#define UART_TRANSCEIVE             "kss_kose_uart_transceive"
+#define UART_CLOSE                  "kss_kose_uart_close"
+#define SESSION_CREATE              "kss_kose_session_create"
+#define SESSION_OPEN                "kss_kose_session_open"
+#define SESSION_CLOSE               "kss_kose_session_close"
+#define MBEDTLS_ASSOCIATE_PUBKEY    "kss_mbedtls_associate_pubkey"
+#define AWS_IOT_DEMO                "aws_iot_demo_main"
+
+
+int aws_iot_demo_main( int argc, char ** argv );
 
 static const char *TAG = "example";
 
@@ -99,13 +121,14 @@ int buf_index = 0;
 void print_manu(){
     printf("//////////////////////////////////////////////////////////////////\n");
     printf("CMD : REBOOT                    - Board Reboot\n");
-    printf("CMD : uart_init or 1.1          - kss_kose_uart_init()\n");
-    printf("CMD : uart_transceive or 1.2    - kss_kose_uart_transceive()\n");
-    printf("CMD : uart_close or 1.3         - kss_kose_uart_close()\n");
-    printf("CMD : session_create or 2.1     - kss_kose_session_create()\n");
-    printf("CMD : session_open or 2.2       - kss_kose_session_open()\n");
-    printf("CMD : session_close or 2.3      - kss_kose_session_close()\n");
-    printf("CMD : session_delete or 2.4     - kss_kose_session_delete()\n");
+    printf("CMD : uart_init or 1.1          - %s\n", UART_INIT);
+    printf("CMD : uart_transceive or 1.2    - %s\n", UART_TRANSCEIVE);
+    printf("CMD : uart_close or 1.3         - %s\n", UART_CLOSE);
+    printf("CMD : session_create or 2.1     - %s\n", SESSION_CREATE);
+    printf("CMD : session_open or 2.2       - %s\n", SESSION_OPEN);
+    printf("CMD : session_close or 2.3      - %s\n", SESSION_CLOSE);
+    printf("CMD : mbedtls_pubkey or 9.1     - %s\n", MBEDTLS_ASSOCIATE_PUBKEY);
+    printf("CMD : aws_mqtt or 11.1          - %s\n", AWS_IOT_DEMO);
     printf("//////////////////////////////////////////////////////////////////\n");
 }
 
@@ -171,47 +194,53 @@ void uart_command_task(void *arg)
                     esp_restart();
                 }
                 else if (strcmp((char*)buf, "uart_init") == 0 || strcmp((char*)buf, "1.1") == 0) {    // kss_kose_uart_init
-                    ESP_LOGI(TAG, "Start kss_kose_uart_init");
+                    ESP_LOGI(TAG, "Start %s", UART_INIT);
                     set_se_uart_init(&se_uart_init);
-                    ret = kss_kose_uart_init(se_uart_init);
-                    ESP_LOGI(TAG, "kss_kose_uart_init return : %d", ret);
-                    ESP_LOGI(TAG, "End kss_kose_uart_init");
+                    ret = kss_kose_uart_init(&se_uart_init);
+                    ESP_LOGI(TAG, "%s return : %d", UART_INIT, ret);
+                    ESP_LOGI(TAG, "End %s", UART_INIT);
                 }
                 else if (strcmp((char*)buf, "uart_transceive") == 0 || strcmp((char*)buf, "1.2") == 0) {    // kss_kose_uart_transceive
-                    ESP_LOGI(TAG, "Start kss_kose_uart_transceive");
+                    ESP_LOGI(TAG, "Start %s", UART_TRANSCEIVE);
                     uint8_t *rcvbuf = (uint8_t *)malloc(512); // Loopback + ProcedureBytes + TPDU;
                     int rcvlen;
                     ret = kss_kose_uart_transceive((uint8_t *)"\x00\xa4\x04\x00\x01\xa0", 6, rcvbuf, &rcvlen);
-                    ESP_LOGI(TAG, "kss_kose_uart_transceive return : %d", ret);
-                    ESP_LOGI(TAG, "End kss_kose_uart_transceive");
+                    ESP_LOGI(TAG, "%s return : %d", UART_TRANSCEIVE, ret);
+                    ESP_LOGI(TAG, "End %s", UART_TRANSCEIVE);
                     free(rcvbuf);
                 }
                 else if (strcmp((char*)buf, "uart_close") == 0 || strcmp((char*)buf, "1.3") == 0) {    // kss_kose_uart_close
-                    ESP_LOGI(TAG, "Start kss_kose_uart_close");
+                    ESP_LOGI(TAG, "Start %s", UART_CLOSE);
                     kss_kose_uart_close();
-                    ESP_LOGI(TAG, "Start kss_kose_uart_close");
+                    ESP_LOGI(TAG, "Start %s", UART_CLOSE);
                 }
                 else if (strcmp((char*)buf, "session_create") == 0 || strcmp((char*)buf, "2.1") == 0) {    // kss_kose_session_create
-                    ESP_LOGI(TAG, "Start kss_kose_session_create");
+                    ESP_LOGI(TAG, "Start %s", SESSION_CREATE);
                     ret = kss_kose_session_create(session, subsystem, application_id, connection_type, connectionData);
-                    ESP_LOGI(TAG, "kss_kose_session_create return : %d", ret);
-                    ESP_LOGI(TAG, "End kss_kose_session_create");
+                    ESP_LOGI(TAG, "%s return : %d", SESSION_CREATE, ret);
+                    ESP_LOGI(TAG, "End %s", SESSION_CREATE);
                 }
                 else if (strcmp((char*)buf, "session_open") == 0 || strcmp((char*)buf, "2.2") == 0) {    // kss_kose_session_open
-                    ESP_LOGI(TAG, "Start kss_kose_session_open");
+                    ESP_LOGI(TAG, "Start %s", SESSION_OPEN);
                     session->s_ctx.conn_ctx = &se_uart_init;
                     ret = kss_kose_session_open(session, subsystem, application_id, connection_type, connectionData);
-                    ESP_LOGI(TAG, "kss_kose_session_open return : %d", ret);
-                    ESP_LOGI(TAG, "End kss_kose_session_open");
+                    ESP_LOGI(TAG, "%s return : %d", SESSION_OPEN, ret);
+                    ESP_LOGI(TAG, "End %s", SESSION_OPEN);
                 }
                 else if (strcmp((char*)buf, "session_close") == 0 || strcmp((char*)buf, "2.3") == 0) {    // kss_kose_session_close
-                    ESP_LOGI(TAG, "Start kss_kose_session_close");
+                    ESP_LOGI(TAG, "Start %s", SESSION_CLOSE);
                     kss_kose_session_close(session);
-                    ESP_LOGI(TAG, "End kss_kose_session_close");
+                    ESP_LOGI(TAG, "End %s", SESSION_CLOSE);
                 }
-                else if (strcmp((char*)buf, "session_delete") == 0 || strcmp((char*)buf, "2.4") == 0) {    // kss_kose_session_delete
-                    ESP_LOGI(TAG, "Start kss_kose_session_delete");
-                    ESP_LOGI(TAG, "End kss_kose_session_delete");
+                else if (strcmp((char*)buf, "mbedtls_pubkey") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_associate_pubkey
+                    ESP_LOGI(TAG, "Start %s", MBEDTLS_ASSOCIATE_PUBKEY);
+                    kss_kose_session_close(session);
+                    ESP_LOGI(TAG, "End %s", MBEDTLS_ASSOCIATE_PUBKEY);
+                }
+                else if (strcmp((char*)buf, "aws_mqtt") == 0 || strcmp((char*)buf, "11.1") == 0) {    // aws_iot_demo_main
+                    ESP_LOGI(TAG, "Start %s", AWS_IOT_DEMO);
+                    aws_iot_demo_main(0,NULL);
+                    ESP_LOGI(TAG, "End %s", AWS_IOT_DEMO);
                 }
                 print_manu();
 
@@ -254,6 +283,26 @@ void app_main(void)
     configure_led();
     uart_command_task_create();
     //smartcard_task_create();
+
+    /* Initialize NVS partition */
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        /* NVS partition was truncated
+        * and needs to be erased */
+        ESP_ERROR_CHECK(nvs_flash_erase());
+
+        /* Retry nvs_flash_init */
+        ESP_ERROR_CHECK(nvs_flash_init());
+    }
+    
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+    * Read "Establishing Wi-Fi or Ethernet Connection" section in
+    * examples/protocols/README.md for more information about this function.
+    */
+    ESP_ERROR_CHECK(example_connect());
     
     print_manu();
 

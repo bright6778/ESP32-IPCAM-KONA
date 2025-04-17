@@ -1,6 +1,8 @@
 #include "kss_kose_uart.h"
 #include "smartcard.h"
 
+static const char *TAG = "kss_kose_uart.c";
+
 kss_kose_uart_ctx_t se_uart_init = {
     .se_uart_pin.se_uart_txd = SE_UART_TXD,
     .se_uart_pin.se_uart_rxd = SE_UART_RXD,
@@ -57,12 +59,12 @@ void set_se_uart_init_default(kss_kose_uart_ctx_t *se_uart_init){
     se_uart_init->ledc_channel.hpoint = 0;
 }
 
-bool kss_kose_uart_init(kss_kose_uart_ctx_t kose_uart_init_config){
+bool kss_kose_uart_init(kss_kose_uart_ctx_t *kose_uart_init_config){
     bool ret = false;
     smartcard_vcc_init();
     smartcard_rst_init();
-    smartcard_clk_init(kose_uart_init_config);
-    smartcard_io_init(kose_uart_init_config);
+    smartcard_clk_init(*kose_uart_init_config);
+    smartcard_io_init(*kose_uart_init_config);
     rcvbuf = (uint8_t *)malloc(512); // Loopback + ProcedureBytes + TPDU
     ret = smartcard_getATR(rcvbuf, rcvlen);
     if (ret == false) return ret;
