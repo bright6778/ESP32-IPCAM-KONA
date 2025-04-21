@@ -7,11 +7,20 @@
 #include <stdint.h>
 
 /////////////////////////////////////////////////////////////////////////////
+// Defines
+/////////////////////////////////////////////////////////////////////////////
+// ANSI 색상 코드
+#define ANSI_COLOR_RED     "\x1B[31m"
+#define ANSI_COLOR_GREEN   "\x1B[32m"
+#define ANSI_COLOR_YELLOW  "\x1B[33m"
+#define ANSI_COLOR_RESET   "\x1B[0m"
+
+/////////////////////////////////////////////////////////////////////////////
 // Functions
 /////////////////////////////////////////////////////////////////////////////
 #ifdef DEBUG
-#define LOGI(tag, fmt, ...) printf("[INFO] %s: " fmt "\n", tag, ##__VA_ARGS__);
-#define LOGE(tag, fmt, ...) printf("[ERR ] %s: " fmt "\n", tag, ##__VA_ARGS__);
+#define LOGI(tag, fmt, ...) printf(ANSI_COLOR_GREEN "[INFO] %s: " fmt "\n", tag, ##__VA_ARGS__);
+#define LOGE(tag, fmt, ...) printf(ANSI_COLOR_RED "[ERR ] %s: " fmt "\n", tag, ##__VA_ARGS__);
 #else
 #define LOGI(tag, fmt, ...) do {} while (0);
 #define LOGE(tag, fmt, ...) do {} while (0);
@@ -22,6 +31,6 @@ void debug_showframe(char *title, uint8_t *buf, int len);
 
 #define ENSURE_OR_RETURN_ON_ERROR(CONDITION, RETURN_VALUE) \
 if (!(CONDITION)) { \
-    debug_printf("CONDITION:'" #CONDITION "' failed. At Line:%d Function:%s", __LINE__, __FUNCTION__); \
+    debug_printf(ANSI_COLOR_YELLOW "CONDITION:'" #CONDITION "' failed. At Line:%d Function:%s", __LINE__, __FUNCTION__); \
     return RETURN_VALUE; \
 }

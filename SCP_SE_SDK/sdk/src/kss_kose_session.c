@@ -15,55 +15,35 @@ extern "C" {
 
 static const char *TAG = "kss_kose_session.c";
 
-kss_status_t kss_kose_session_create(kss_kose_session_t *session,
-    kss_type_t subsystem,
-    uint32_t application_id,
-    kss_connection_type_t connection_type,
-    void *connectionData)
+kss_status_t kss_kose_session_create(kss_kose_session_t *session)
 {
     kss_status_t retval = kStatus_KSS_Success;
     AX_UNUSED_ARG(session);
-    AX_UNUSED_ARG(subsystem);
-    AX_UNUSED_ARG(application_id);
-    AX_UNUSED_ARG(connection_type);
-    AX_UNUSED_ARG(connectionData);
     /* Nothing special to be handled */
     return retval;
 }
 #if 1
 kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     kss_type_t subsystem,
-    uint32_t application_id,
     kss_connection_type_t connection_type,
     void *connectionData)
 {
     kss_status_t retval           = kStatus_KSS_InvalidArgument;
 
-    //Kose_Connect_Ctx_t *pAuthCtx = NULL;
-    //SmCommState_t CommState       = {0};
-    smStatus_t status             = SM_NOT_OK;
-    int sm_connected              = 0;
-    //U16 lReturn;
+    //smStatus_t status             = SM_NOT_OK;
+    //int sm_connected              = 0;
     pKoseSession_t koseSession;
-    
-#if defined(SMCOM_JRCP_V1_AM)
-    int session_open_retry_cnt     = 1;
-    int session_open_retry_dly     = 1; //seconds
-    int session_open_retry_cnt_max = 50;
-    int session_open_retry_dly_max = 10; //seconds
-#endif
 
     ENSURE_OR_RETURN_ON_ERROR(session, kStatus_KSS_Fail);
     koseSession = &session->s_ctx;
     memset(session, 0, sizeof(*session));
-
+    koseSession->conn_ctx = connectionData;
 #ifdef CONNECT_SE_UART
-    //ENSURE_OR_GO_EXIT(connectionData);
     if(koseSession->conn_ctx == NULL){
+        LOGI(TAG, "conn_ctx == NULL");
+        koseSession->conn_ctx = calloc(1, sizeof(kss_kose_uart_ctx_t));
         set_se_uart_init_default(koseSession->conn_ctx);
     }
-    //kss_kose_uart_ctx_t se_uart_init;
-    //set_se_uart_init_default(&se_uart_init);
     if(kss_kose_uart_init(koseSession->conn_ctx) == false){
         retval = kStatus_KSS_Fail;
         goto exit;
@@ -355,7 +335,7 @@ exit:
             SM_Close(koseSession->conn_ctx, 0);
         }*/
 
-        memset(session, 0x00, sizeof(*session));
+        memset(koseSession, 0x00, sizeof(*koseSession));
     }
 
     return retval;
@@ -363,19 +343,9 @@ exit:
 #endif
 
 void kss_kose_session_close(kss_kose_session_t *session){
-
-/*
-    smStatus_t sm_status = SM_NOT_OK;
-    sm_status = Se05x_API_CloseSession(&session->s_ctx);
-    if (sm_status == SM_ERR_APDU_THROUGHPUT) {
-        LOG_E("6a66 Error");
-    }
-    if (session->s_ctx.pChannelCtx == NULL) {
-        SM_Close(session->s_ctx.conn_ctx, 0);
-    }
-    memset(session, 0, sizeof(*session));
-    */
+#ifdef CONNECT_SE_UART
    kss_kose_uart_close();
+#endif
    memset(session, 0, sizeof(*session));
 }
 #ifdef __cplusplus

@@ -108,15 +108,10 @@ typedef enum
 static kss_kose_uart_ctx_t se_uart_init;
 
 // Function Declaration
-kss_status_t kss_kose_session_create(kss_kose_session_t *session,
-    kss_type_t subsystem,
-    uint32_t application_id,
-    kss_connection_type_t connection_type,
-    void *connectionData);
+kss_status_t kss_kose_session_create(kss_kose_session_t *session);
     
 kss_status_t kss_kose_session_open(kss_kose_session_t *session,
         kss_type_t subsystem,
-        uint32_t application_id,
         kss_connection_type_t connection_type,
         void *connectionData);
 

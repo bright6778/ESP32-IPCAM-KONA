@@ -48,7 +48,7 @@ void set_se_uart_init_default(kss_kose_uart_ctx_t *se_uart_init){
     se_uart_init->ledc_timer.duty_resolution = SCR_PWM_DUTY_RES;
     se_uart_init->ledc_timer.freq_hz = SCR_PWM_FREQUENCY;
     se_uart_init->ledc_timer.clk_cfg = LEDC_AUTO_CLK;
-
+    
     // LEDC 채널 설정
     se_uart_init->ledc_channel.speed_mode = LEDC_LOW_SPEED_MODE;
     se_uart_init->ledc_channel.channel = SCR_PWM_CHANNEL;
@@ -67,7 +67,11 @@ bool kss_kose_uart_init(kss_kose_uart_ctx_t *kose_uart_init_config){
     smartcard_io_init(*kose_uart_init_config);
     rcvbuf = (uint8_t *)malloc(512); // Loopback + ProcedureBytes + TPDU
     ret = smartcard_getATR(rcvbuf, rcvlen);
-    if (ret == false) return ret;
+    if (ret == false){
+        free(rcvbuf);
+        rcvbuf = NULL;
+        return ret;
+    } 
     ret = smartcard_pps_exchange(rcvbuf, rcvlen);
     return ret;
 }
@@ -78,7 +82,11 @@ void kss_kose_uart_close(){
     uart_set_pin(UART_NUM_1, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE,
                  UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
-    free(rcvbuf);
+    if(rcvbuf != NULL){
+        LOGI(TAG, "free");
+        free(rcvbuf);
+        rcvbuf = NULL;
+    }  
 }
 
 bool kss_kose_uart_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcvlen){

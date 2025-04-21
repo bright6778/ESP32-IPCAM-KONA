@@ -195,7 +195,8 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "uart_init") == 0 || strcmp((char*)buf, "1.1") == 0) {    // kss_kose_uart_init
                     ESP_LOGI(TAG, "Start %s", UART_INIT);
-                    set_se_uart_init(&se_uart_init);
+                    //set_se_uart_init(&se_uart_init);
+                    set_se_uart_init_default(&se_uart_init);
                     ret = kss_kose_uart_init(&se_uart_init);
                     ESP_LOGI(TAG, "%s return : %d", UART_INIT, ret);
                     ESP_LOGI(TAG, "End %s", UART_INIT);
@@ -216,14 +217,15 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "session_create") == 0 || strcmp((char*)buf, "2.1") == 0) {    // kss_kose_session_create
                     ESP_LOGI(TAG, "Start %s", SESSION_CREATE);
-                    ret = kss_kose_session_create(session, subsystem, application_id, connection_type, connectionData);
+                    ret = kss_kose_session_create(session);
                     ESP_LOGI(TAG, "%s return : %d", SESSION_CREATE, ret);
                     ESP_LOGI(TAG, "End %s", SESSION_CREATE);
                 }
                 else if (strcmp((char*)buf, "session_open") == 0 || strcmp((char*)buf, "2.2") == 0) {    // kss_kose_session_open
                     ESP_LOGI(TAG, "Start %s", SESSION_OPEN);
-                    session->s_ctx.conn_ctx = &se_uart_init;
-                    ret = kss_kose_session_open(session, subsystem, application_id, connection_type, connectionData);
+                    set_se_uart_init_default(&se_uart_init);
+                    connectionData = &se_uart_init;
+                    ret = kss_kose_session_open(session, subsystem, connection_type, connectionData);
                     ESP_LOGI(TAG, "%s return : %d", SESSION_OPEN, ret);
                     ESP_LOGI(TAG, "End %s", SESSION_OPEN);
                 }
