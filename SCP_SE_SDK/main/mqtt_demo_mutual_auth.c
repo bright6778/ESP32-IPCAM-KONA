@@ -113,6 +113,8 @@
 extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
 extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
 
+static const char *TAG = "mqtt_demo_mutual_auth.c";
+
 /**
  * aws_iot_demo_main 수행 횟수
  */

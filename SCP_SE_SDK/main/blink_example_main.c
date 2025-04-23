@@ -22,8 +22,9 @@
 #include "sdkconfig.h"
 
 #include "kona_kss_api.h"
-//#include "kss_kose_uart.h"
-//#include "smartcard.h"
+#include <mbedtls/pk.h>
+#include "kss_kose_mbedtls.h"
+#include <esp_spiffs.h>
 
 ///////////////////////////////////////////////////////////////
 // Define
@@ -37,7 +38,7 @@
 #define MBEDTLS_ASSOCIATE_PUBKEY    "kss_mbedtls_associate_pubkey"
 #define AWS_IOT_DEMO                "aws_iot_demo_main"
 
-
+void aws_iot_mbedtls_mqtt_test(void);
 int aws_iot_demo_main( int argc, char ** argv );
 
 static const char *TAG = "example";
@@ -195,7 +196,6 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "uart_init") == 0 || strcmp((char*)buf, "1.1") == 0) {    // kss_kose_uart_init
                     ESP_LOGI(TAG, "Start %s", UART_INIT);
-                    //set_se_uart_init(&se_uart_init);
                     set_se_uart_init_default(&se_uart_init);
                     ret = kss_kose_uart_init(&se_uart_init);
                     ESP_LOGI(TAG, "%s return : %d", UART_INIT, ret);
@@ -236,12 +236,12 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "mbedtls_pubkey") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_associate_pubkey
                     ESP_LOGI(TAG, "Start %s", MBEDTLS_ASSOCIATE_PUBKEY);
-                    kss_kose_session_close(session);
                     ESP_LOGI(TAG, "End %s", MBEDTLS_ASSOCIATE_PUBKEY);
                 }
                 else if (strcmp((char*)buf, "aws_mqtt") == 0 || strcmp((char*)buf, "11.1") == 0) {    // aws_iot_demo_main
                     ESP_LOGI(TAG, "Start %s", AWS_IOT_DEMO);
-                    aws_iot_demo_main(0,NULL);
+                    //aws_iot_demo_main(0,NULL);    // AWS IoT Device Embedded C SDK
+                    aws_iot_mbedtls_mqtt_test();    // mbedTLS MQTT
                     ESP_LOGI(TAG, "End %s", AWS_IOT_DEMO);
                 }
                 print_manu();
@@ -261,7 +261,7 @@ void command_task(void *arg)
 
 void command_task_create(void)
 {
-    xTaskCreate(command_task, "command_task", 4096, NULL, 1, NULL);
+    xTaskCreate(command_task, "command_task", 8192, NULL, 1, NULL);
 }
 
 void app_main(void)
@@ -284,8 +284,7 @@ void app_main(void)
     /* Configure the peripheral according to the LED type */
     configure_led();
     command_task_create();
-    //smartcard_task_create();
-
+    
     /* Initialize NVS partition */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
