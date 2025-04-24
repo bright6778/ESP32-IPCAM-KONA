@@ -21,7 +21,7 @@ extern "C" {
 #include "debug.h"
 #endif
 
-typedef struct kose_mbedtls_pk_info_t{
+typedef struct mbedtls_pk_info_t{
     /** Public key type */
     mbedtls_pk_type_t type;
 
@@ -65,12 +65,26 @@ typedef struct kose_mbedtls_pk_info_t{
     void (*ctx_free_func)(void *);
 
     int (*debug_func)(const void *, mbedtls_pk_debug_item *items);
-} kose_mbedtls_pk_info_t;
+} mbedtls_pk_info_t;
+
+typedef struct
+{
+    /** @copydoc sss_asymmetric_t::session */
+    //kss_kose_session_t *session;
+    /** @copydoc sss_asymmetric_t::keyObject */
+    //kss_kose_object_t *keyObject;
+    /** @copydoc sss_asymmetric_t::algorithm */
+    //kss_algorithm_t algorithm;
+    /** @copydoc sss_asymmetric_t::mode */
+    //kss_mode_t mode;
+
+} kss_se05x_asymmetric_t;
 
 //extern const mbedtls_pk_info_t kose_pk_info;
-extern const kose_mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info;
-extern const kose_mbedtls_pk_info_t kose_mbedtls_ecpubkey_pk_info;
+extern mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info;
+extern mbedtls_pk_info_t kose_mbedtls_ecpubkey_pk_info;
 
+void setup_se_default_pk_info();
 static int kss_eckey_check_pair(const void *pub, const void *prv);
 static int kss_eckeypair_can_do(mbedtls_pk_type_t type);
 static int kss_ecpubkey_can_do(mbedtls_pk_type_t type);
@@ -115,6 +129,22 @@ void cp_tls_register_with_mbedtls(mbedtls_ssl_config *config);
  */
 
 //int mbedtls_associate_ecdhctx(SST_Index_t key_index, mbedtls_ssl_handshake_params * handshake);
+
+int kss_eckey_verify(void *ctx,
+    mbedtls_md_type_t md_alg,
+    const unsigned char *hash,
+    size_t hash_len,
+    const unsigned char *sig,
+    size_t sig_len);
+
+int kss_eckey_sign(void *ctx,
+    mbedtls_md_type_t md_alg,
+    const unsigned char *hash,
+    size_t hash_len,
+    unsigned char *sig,
+    size_t *sig_len,
+    int (*f_rng)(void *, unsigned char *, size_t),
+    void *p_rng);
 
 #ifdef __cplusplus
 }

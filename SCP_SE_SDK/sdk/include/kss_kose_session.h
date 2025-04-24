@@ -20,6 +20,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include "kona_kss_kose_config.h"
+#include "kona_kss_api.h"
 #include "kose_tlv.h"
 #include "kss_kose_uart.h"
 
@@ -29,7 +30,7 @@ extern "C" {
 #endif
 
 #define AX_UNUSED_ARG(x) (void)(x)
-
+#if 0
 /** Status of the KSS APIs */
 typedef enum
 {
@@ -59,7 +60,7 @@ typedef enum
     /** Software based */
     kType_KSS_mbedTLS
 } kss_type_t;
-
+#endif
 typedef struct _kss_kose_session
 {
     /** Indicates which security subsystem is selected to be used. */
@@ -74,6 +75,7 @@ typedef struct _kss_kose_session
     //kss_kose_tunnel_context_t *ptun_ctx;
 } kss_kose_session_t;
 
+#if 0
 /** Destintion connection type */
 typedef enum
 {
@@ -104,6 +106,7 @@ typedef enum
      */
     kKSS_ConnectionType_Encrypted
 } kss_connection_type_t;
+#endif
 
 static kss_kose_uart_ctx_t se_uart_init;
 
@@ -111,9 +114,10 @@ static kss_kose_uart_ctx_t se_uart_init;
 kss_status_t kss_kose_session_create(kss_kose_session_t *session);
     
 kss_status_t kss_kose_session_open(kss_kose_session_t *session,
-        kss_type_t subsystem,
-        kss_connection_type_t connection_type,
-        void *connectionData);
+    kss_type_t subsystem,
+    uint32_t application_id,
+    kss_connection_type_t connection_type,
+    void *connectionData);
 
 void kss_kose_session_close(kss_kose_session_t *session);
 //void kss_kose_session_delete();

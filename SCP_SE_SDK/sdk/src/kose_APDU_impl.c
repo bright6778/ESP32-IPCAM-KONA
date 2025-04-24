@@ -17,6 +17,7 @@
  #include <string.h>
  #include <limits.h>
  #include "kose_APDU_impl.h"
+ #include "kss_kose_uart.h"
 
 #if 1
 // SE Select

@@ -6,6 +6,7 @@
  */
 
 #include "kss_kose_session.h"
+#include "kona_kss_api.h"
 #include "debug.h"
 
 /** @file */
@@ -25,10 +26,11 @@ kss_status_t kss_kose_session_create(kss_kose_session_t *session)
 #if 1
 kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     kss_type_t subsystem,
+    uint32_t application_id,
     kss_connection_type_t connection_type,
     void *connectionData)
 {
-    kss_status_t retval           = kStatus_KSS_InvalidArgument;
+    kss_status_t retval           = kStatus_KSS_Success;
 
     //smStatus_t status             = SM_NOT_OK;
     //int sm_connected              = 0;

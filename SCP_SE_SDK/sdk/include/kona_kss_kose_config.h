@@ -25,6 +25,80 @@ extern "C" {
 #define KSS_SESSION_MAX_CONTEXT_SIZE 100
 #define DEBUG_PRINT
 
+/* clang-format off */
+/*
+#define KSS_SESSION_MAX_CONTEXT_SIZE        ( 0 \
+    + (1 * sizeof(void *)) \
+    + (1 * sizeof(void *)) \
+    + (8 * sizeof(void *)) \
+    + (7 * sizeof(void *)) \
+    + 32)*/
+#define KSS_KEY_STORE_MAX_CONTEXT_SIZE      ( 0 \
+    + (1 * sizeof(void *)) \
+    + (4 * sizeof(void *)) \
+    + 32)
+#define KSS_KEY_OBJECT_MAX_CONTEXT_SIZE     ( 0 \
+    + (1 * sizeof(void *)) \
+    + (2 * sizeof(int)) \
+    + (4 * sizeof(void *)) \
+    + 32)
+#define KSS_SYMMETRIC_MAX_CONTEXT_SIZE      ( 0 \
+    + (2 * sizeof(void *)) \
+    + (2 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 16 /* Buffer in case of unaligned block cipher operations */ \
+    + 4  /* Buffer length in case of unaligned block cipher operations */ \
+    + 32)
+#define KSS_AEAD_MAX_CONTEXT_SIZE           ( 0 \
+    + (5 * sizeof(void *)) \
+    + (6 * sizeof(int)) \
+    + (5 * sizeof(void *)) \
+    + 32)
+#define KSS_DIGEST_MAX_CONTEXT_SIZE         ( 0 \
+    + (1 * sizeof(void *)) \
+    + (3 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_MAC_MAX_CONTEXT_SIZE            ( 0 \
+    + (2 * sizeof(void *)) \
+    + (2 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_ASYMMETRIC_MAX_CONTEXT_SIZE      ( 0 \
+    + (2 * sizeof(void *)) \
+    + (3 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_TUNNEL_MAX_CONTEXT_SIZE         ( 0 \
+    + (1 * sizeof(void *)) \
+    + (2 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_CHANNEL_MAX_CONTEXT_SIZE         ( 0 \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_DERIVE_KEY_MAX_CONTEXT_SIZE     ( 0 \
+    + (2 * sizeof(void *)) \
+    + (2 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_RNG_MAX_CONTEXT_SIZE            ( 0 \
+    + (1 * sizeof(void *)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+
+#define KSS_CONNECT_MAX_CONTEXT_SIZE ( 0 \
+    + (4 * sizeof(void *)) \
+    + 8 \
+    )
+
+#define KSS_AUTH_MAX_CONTEXT_SIZE ( 0 \
+    + (3 * sizeof(void *)) \
+    + 8 \
+    )
+
+#define KSS_POLICY_COUNT_MAX (10)
+
 /////////////////////////////////////////////////////////////////////////////
 // SE Interface 설정
 /////////////////////////////////////////////////////////////////////////////

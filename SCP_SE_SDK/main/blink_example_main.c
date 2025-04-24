@@ -159,7 +159,7 @@ void set_se_uart_init(kss_kose_uart_ctx_t *se_uart_init){
     se_uart_init->ledc_channel.hpoint = 0;
 }
 
-void set_session_variables_dafault(kss_kose_session_t *session,
+void set_session_variables_dafault(kss_session_t *session,
     kss_type_t subsystem,
     uint32_t application_id,
     kss_connection_type_t connection_type,
@@ -170,14 +170,16 @@ void command_task(void *arg)
 {
     uint8_t byte;
     bool ret;
+    kss_status_t kStatus = kStatus_KSS_Fail;
 
     // uart variables
     kss_kose_uart_ctx_t se_uart_init;
 
     // session variables
-    kss_kose_session_t *session = malloc(sizeof(kss_kose_session_t));
-    memset(session, 0, sizeof(kss_kose_session_t));
-    kss_type_t subsystem = kType_KSS_mbedTLS;
+    //kss_kose_session_t *session = malloc(sizeof(kss_kose_session_t));
+    kss_session_t *session = malloc(sizeof(kss_session_t));
+    memset(session, 0, sizeof(kss_session_t));
+    kss_type_t subsystem = kType_KSS_SecureElement;
     uint32_t application_id = 0;
     kss_connection_type_t connection_type = kKSS_ConnectionType_Plain;
     void *connectionData = NULL;
@@ -217,21 +219,29 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "session_create") == 0 || strcmp((char*)buf, "2.1") == 0) {    // kss_kose_session_create
                     ESP_LOGI(TAG, "Start %s", SESSION_CREATE);
-                    ret = kss_kose_session_create(session);
-                    ESP_LOGI(TAG, "%s return : %d", SESSION_CREATE, ret);
+                    //ret = kss_kose_session_create(session);
+                    kStatus = kss_session_create(session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
+                    if (kStatus_KSS_Success != kStatus) {
+                        LOGE(TAG, "kss_kose_session_create failed");
+                    }
+                    ESP_LOGI(TAG, "%s return : %d", SESSION_CREATE, kStatus);
                     ESP_LOGI(TAG, "End %s", SESSION_CREATE);
                 }
                 else if (strcmp((char*)buf, "session_open") == 0 || strcmp((char*)buf, "2.2") == 0) {    // kss_kose_session_open
                     ESP_LOGI(TAG, "Start %s", SESSION_OPEN);
                     set_se_uart_init_default(&se_uart_init);
                     connectionData = &se_uart_init;
-                    ret = kss_kose_session_open(session, subsystem, connection_type, connectionData);
-                    ESP_LOGI(TAG, "%s return : %d", SESSION_OPEN, ret);
+                    //ret = kss_kose_session_open(session, subsystem, connection_type, connectionData);
+                    kStatus = kss_session_open(session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
+                    if (kStatus_KSS_Success != kStatus) {
+                        LOGE(TAG, "kss_kose_session_create failed");
+                    }
+                    ESP_LOGI(TAG, "%s return : %d", SESSION_OPEN, kStatus);
                     ESP_LOGI(TAG, "End %s", SESSION_OPEN);
                 }
                 else if (strcmp((char*)buf, "session_close") == 0 || strcmp((char*)buf, "2.3") == 0) {    // kss_kose_session_close
                     ESP_LOGI(TAG, "Start %s", SESSION_CLOSE);
-                    kss_kose_session_close(session);
+                    kss_session_close(session);
                     ESP_LOGI(TAG, "End %s", SESSION_CLOSE);
                 }
                 else if (strcmp((char*)buf, "mbedtls_pubkey") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_associate_pubkey

@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "kona_kss_kose_config.h"
+#include "kss_kose_mbedtls.h"
 
 #ifdef DEBUG_PRINT
 #include "esp_log.h"
@@ -38,7 +39,8 @@ extern const char client_key_end[] asm("_binary_client_key_end");
 extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
 extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
 
-extern const mbedtls_pk_info_t se_mbedtls_pk_info; // SE 기반 sign_func 포함
+extern mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info; // SE 기반 sign_func 포함
+//extern const mbedtls_pk_info_t mbedtls_eckeypair_pk_info; // SE 기반 sign_func 포함
 extern void *se_key_object;                        // SE 핸들
 
 int mqtt_send_connect(mbedtls_ssl_context *ssl, const char *client_id)
@@ -147,9 +149,9 @@ void aws_iot_mbedtls_mqtt_test(void)
     ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_start, (root_cert_auth_end - root_cert_auth_start));
     ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));
     
-    //client_key.private_pk_info = &se_mbedtls_pk_info;
-    //client_key.private_pk_ctx  = se_key_object;
-
+    setup_se_default_pk_info();
+    client_key.private_pk_info = &kose_mbedtls_eckeypair_pk_info;
+    
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ciphersuites(&conf, sdk_recommended_ciphersuites);
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
