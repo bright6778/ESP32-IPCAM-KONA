@@ -26,10 +26,12 @@ kss_status_t kss_session_open(kss_session_t *session,
     kss_connection_type_t connection_type,
     void *connectionData)
 {
-    subsystem = kType_KSS_SecureElement;
+    if (kType_KSS_SecureElement == subsystem){
+        kss_kose_session_t *kose_session = (kss_kose_session_t *)session;
+        return kss_kose_session_open(kose_session, subsystem, application_id, connection_type, connectionData);
+    }
 
-    kss_kose_session_t *kose_session = (kss_kose_session_t *)session;
-    return kss_kose_session_open(kose_session, subsystem, application_id, connection_type, connectionData);
+    return kStatus_KSS_InvalidArgument;
 }
 
 void kss_session_close(kss_session_t *session)
