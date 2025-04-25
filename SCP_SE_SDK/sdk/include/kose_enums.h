@@ -6,8 +6,8 @@
 
 /** @file */
 
-#ifndef SE05x_ENUMS_H
-#define SE05x_ENUMS_H
+#ifndef KOSE_ENUMS_H
+#define KOSE_ENUMS_H
 
 /** Values for INS in ISO7816 APDU */
 typedef enum
@@ -63,12 +63,12 @@ typedef enum
     kKOSE_P1_CIPHER = 0x0E,
     kKOSE_P1_TLS = 0x0F,
     kKOSE_P1_CRYPTO_OBJ = 0x10,
-#if SSS_HAVE_SE05X_VER_GTE_07_02
+#if KSS_HAVE_KOSE_VER_GTE_07_02
     /** Applet >= 4.4 */
     kKOSE_P1_AEAD = 0x11,
     /** Applet >= 4.4 */
     kKOSE_P1_AEAD_SP800_38D = 0x12,
-#endif /* SSS_HAVE_SE05X_VER_GTE_07_02 */
+#endif /* KSS_HAVE_KOSE_VER_GTE_07_02 */
     kKOSE_P1_PAKE = 0x12,
 } KOSE_P1_t;
 
@@ -148,7 +148,7 @@ typedef enum
     kKOSE_P2_SCP = 0x52,
     kKOSE_P2_AUTH_FIRST_PART1 = 0x53,
     kKOSE_P2_AUTH_NONFIRST_PART1 = 0x54,
-#if SSS_HAVE_SE05X_VER_GTE_07_02
+#if KSS_HAVE_KOSE_VER_GTE_07_02
     kKOSE_P2_CM_COMMAND = 0x55,
     kKOSE_P2_MODE_OF_OPERATION = 0x56,
     kKOSE_P2_RESTRICT = 0x57,
@@ -156,7 +156,7 @@ typedef enum
     kKOSE_P2_DH_REVERSE = 0x59,
     kKOSE_P2_READ_STATE = 0x5B,
 #endif
-#if SSS_HAVE_SE05X_VER_GTE_07_02
+#if KSS_HAVE_KOSE_VER_GTE_07_02
     kKOSE_P2_ECPM = 0x62
 #endif
 } KOSE_P2_t;
@@ -225,7 +225,7 @@ typedef enum
     /** SPAKE2P_N_P521_UNCOMPRESSED KEY*/
     kKOSE_AppletResID_SPAKE2P_N_P521_UNCOMPRESSED = 0x7FFF0215,
 
-} SE05x_AppletResID_t;
+} KOSE_AppletResID_t;
 
 /** Mapping of 2 byte return code */
 typedef enum
@@ -244,7 +244,7 @@ typedef enum
     kKOSE_SW12_DATA_INVALID = 0x6984,
     /** Command not allowed - access denied based on object policy */
     kKOSE_SW12_COMMAND_NOT_ALLOWED = 0x6986,
-} SE05x_SW12_t;
+} KOSE_SW12_t;
 
 /** Values for INS in ISO7816 APDU */
 typedef enum
@@ -273,7 +273,7 @@ typedef enum
     kKOSE_INS_MGMT = 0x04,
     /** Process session command */
     kKOSE_INS_PROCESS = 0x05,
-} SE05x_INS_t;
+} KOSE_INS_t;
 
 
 
@@ -289,7 +289,7 @@ typedef enum
     kKOSE_MemoryType_TRANSIENT_RESET = 0x02,
     /** Transient memory, clear on deselect */
     kKOSE_MemoryType_TRANSIENT_DESELECT = 0x03,
-} SE05x_MemoryType_t;
+} KOSE_MemoryType_t;
 
 /** Where was this object originated */
 typedef enum
@@ -302,9 +302,9 @@ typedef enum
     kKOSE_Origin_INTERNAL = 0x02,
     /** Trust provisioned by NXP */
     kKOSE_Origin_PROVISIONED = 0x03,
-} SE05x_Origin_t;
+} KOSE_Origin_t;
 
-/** Different TAG Values to talk to SE05X IoT Applet */
+/** Different TAG Values to talk to KOSE IoT Applet */
 typedef enum
 {
     /** Invalid */
@@ -326,7 +326,7 @@ typedef enum
     kKOSE_TAG_9 = 0x49,
     kKOSE_TAG_10 = 0x4A,
     kKOSE_TAG_11 = 0x4B,
-#if SSS_HAVE_SE05X_VER_GTE_07_02
+#if KSS_HAVE_KOSE_VER_GTE_07_02
     kKOSE_TAG_TIMESTAMP = 0x4F,
     kKOSE_TAG_SIGNATURE = 0x52,
 #endif
@@ -339,7 +339,7 @@ typedef enum
     kKOSE_GP_TAG_RECEIPT = 0x86,
     kKOSE_GP_TAG_SCP_PARMS = 0x90,
 
-#if SSS_HAVE_APPLET_SE051_UWB
+#if KSS_HAVE_APPLET_SE051_UWB
     /** FiRaLite applet specific Tags */
     kKOSE_FIRALITE_OID_TAG = 0x06,
     kKOSE_FIRALITE_OPTSA_TAG = 0x80,
@@ -372,7 +372,7 @@ typedef enum
     kKOSE_SUS_TAG_RANDOM_NUM = 0xD0,
     kKOSE_SUS_TAG_WRDS,
 #endif
-} SE05x_TAG_t;
+} KOSE_TAG_t;
 
 #ifndef __DOXYGEN__
 #define kKOSE_TAG_GP_CONTRL_REF_PARM kKOSE_GP_TAG_CONTRL_REF_PARM
@@ -390,7 +390,7 @@ typedef enum
     kKOSE_ECSignatureAlgo_SHA_256 = 0x21,
     kKOSE_ECSignatureAlgo_SHA_384 = 0x22,
     kKOSE_ECSignatureAlgo_SHA_512 = 0x26,
-} SE05x_ECSignatureAlgo_t;
+} KOSE_ECSignatureAlgo_t;
 
 /** Different signature algorithms for ED */
 typedef enum
@@ -399,7 +399,7 @@ typedef enum
     kKOSE_EDSignatureAlgo_NA = 0,
     /** Message input must be plain Data. Pure EDDSA algorithm */
     kKOSE_EDSignatureAlgo_ED25519PURE_SHA_512 = 0xA3,
-} SE05x_EDSignatureAlgo_t;
+} KOSE_EDSignatureAlgo_t;
 
 /** Different ECDH algorithms */
 typedef enum
@@ -410,7 +410,7 @@ typedef enum
     kKOSE_ECDHAlgo_EC_SVDP_DH = 0x01,
     /** Generates the X coordinate. */
     kKOSE_ECDHAlgo_EC_SVDP_DH_PLAIN = 0x03,
-} SE05x_ECDHAlgo_t;
+} KOSE_ECDHAlgo_t;
 
 /** Different signature algorithms for RSA */
 typedef enum
@@ -437,7 +437,7 @@ typedef enum
     kKOSE_RSASignatureAlgo_SHA_384_PKCS1 = 0x29,
     /** RFC8017: RSASSA-PKCS1-v1_5 */
     kKOSE_RSASignatureAlgo_SHA_512_PKCS1 = 0x2A,
-} SE05x_RSASignatureAlgo_t;
+} KOSE_RSASignatureAlgo_t;
 
 /** Different encryption/decryption algorithms for RSA */
 typedef enum
@@ -450,7 +450,7 @@ typedef enum
     kKOSE_RSAEncryptionAlgo_PKCS1 = 0x0A,
     /** RFC8017: RSAES-OAEP */
     kKOSE_RSAEncryptionAlgo_PKCS1_OAEP = 0x0F,
-} SE05x_RSAEncryptionAlgo_t;
+} KOSE_RSAEncryptionAlgo_t;
 
 /** Size of RSA Key Objects  */
 typedef enum
@@ -463,7 +463,7 @@ typedef enum
     kKOSE_RSABitLength_2048 = 2048,
     kKOSE_RSABitLength_3072 = 3072,
     kKOSE_RSABitLength_4096 = 4096,
-} SE05x_RSABitLength_t;
+} KOSE_RSABitLength_t;
 
 /** Part of the RSA Key Objects  */
 typedef enum
@@ -486,7 +486,7 @@ typedef enum
     kKOSE_RSAKeyComponent_DQ = 0x06,
     /** CRT component q_inv */
     kKOSE_RSAKeyComponent_INVQ = 0x07,
-} SE05x_RSAKeyComponent_t;
+} KOSE_RSAKeyComponent_t;
 
 /** Hashing/Digest algorithms */
 typedef enum
@@ -500,7 +500,7 @@ typedef enum
     kKOSE_DigestMode_SHA256 = 0x04,
     kKOSE_DigestMode_SHA384 = 0x05,
     kKOSE_DigestMode_SHA512 = 0x06,
-} SE05x_DigestMode_t;
+} KOSE_DigestMode_t;
 
 /** HMAC/CMAC Algorithms  */
 typedef enum
@@ -513,7 +513,7 @@ typedef enum
     kKOSE_MACAlgo_HMAC_SHA512 = 0x1B,
     kKOSE_MACAlgo_CMAC_128 = 0x31,
     kKOSE_MACAlgo_DES_CMAC8 = 0x7A,
-} SE05x_MACAlgo_t;
+} KOSE_MACAlgo_t;
 
 /** AEAD Algorithms */
 typedef enum
@@ -523,7 +523,7 @@ typedef enum
     kKOSE_AeadGCMAlgo = 0xB0,
     kKOSE_AeadGCM_IVAlgo = 0xF3,
     kKOSE_AeadCCMAlgo = 0xF4,
-} SE05x_AeadAlgo_t;
+} KOSE_AeadAlgo_t;
 
 /** PAKE Mode */
 typedef enum
@@ -539,7 +539,7 @@ typedef enum
     //kKOSE_SPAKE2PLUS_ED448_SHA512_HKDF_HMAC = 0x07, //Not supported
     kKOSE_SPAKE2PLUS_P256_SHA256_HKDF_CMAC = 0x08,
     kKOSE_SPAKE2PLUS_P256_SHA512_HKDF_CMAC = 0x09,
-} SE05x_PAKEMode_t;
+} KOSE_PAKEMode_t;
 
 /** PAKE State */
 typedef enum
@@ -547,7 +547,7 @@ typedef enum
     kKOSE_PAKE_STATE_SETUP = 0,
     kKOSE_PAKE_STATE_KEY_SHARE_GENERATED = 0xA5,
     kKOSE_PAKE_STATE_SESSION_KEYS_GENERATED = 0x5A,
-} SE05x_PAKEState_t;
+} KOSE_PAKEState_t;
 
 /** HKDF Mode */
 typedef enum
@@ -556,7 +556,7 @@ typedef enum
     kKOSE_HkdfMode_NA = 0x00,
     kKOSE_HkdfMode_ExtractExpand = 0x01,
     kKOSE_HkdfMode_ExpandOnly = 0x02,
-} SE05x_HkdfMode_t;
+} KOSE_HkdfMode_t;
 
 
 /** ECC Curve Identifiers */
@@ -586,14 +586,14 @@ typedef enum
     kKOSE_ECCurve_ECC_MONT_DH_25519 = 0x41,
     /** Not Weierstrass */
     kKOSE_ECCurve_ECC_MONT_DH_448 = 0x43,
-} SE05x_ECCurve_t;
+} KOSE_ECCurve_t;
 
 #ifndef __DOXYGEN__
 
 /** Same as kKOSE_ECCurve_TPM_ECC_BN_P256 */
 #define kKOSE_ECCurve_RESERVED_ID_ECC_ED_25519 kKOSE_ECCurve_ECC_ED_25519
 #define kKOSE_ECCurve_RESERVED_ID_ECC_MONT_DH_25519 kKOSE_ECCurve_ECC_MONT_DH_25519
-#if SSS_HAVE_SE05X_VER_GTE_07_02
+#if KSS_HAVE_KOSE_VER_GTE_07_02
 #define kKOSE_ECCurve_RESERVED_ID_ECC_MONT_DH_448 kKOSE_ECCurve_ECC_MONT_DH_448
 #endif
 #define kKOSE_ECCurve_Total_Weierstrass_Curves kKOSE_ECCurve_TPM_ECC_BN_P256
@@ -608,7 +608,7 @@ typedef enum
     kKOSE_ECCurveParam_PARAM_G = 0x04,
     kKOSE_ECCurveParam_PARAM_N = 0x08,
     kKOSE_ECCurveParam_PARAM_PRIME = 0x10,
-} SE05x_ECCurveParam_t;
+} KOSE_ECCurveParam_t;
 
 /** Symmetric cipher modes */
 typedef enum
@@ -654,7 +654,7 @@ typedef enum
     kKOSE_CipherMode_AES_CCM = 0xF4,
     /** Typically using AEAD CCM with internal IV Gen */
     kKOSE_CipherMode_AES_CCM_INT_IV = 0xF5,
-} SE05x_CipherMode_t;
+} KOSE_CipherMode_t;
 
 /** Features which are available / enabled in the Applet */
 typedef enum {
@@ -688,7 +688,7 @@ typedef enum {
     kKOSE_AppletConfig_I2CM = 0x2000,
     /** RFU2 */
     kKOSE_AppletConfig_RFU2 = 0x4000,
-} SE05x_AppletConfig_t;
+} KOSE_AppletConfig_t;
 
 /** Transient / Persistent lock */
 typedef enum
@@ -697,7 +697,7 @@ typedef enum
     kKOSE_LockIndicator_NA = 0,
     kKOSE_LockIndicator_TRANSIENT_LOCK = 0x01,
     kKOSE_LockIndicator_PERSISTENT_LOCK = 0x02,
-} SE05x_LockIndicator_t;
+} KOSE_LockIndicator_t;
 
 /**
  * Applet >= 4.4
@@ -708,7 +708,7 @@ typedef enum
     kKOSE_RestrictMode_NA = 0,
     kKOSE_RestrictMode_RESTRICT_NEW = 0x01,
     kKOSE_RestrictMode_RESTRICT_ALL = 0x02,
-} SE05x_RestrictMode_t;
+} KOSE_RestrictMode_t;
 
 /**
  * Lock the sample (until unlocked )
@@ -719,7 +719,7 @@ typedef enum
     kKOSE_LockState_NA = 0,
     kKOSE_LockState_LOCKED = 0x01,
     //    kKOSE_LockState_UNLOCKED = Any except 0x01,
-} SE05x_LockState_t;
+} KOSE_LockState_t;
 
 /** Cryptographic context for operation */
 typedef enum
@@ -736,7 +736,7 @@ typedef enum
     kKOSE_CryptoContext_AEAD = 0x04,
     /** For PAKE */
     kKOSE_CryptoContext_PAKE = 0x05,
-} SE05x_CryptoContext_t;
+} KOSE_CryptoContext_t;
 
 /** Result of operations */
 typedef enum
@@ -745,7 +745,7 @@ typedef enum
     kKOSE_Result_NA = 0,
     kKOSE_Result_SUCCESS = 0x01,
     kKOSE_Result_FAILURE = 0x02,
-} SE05x_Result_t;
+} KOSE_Result_t;
 
 /** Whether object is transient or persistent */
 typedef enum
@@ -754,7 +754,7 @@ typedef enum
     kKOSE_TransientIndicator_NA = 0,
     kKOSE_TransientIndicator_PERSISTENT = 0x01,
     kKOSE_TransientIndicator_TRANSIENT = 0x02,
-} SE05x_TransientIndicator_t;
+} KOSE_TransientIndicator_t;
 
 /** Whether object attribute is set */
 typedef enum
@@ -763,7 +763,7 @@ typedef enum
     kKOSE_SetIndicator_NA = 0,
     kKOSE_SetIndicator_NOT_SET = 0x01,
     kKOSE_SetIndicator_SET = 0x02,
-} SE05x_SetIndicator_t;
+} KOSE_SetIndicator_t;
 
 /** When there are more entries yet to be fetched from few of the APIs */
 typedef enum
@@ -774,9 +774,9 @@ typedef enum
     kKOSE_MoreIndicator_NO_MORE = 0x01,
     /** More data available */
     kKOSE_MoreIndicator_MORE = 0x02,
-} SE05x_MoreIndicator_t;
+} KOSE_MoreIndicator_t;
 
-#if SSS_HAVE_SE05X_VER_GTE_07_02
+#if KSS_HAVE_KOSE_VER_GTE_07_02
 /** Health check */
 typedef enum
 {
@@ -803,7 +803,7 @@ typedef enum
      * fails, the chip triggers the attack counter and the chip will
      * reset. */
     kKOSE_HealthCheckMode_SFR_CHECK = 0xFA05,
-} SE05x_HealthCheckMode_t;
+} KOSE_HealthCheckMode_t;
 #endif
 
 /** Mandate platform SCP or not */
@@ -815,7 +815,7 @@ typedef enum
     kKOSE_PlatformSCPRequest_REQUIRED = 0x01,
     /** No platform SCP required. */
     kKOSE_PlatformSCPRequest_NOT_REQUIRED = 0x02,
-} SE05x_PlatformSCPRequest_t;
+} KOSE_PlatformSCPRequest_t;
 
 /** Crypto object identifiers */
 typedef enum
@@ -854,10 +854,10 @@ typedef enum
 	kKOSE_CryptoObject_PAKE_TYPE_A,
     kKOSE_CryptoObject_PAKE_TYPE_B,
 	kKOSE_CryptoObject_End,
-} SE05x_CryptoObject_t;
+} KOSE_CryptoObject_t;
 
-/** @copydoc SE05x_CryptoObject_t */
-#define SE05x_CryptoObjectID_t SE05x_CryptoObject_t
+/** @copydoc KOSE_CryptoObject_t */
+#define KOSE_CryptoObjectID_t KOSE_CryptoObject_t
 
 /** SPAKE device type */
 typedef enum
@@ -865,10 +865,10 @@ typedef enum
     /** Invalid */
     kKOSE_SPAKE2PLUS_DEVICE_TYPE_UNKNOWN = 0,
     /** Spake device commionsioner */
-    SE05x_SPAKE2PLUS_DEVICE_TYPE_A = 1,
+    KOSE_SPAKE2PLUS_DEVICE_TYPE_A = 1,
     /** Spake device Node/accessory */
-    SE05x_SPAKE2PLUS_DEVICE_TYPE_B = 2,
-}SE05x_SPAKE2PlusDeviceType_t;
+    KOSE_SPAKE2PLUS_DEVICE_TYPE_B = 2,
+}KOSE_SPAKE2PlusDeviceType_t;
 
 
 /** Maximum number of session supported by SE050 */
@@ -925,7 +925,7 @@ typedef enum
     kKOSE_SecObjTyp_CURVE = 0x10,
     /**  */
     kKOSE_SecObjTyp_HMAC_KEY = 0x11,
-#if SSS_HAVE_SE05X_VER_GTE_07_02
+#if KSS_HAVE_KOSE_VER_GTE_07_02
     kKOSE_SecObjTyp_EC_KEY_PAIR_NIST_P192 = 0x21,
     kKOSE_SecObjTyp_EC_PRIV_KEY_NIST_P192 = 0x22,
     kKOSE_SecObjTyp_EC_PUB_KEY_NIST_P192 = 0x23,
@@ -987,10 +987,10 @@ typedef enum
     kKOSE_SecObjTyp_EC_PRIV_KEY_MONT_DH_448 = 0x72,
     kKOSE_SecObjTyp_EC_PUB_KEY_MONT_DH_448 = 0x73,
 #endif
-} SE05x_SecObjTyp_t;
+} KOSE_SecObjTyp_t;
 
-/** @copydoc SE05x_SecObjTyp_t */
-typedef SE05x_SecObjTyp_t SE05x_SecureObjectType_t;
+/** @copydoc KOSE_SecObjTyp_t */
+typedef KOSE_SecObjTyp_t KOSE_SecureObjectType_t;
 
 
 /** Algorithms for RSA Signature */
@@ -1016,7 +1016,7 @@ typedef enum
     kKOSE_RSASignAlgo_SHA_384_PKCS1 = 0x29,
     /** RFC8017: RSASSA-PKCS1-v1_5 */
     kKOSE_RSASignAlgo_SHA_512_PKCS1 = 0x2A,
-} SE05x_RSASignAlgo_t;
+} KOSE_RSASignAlgo_t;
 
 // typedef enum
 // {
@@ -1026,7 +1026,7 @@ typedef enum
 //     kKOSE_RSAEncrAlgo_PKCS1 = 0x0A,
 //     /** RFC8017: RSAES-OAEP */
 //     kKOSE_RSAEncrAlgo_PKCS1_OAEP = 0x0F,
-// } SE05x_RSAEncrAlgo_t;
+// } KOSE_RSAEncrAlgo_t;
 
 /** Public part of RSA Keys */
 typedef enum
@@ -1034,23 +1034,23 @@ typedef enum
     kKOSE_RSAPubKeyComp_NA = 0,
     kKOSE_RSAPubKeyComp_MOD = kKOSE_RSAKeyComponent_MOD,
     kKOSE_RSAPubKeyComp_PUB_EXP = kKOSE_RSAKeyComponent_PUB_EXP,
-} SE05x_RSAPubKeyComp_t;
+} KOSE_RSAPubKeyComp_t;
 
 /** Cyrpto module subtype */
 typedef union {
     /** In case it's digest */
-    SE05x_DigestMode_t digest;
+    KOSE_DigestMode_t digest;
     /** In case it's cipher */
-    SE05x_CipherMode_t cipher;
+    KOSE_CipherMode_t cipher;
     /** In case it's mac */
-    SE05x_MACAlgo_t mac;
+    KOSE_MACAlgo_t mac;
     /** In case it's aead */
-    SE05x_AeadAlgo_t aead;
+    KOSE_AeadAlgo_t aead;
     /** In case it's pake */
-    SE05x_PAKEMode_t pakeMode;
+    KOSE_PAKEMode_t pakeMode;
     /** Accessing 8 bit value for APDUs */
     uint8_t union_8bit;
-} SE05x_CryptoModeSubType_t;
+} KOSE_CryptoModeSubType_t;
 
 /** @} */
 
@@ -1064,7 +1064,7 @@ typedef enum
     kKOSE_TAG_I2CM_Config = 0x01,
     kKOSE_TAG_I2CM_Write = 0x03,
     kKOSE_TAG_I2CM_Read = 0x04,
-} SE05x_I2CM_TAG_t;
+} KOSE_I2CM_TAG_t;
 
 /*!
 *@}
@@ -1079,7 +1079,7 @@ typedef enum
 {
     kKOSE_TransientType_Persistent = 0,
     kKOSE_TransientType_Transient = kKOSE_INS_TRANSIENT,
-} SE05x_TransientType_t;
+} KOSE_TransientType_t;
 
 /** Part of the asymmetric key */
 typedef enum
@@ -1091,7 +1091,7 @@ typedef enum
     kKOSE_KeyPart_Private = kKOSE_P1_PRIVATE,
     /** Public key */
     kKOSE_KeyPart_Public = kKOSE_P1_PUBLIC,
-} SE05x_KeyPart_t;
+} KOSE_KeyPart_t;
 
 /** Cipher Operation.
  *
@@ -1101,7 +1101,7 @@ typedef enum
     kKOSE_Cipher_Oper_NA = 0,
     kKOSE_Cipher_Oper_Encrypt = kKOSE_P2_ENCRYPT,
     kKOSE_Cipher_Oper_Decrypt = kKOSE_P2_DECRYPT,
-} SE05x_Cipher_Oper_t;
+} KOSE_Cipher_Oper_t;
 
 /** One Shot operations helper */
 typedef enum
@@ -1109,7 +1109,7 @@ typedef enum
     kKOSE_Cipher_Oper_OneShot_NA = 0,
     kKOSE_Cipher_Oper_OneShot_Encrypt = kKOSE_P2_ENCRYPT_ONESHOT,
     kKOSE_Cipher_Oper_OneShot_Decrypt = kKOSE_P2_DECRYPT_ONESHOT,
-} SE05x_Cipher_Oper_OneShot_t;
+} KOSE_Cipher_Oper_OneShot_t;
 
 /** MAC operations */
 typedef enum
@@ -1117,14 +1117,14 @@ typedef enum
     kKOSE_Mac_Oper_NA = 0,
     kKOSE_Mac_Oper_Generate = kKOSE_P2_GENERATE,
     kKOSE_Mac_Oper_Validate = kKOSE_P2_VALIDATE,
-} SE05x_Mac_Oper_t;
+} KOSE_Mac_Oper_t;
 
 /** In case the read is attested */
 typedef enum
 {
     kKOSE_AttestationType_None = 0,
     kKOSE_AttestationType_AUTH = kKOSE_INS_AUTH_OBJECT,
-} SE05x_AttestationType_t;
+} KOSE_AttestationType_t;
 
 /** Symmetric keys */
 typedef enum
@@ -1134,10 +1134,10 @@ typedef enum
     kKOSE_SymmKeyType_DES = kKOSE_P1_DES,
     kKOSE_SymmKeyType_HMAC = kKOSE_P1_HMAC,
     kKOSE_SymmKeyType_CMAC = kKOSE_P1_AES,
-} SE05x_SymmKeyType_t;
+} KOSE_SymmKeyType_t;
 
-/** @copydoc SE05x_AppletConfig_t */
-typedef SE05x_AppletConfig_t SE05x_Variant_t;
+/** @copydoc KOSE_AppletConfig_t */
+typedef KOSE_AppletConfig_t KOSE_Variant_t;
 
 /** TLS Perform PRF */
 typedef enum
@@ -1148,7 +1148,7 @@ typedef enum
     kKOSE_TLS_PRF_CLI_RND = kKOSE_P2_TLS_PRF_CLI_RND,
     kKOSE_TLS_PRF_SRV_RND = kKOSE_P2_TLS_PRF_SRV_RND,
     kKOSE_TLS_PRF_BOTH = kKOSE_P2_TLS_PRF_BOTH,
-} SE05x_TLSPerformPRFType_t;
+} KOSE_TLSPerformPRFType_t;
 
 /** Attestation */
 typedef enum
@@ -1171,7 +1171,7 @@ typedef enum
     kKOSE_AttestationAlgo_RSA_SHA_384_PKCS1 = kKOSE_RSASignatureAlgo_SHA_384_PKCS1,
     kKOSE_AttestationAlgo_RSA_SHA_512_PKCS1 = kKOSE_RSASignatureAlgo_SHA_512_PKCS1,
 
-} SE05x_AttestationAlgo_t;
+} KOSE_AttestationAlgo_t;
 
 
 
@@ -1185,7 +1185,7 @@ typedef enum
     kKOSE_AccessCtrl_Denied = 0xFF,
     /** Access_Control_Locked */
     kKOSE_AccessCtrl_Locked = 0x80,
-} SE05x_T4T_Access_Ctrl_t;
+} KOSE_T4T_Access_Ctrl_t;
 
 /** T4T Interface constants */
 typedef enum
@@ -1194,7 +1194,7 @@ typedef enum
     kKOSE_Interface_Contact = 0x00,
     /** Interface contactless */
     kKOSE_Interface_Contactless = 0xFF,
-} SE05x_T4T_Interface_Const_t;
+} KOSE_T4T_Interface_Const_t;
 
 /** T4T Operation constants */
 typedef enum
@@ -1203,7 +1203,7 @@ typedef enum
     kKOSE_Operation_Read = 0x00,
     /** Operation Wrire */
     kKOSE_Operation_Write = 0xFF,
-} SE05x_T4T_Operation_Const_t;
+} KOSE_T4T_Operation_Const_t;
 
 /** T4T Read counter operation */
 typedef enum
@@ -1214,7 +1214,7 @@ typedef enum
     kKOSE_Read_Counter_Enable = 0x02,
     /** Read Counter Disable */
     kKOSE_Read_Counter_Disable = 0x03,
-} SE05x_T4T_Read_Ctr_Operation_t;
+} KOSE_T4T_Read_Ctr_Operation_t;
 
 
 /** RSA Key format */
@@ -1222,32 +1222,32 @@ typedef enum
 {
     kKOSE_RSAKeyFormat_CRT = kKOSE_P2_DEFAULT,
     kKOSE_RSAKeyFormat_RAW = kKOSE_P2_RAW,
-} SE05x_RSAKeyFormat_t;
+} KOSE_RSAKeyFormat_t;
 
 /** ECPMAlgo */
 typedef enum
 {
     kKOSE_ECPMAlgo_PACE_GM = 0x05,
     kKOSE_ECPMAlgo_SVDP_DH_PLAIN_XY = 0x06,
-} SE05x_ECPMAlgo_t;
+} KOSE_ECPMAlgo_t;
 
-/** @copydoc SE05x_MACAlgo_t */
-typedef SE05x_MACAlgo_t SE05x_MacOperation_t;
+/** @copydoc KOSE_MACAlgo_t */
+typedef KOSE_MACAlgo_t KOSE_MacOperation_t;
 
-/** SE05X's key IDs */
-typedef uint32_t SE05x_KeyID_t;
+/** KOSE's key IDs */
+typedef uint32_t KOSE_KeyID_t;
 /** Case when there is no KEK */
-#define SE05x_KeyID_KEK_NONE 0
+#define KOSE_KeyID_KEK_NONE 0
 
 /** [Optional: if the authentication key is the same as the key to be replaced, this TAG should not be present]. */
-#define SE05x_KeyID_MFDF_NONE 0
+#define KOSE_KeyID_MFDF_NONE 0
 
-/** SE05X key's max attempts */
-typedef uint16_t SE05x_MaxAttemps_t;
+/** KOSE key's max attempts */
+typedef uint16_t KOSE_MaxAttemps_t;
 /** Fall back to applet default */
-#define SE05x_MaxAttemps_UNLIMITED 0
+#define KOSE_MaxAttemps_UNLIMITED 0
 /** Identify in code that this is not an AUTH object and hence not applicable */
-#define SE05x_MaxAttemps_NA 0
+#define KOSE_MaxAttemps_NA 0
 
 /** When we want to read with attestation */
 #define kKOSE_INS_READ_With_Attestation (kKOSE_INS_READ | kKOSE_INS_ATTEST)
@@ -1257,14 +1257,14 @@ typedef uint16_t SE05x_MaxAttemps_t;
 
 #ifndef __DOXYGEN__
 /* RSA Helper Macros to make code little more readable */
-#define SE05X_RSA_NO_p /* Skip */ NULL, 0
-#define SE05X_RSA_NO_q /* Skip */ NULL, 0
-#define SE05X_RSA_NO_dp /* Skip */ NULL, 0
-#define SE05X_RSA_NO_dq /* Skip */ NULL, 0
-#define SE05X_RSA_NO_qInv /* Skip */ NULL, 0
-#define SE05X_RSA_NO_pubExp /* Skip */ NULL, 0
-#define SE05X_RSA_NO_priv /* Skip */ NULL, 0
-#define SE05X_RSA_NO_pubMod /* Skip */ NULL, 0
+#define KOSE_RSA_NO_p /* Skip */ NULL, 0
+#define KOSE_RSA_NO_q /* Skip */ NULL, 0
+#define KOSE_RSA_NO_dp /* Skip */ NULL, 0
+#define KOSE_RSA_NO_dq /* Skip */ NULL, 0
+#define KOSE_RSA_NO_qInv /* Skip */ NULL, 0
+#define KOSE_RSA_NO_pubExp /* Skip */ NULL, 0
+#define KOSE_RSA_NO_priv /* Skip */ NULL, 0
+#define KOSE_RSA_NO_pubMod /* Skip */ NULL, 0
 #endif // __DOXYGEN__
 
 
@@ -1273,4 +1273,4 @@ typedef uint16_t SE05x_MaxAttemps_t;
 */ /* end of se05x_types */
 #endif
 
-#endif /* SE05x_ENUMS_H */
+#endif /* KOSE_ENUMS_H */

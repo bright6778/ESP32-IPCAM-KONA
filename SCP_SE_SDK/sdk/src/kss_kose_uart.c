@@ -91,7 +91,7 @@ void kss_kose_uart_close(){
 }
 
 bool kss_kose_uart_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcvlen){
-    bool bReturn = false; 
+    bool bReturn = false;
     bReturn = smartcard_apdu(sndbuf, sndlen, rcvbuf, rcvlen);
     return bReturn;
 }

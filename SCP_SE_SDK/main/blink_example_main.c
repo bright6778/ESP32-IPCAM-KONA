@@ -25,6 +25,7 @@
 #include <mbedtls/pk.h>
 #include "kss_kose_mbedtls.h"
 #include <esp_spiffs.h>
+#include <scp03_Types.h>
 
 ///////////////////////////////////////////////////////////////
 // Define
@@ -174,7 +175,8 @@ void command_task(void *arg)
 
     // uart variables
     kss_kose_uart_ctx_t se_uart_init;
-
+    SE_Connect_Ctx_t se_conn_ctx;
+                    
     // session variables
     //kss_kose_session_t *session = malloc(sizeof(kss_kose_session_t));
     kss_session_t *session = malloc(sizeof(kss_session_t));
@@ -219,7 +221,6 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "session_create") == 0 || strcmp((char*)buf, "2.1") == 0) {    // kss_kose_session_create
                     ESP_LOGI(TAG, "Start %s", SESSION_CREATE);
-                    //ret = kss_kose_session_create(session);
                     kStatus = kss_session_create(session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
                     if (kStatus_KSS_Success != kStatus) {
                         LOGE(TAG, "kss_kose_session_create failed");
@@ -230,8 +231,9 @@ void command_task(void *arg)
                 else if (strcmp((char*)buf, "session_open") == 0 || strcmp((char*)buf, "2.2") == 0) {    // kss_kose_session_open
                     ESP_LOGI(TAG, "Start %s", SESSION_OPEN);
                     set_se_uart_init_default(&se_uart_init);
-                    connectionData = &se_uart_init;
-                    //ret = kss_kose_session_open(session, subsystem, connection_type, connectionData);
+                    se_conn_ctx.connType = kType_SE_Conn_Type_UART;
+                    se_conn_ctx.conn_ctx = &se_uart_init;
+                    connectionData = &se_conn_ctx;
                     kStatus = kss_session_open(session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
                     if (kStatus_KSS_Success != kStatus) {
                         LOGE(TAG, "kss_kose_session_create failed");

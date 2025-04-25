@@ -22,7 +22,7 @@ kss_status_t kss_session_create(kss_session_t *session,
 
 kss_status_t kss_session_open(kss_session_t *session,
     kss_type_t subsystem,
-    uint32_t application_id,
+    uint32_t application_id,    // se object id
     kss_connection_type_t connection_type,
     void *connectionData)
 {

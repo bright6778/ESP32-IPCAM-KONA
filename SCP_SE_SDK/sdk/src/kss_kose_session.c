@@ -8,6 +8,7 @@
 #include "kss_kose_session.h"
 #include "kona_kss_api.h"
 #include "debug.h"
+#include "scp03_Types.h"
 
 /** @file */
 #ifdef __cplusplus
@@ -23,24 +24,26 @@ kss_status_t kss_kose_session_create(kss_kose_session_t *session)
     /* Nothing special to be handled */
     return retval;
 }
-#if 1
+
 kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     kss_type_t subsystem,
     uint32_t application_id,
     kss_connection_type_t connection_type,
     void *connectionData)
 {
-    kss_status_t retval           = kStatus_KSS_Success;
-
-    //smStatus_t status             = SM_NOT_OK;
+    kss_status_t retval             = kStatus_KSS_Success;
+    SE_Connect_Ctx_t *pAuthCtx      = NULL;
+    SmCommState_t CommState         = {0};
+    smStatus_t status               = SM_NOT_OK;
     //int sm_connected              = 0;
     pKoseSession_t koseSession;
 
     ENSURE_OR_RETURN_ON_ERROR(session, kStatus_KSS_Fail);
     koseSession = &session->s_ctx;
     memset(session, 0, sizeof(*session));
-    koseSession->conn_ctx = connectionData;
-#ifdef CONNECT_SE_UART
+    
+//#ifdef CONNECT_SE_UART
+#if 0
     if(koseSession->conn_ctx == NULL){
         LOGI(TAG, "conn_ctx == NULL");
         koseSession->conn_ctx = calloc(1, sizeof(kss_kose_uart_ctx_t));
@@ -50,55 +53,39 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
         retval = kStatus_KSS_Fail;
         goto exit;
     }
-
-    // Test Select
-    uint8_t *rcvbuf = (uint8_t *)malloc(512); // Loopback + ProcedureBytes + TPDU;
-    int rcvlen;
-    if(kss_kose_uart_transceive((uint8_t *)"\x00\xa4\x04\x00\x01\xa0", 6, rcvbuf, &rcvlen) == false){
-        retval = kStatus_KSS_Fail;
-        goto exit;
-    }
 #endif
-    #if 0
+    pAuthCtx = (SE_Connect_Ctx_t *)connectionData;
+    if (pAuthCtx->connType == kType_SE_Conn_Type_UART) {
+        koseSession->conn_ctx = pAuthCtx->conn_ctx;
 
-    pAuthCtx = (Kose_Connect_Ctx_t *)connectionData;
-
-    if (pAuthCtx->connType != kType_SE_Conn_Type_Channel) {
-        uint8_t atr[100];
-        uint16_t atrLen    = ARRAY_SIZE(atr);
         CommState.connType = pAuthCtx->connType;
-        if (1 == pAuthCtx->skip_select_applet) {
-            if (pAuthCtx->auth.authType == kSSS_AuthType_None) {
-                CommState.select = SELECT_NONE;
-            }
-            else if (pAuthCtx->auth.authType == kSSS_AuthType_SCP03) {
-                CommState.select = SELECT_SSD;
-            }
-        }
         if (1 == pAuthCtx->sessionResume) {
             CommState.sessionResume = 1;
         }
 
-        /* AX_EMBEDDED Or Native */
-        lReturn = SM_I2CConnect(&(koseSession->conn_ctx), &CommState, atr, &atrLen, pAuthCtx->portName);
-        if (lReturn == ERR_APDU_THROUGHPUT) {
-            LOG_E("SM_I2CConnect Failed. Status %04X", lReturn);
-            retval = kStatus_SSS_ApduThroughputError;
-            goto exit;
+        if(koseSession->conn_ctx == NULL){
+            LOGI(TAG, "conn_ctx == NULL");
+            koseSession->conn_ctx = calloc(1, sizeof(kss_kose_uart_ctx_t));
+            set_se_uart_init_default(koseSession->conn_ctx);
         }
-        if (lReturn != SW_OK) {
-            LOG_E("SM_I2CConnect Failed. Status %04X", lReturn);
-            retval = kStatus_SSS_Fail;
+        if(kss_kose_uart_init(koseSession->conn_ctx) == false){
+            retval = kStatus_KSS_Fail;
             goto exit;
-        }
-        if (atrLen != 0) {
-            LOG_AU8_I(atr, atrLen);
         }
 
+        // KOSE Select
+        uint8_t *rcvbuf = (uint8_t *)malloc(512); // Loopback + ProcedureBytes + TPDU;
+        int rcvlen;
+        if(kss_kose_uart_transceive((uint8_t *)"\x00\xa4\x04\x00\x01\x0a", 6, rcvbuf, &rcvlen) == false){
+            retval = kStatus_KSS_Fail;
+            goto exit;
+        }
+        status = SM_OK;
+#if 0
         sm_connected = 1;
 
         if (1 == pAuthCtx->skip_select_applet) {
-            status = (smStatus_t)lReturn;
+            status = (smStatus_t)status;
             /* Not selecting the applet, so we don't know whether it's old or new */
         }
         else {
@@ -131,14 +118,12 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
                     (CommState.appletVersion) >> 8);
             }
 #else
-            LOG_I("Compiled for 0x%X. Connected applet Ver 0x%X",
-                (HEX_EXPECTED_APPLET_VERSION) >> 8,
-                (CommState.appletVersion) >> 8);
+            LOGI(TAG, "KONA secure element version");
 #endif
         }
-    }
 #endif
-#if 0
+    }
+
 #ifdef SSS_USE_SCP03_THREAD_SAFETY /* Disabled by default. Enable in case of multiple applications access platform SCP03 session */
 #if SSS_HAVE_SCP_SCP03_SSS
     if (pAuthCtx->auth.authType == kSSS_AuthType_SCP03) {
@@ -165,7 +150,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     }
 #endif //#if SSS_HAVE_SCP_SCP03_SSS
 #endif //#if SSS_USE_SCP03_THREAD_SAFETY
-
+#if 0
     if (pAuthCtx->auth.authType == kSSS_AuthType_ECKey) {
         ENSURE_OR_GO_EXIT(pAuthCtx->auth.ctx.eckey.pDyn_ctx);
         if (CommState.appletVersion == 0) {
@@ -214,6 +199,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
             status                     = SM_OK;
         }
     }
+#endif
 
 #if SSS_HAVE_SCP_SCP03_SSS
     /* Auth type is Platform SCP03 */
@@ -244,11 +230,6 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
         }
     }
 #else
-    if (pAuthCtx->auth.authType != kSSS_AuthType_None && pAuthCtx->auth.authType != kSSS_AuthType_ID) {
-        LOG_E(
-            "Set the SCP to SCP03_SSS in the build configuration and "
-            "recompile.!");
-    }
 
 #endif
 
@@ -329,7 +310,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
             retval = kStatus_KSS_Fail;
         }
     }
-        #endif
+
 exit:
     if (retval != kStatus_KSS_Success) {
         /*
@@ -342,7 +323,6 @@ exit:
 
     return retval;
 }
-#endif
 
 void kss_kose_session_close(kss_kose_session_t *session){
 #ifdef CONNECT_SE_UART

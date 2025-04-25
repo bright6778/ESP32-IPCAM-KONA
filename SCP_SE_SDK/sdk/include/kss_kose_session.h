@@ -30,6 +30,9 @@ extern "C" {
 #endif
 
 #define AX_UNUSED_ARG(x) (void)(x)
+
+//uint8_t kose_aid[] = "\x0F\x4B\x4F\x4E\x41\x01\xFF\x80\x00";
+
 #if 0
 /** Status of the KSS APIs */
 typedef enum
