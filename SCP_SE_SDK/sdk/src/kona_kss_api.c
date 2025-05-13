@@ -1,4 +1,6 @@
 #include "kona_kss_api.h"
+#include "kss_kose_rng.h"
+#include "kss_kose_session.h"
 #include "kss_kose_session.h"
 
 kss_status_t kss_session_create(kss_session_t *session,
@@ -38,4 +40,22 @@ void kss_session_close(kss_session_t *session)
 {
     kss_kose_session_t *kose_session = (kss_kose_session_t *)session;
     kss_kose_session_close(kose_session);
+}
+
+kss_status_t kss_rng_context_init(kss_rng_context_t *context, kss_session_t *session)
+{
+   return kss_kose_rng_context_init(context , session);
+}
+
+kss_status_t kss_rng_get_random(kss_rng_context_t *context, uint8_t *random_data, size_t dataLen)
+{
+    LOG_D("FN: %s", __FUNCTION__);
+    return kss_kose_rng_get_random(context, random_data, dataLen);
+}
+
+kss_status_t kss_rng_context_free(kss_rng_context_t *context)
+{
+    LOG_D("FN: %s", __FUNCTION__);
+    return kss_kose_rng_context_free(context);
+
 }

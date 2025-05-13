@@ -38,7 +38,7 @@
 #define SESSION_CLOSE               "kss_kose_session_close"
 #define MBEDTLS_ASSOCIATE_PUBKEY    "kss_mbedtls_associate_pubkey"
 #define AWS_IOT_DEMO                "aws_iot_demo_main"
-
+#define RANDOM_GEN                  "kss_kose_rng"
 void aws_iot_mbedtls_mqtt_test(void);
 int aws_iot_demo_main( int argc, char ** argv );
 
@@ -131,6 +131,7 @@ void print_manu(){
     printf("CMD : session_close or 2.3      - %s\n", SESSION_CLOSE);
     printf("CMD : mbedtls_pubkey or 9.1     - %s\n", MBEDTLS_ASSOCIATE_PUBKEY);
     printf("CMD : aws_mqtt or 11.1          - %s\n", AWS_IOT_DEMO);
+    printf("CMD : generate random 2.4       - %s\n", RANDOM_GEN);
     printf("//////////////////////////////////////////////////////////////////\n");
 }
 
@@ -255,6 +256,26 @@ void command_task(void *arg)
                     //aws_iot_demo_main(0,NULL);    // AWS IoT Device Embedded C SDK
                     aws_iot_mbedtls_mqtt_test();    // mbedTLS MQTT
                     ESP_LOGI(TAG, "End %s", AWS_IOT_DEMO);
+                }
+                else if (strcmp((char*)buf, "generate_random") == 0 || strcmp((char*)buf, "2.4") == 0) {    // kss_kose_rng
+                    ESP_LOGI(TAG, "Start %s", RANDOM_GEN);
+                    uint8_t *random_data = (uint8_t *)malloc(32); 
+                    int dataLen = 32;
+                    kss_rng_context_t rng_ctx;
+                    set_se_uart_init_default(&se_uart_init);
+                    se_conn_ctx.connType = kType_SE_Conn_Type_UART;
+                    se_conn_ctx.conn_ctx = &se_uart_init;
+                    
+                    kStatus = kss_rng_context_init(&rng_ctx, session);
+                    kStatus = kss_rng_get_random(& rng_ctx, &random_data, dataLen);     
+
+                    if (kStatus_KSS_Success != kStatus) {
+                        LOGE(TAG, "kss_kose_rng failed");
+                    }
+                    ESP_LOGI(TAG, "%s return : %d", RANDOM_GEN, kStatus);
+                    ESP_LOGI(TAG, "End %s", RANDOM_GEN);
+                    free(random_data);
+
                 }
                 print_manu();
 

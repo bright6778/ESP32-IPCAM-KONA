@@ -707,6 +707,8 @@ typedef struct
                 + 1 /* P2 */
     ];
 } tlvHeader_t;
+
+
 #if 0
 /**
  * @addtogroup kss_crypto_tunnel
@@ -840,6 +842,44 @@ kss_status_t kss_session_open(kss_session_t *session,
     uint32_t application_id,
     kss_connection_type_t connection_type,
     void *connectionData);
+
+
+#endif
+#if 1
+/** Random number generator context */
+typedef struct
+{
+    /** Pointer to the session */
+    kss_session_t *session;
+
+    /** Reserved memory for implementation specific extension */
+    struct
+    {
+        uint8_t data[KSS_RNG_MAX_CONTEXT_SIZE];
+    } context;
+
+} kss_rng_context_t;
+
+kss_status_t kss_rng_context_init(kss_rng_context_t *context, kss_session_t *session);
+
+/**
+ * @brief Generate random number.
+ *
+ * @param   context random generator context.
+ * @param   random_data buffer to hold random data.
+ * @param   dataLen required random number length
+ * @return  status
+ */
+kss_status_t kss_rng_get_random(kss_rng_context_t *context, uint8_t *random_data, size_t dataLen);
+
+/**
+ * @brief free random genertor context.
+ *
+ * @param   context generator context.
+ * @return  status
+ */
+kss_status_t kss_rng_context_free(kss_rng_context_t *context);
+
 #endif
 #if 0
 /**
