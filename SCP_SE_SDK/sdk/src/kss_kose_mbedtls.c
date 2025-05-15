@@ -1,5 +1,6 @@
 #include "kss_kose_mbedtls.h"
 #include "kss_kose_session.h"
+#include "kss_kose_asymmetric.h"
 /*
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/pk.h"
@@ -80,46 +81,46 @@ int kss_eckey_verify(void *ctx,
 {
     LOGI(TAG, "kss_eckey_verify");
     /*
-    sss_status_t status = kStatus_SSS_Success;
-    sss_asymmetric_t asymVerifyCtx;
-    sss_object_t *sssObject = NULL;
-    sss_algorithm_t algorithm;
+    kss_status_t status = kStatus_KSS_Success;
+    kss_asymmetric_t asymVerifyCtx;
+    kss_object_t *kssObject = NULL;
+    kss_algorithm_t algorithm;
     mbedtls_ecp_keypair *pax_ctx = (mbedtls_ecp_keypair *)ctx;
 
-    sssObject = pax_ctx->grp.pSSSObject;
+    kssObject = pax_ctx->grp.pKSSObject;
 
     switch (md_alg) {
     case MBEDTLS_MD_SHA1:
-        algorithm = kAlgorithm_SSS_SHA1;
+        algorithm = kAlgorithm_KSS_SHA1;
         break;
     case MBEDTLS_MD_SHA224:
-        algorithm = kAlgorithm_SSS_SHA224;
+        algorithm = kAlgorithm_KSS_SHA224;
         break;
     case MBEDTLS_MD_SHA256:
-        algorithm = kAlgorithm_SSS_SHA256;
+        algorithm = kAlgorithm_KSS_SHA256;
         break;
     case MBEDTLS_MD_SHA384:
-        algorithm = kAlgorithm_SSS_SHA384;
+        algorithm = kAlgorithm_KSS_SHA384;
         break;
     case MBEDTLS_MD_SHA512:
-        algorithm = kAlgorithm_SSS_SHA512;
+        algorithm = kAlgorithm_KSS_SHA512;
         break;
     default:
         return 1;
     }
 
-    LOG_I("%s: Verify using key '0x%08X'", __FUNCTION__, pax_ctx->grp.pSSSObject->keyId);
+    LOG_I("%s: Verify using key '0x%08X'", __FUNCTION__, pax_ctx->grp.pKSSObject->keyId);
 
-    status = sss_asymmetric_context_init(
-        &asymVerifyCtx, sssObject->keyStore->session, sssObject, algorithm, kMode_SSS_Verify);
-    if (status != kStatus_SSS_Success) {
-        LOG_E(" sss_asymmetric_context_init verify context Failed...\n");
+    status = kss_asymmetric_context_init(
+        &asymVerifyCtx, kssObject->keyStore->session, kssObject, algorithm, kMode_KSS_Verify);
+    if (status != kStatus_KSS_Success) {
+        LOG_E(" kss_asymmetric_context_init verify context Failed...\n");
         return 1;
     }
 
-    status = sss_asymmetric_verify_digest(&asymVerifyCtx, (uint8_t *)hash, hash_len, (uint8_t *)sig, sig_len);
-    if (status != kStatus_SSS_Success) {
-        LOG_E(" sss_asymmetric_verify_digest Failed...\n");
+    status = kss_asymmetric_verify_digest(&asymVerifyCtx, (uint8_t *)hash, hash_len, (uint8_t *)sig, sig_len);
+    if (status != kStatus_KSS_Success) {
+        LOG_E(" kss_asymmetric_verify_digest Failed...\n");
         return 1;
     }
     */
@@ -131,58 +132,56 @@ int kss_eckey_sign(void *ctx,
     const unsigned char *hash,
     size_t hash_len,
     unsigned char *sig,
+    size_t sig_size,
     size_t *sig_len,
     int (*f_rng)(void *, unsigned char *, size_t),
     void *p_rng)
 {
     LOGI(TAG, "kss_mbedtls_pk_sign");
     int ret            = 0;
-    /*
+    
     size_t u16_sig_len = 1024;
-    sss_asymmetric_t asymVerifyCtx;
-    sss_status_t status          = kStatus_SSS_Success;
-    sss_object_t *sssObject      = NULL;
+    kss_asymmetric_t asymVerifyCtx;
+    kss_status_t status          = kStatus_KSS_Success;
+    kss_object_t *kssObject      = NULL;
     mbedtls_ecp_keypair *pax_ctx = (mbedtls_ecp_keypair *)ctx;
-    sss_algorithm_t algorithm;
+    kss_algorithm_t algorithm;
 
-    sssObject = pax_ctx->grp.pSSSObject;
+    //kssObject = pax_ctx->private_grp.pKSSObject;
     switch (md_alg) {
     case MBEDTLS_MD_SHA1:
-        algorithm = kAlgorithm_SSS_SHA1;
+        algorithm = kAlgorithm_KSS_SHA1;
         break;
     case MBEDTLS_MD_SHA224:
-        algorithm = kAlgorithm_SSS_SHA224;
+        algorithm = kAlgorithm_KSS_SHA224;
         break;
     case MBEDTLS_MD_SHA256:
-        algorithm = kAlgorithm_SSS_SHA256;
+        algorithm = kAlgorithm_KSS_SHA256;
         break;
     case MBEDTLS_MD_SHA384:
-        algorithm = kAlgorithm_SSS_SHA384;
+        algorithm = kAlgorithm_KSS_SHA384;
         break;
     case MBEDTLS_MD_SHA512:
-        algorithm = kAlgorithm_SSS_SHA512;
+        algorithm = kAlgorithm_KSS_SHA512;
         break;
     default:
         return 1;
     }
 
-    status =
-        sss_asymmetric_context_init(&asymVerifyCtx, sssObject->keyStore->session, sssObject, algorithm, kMode_SSS_Sign);
-    if (status != kStatus_SSS_Success) {
-        LOG_E(" sss_asymmetric_context_init verify context Failed...\n");
-        return 1;
+    status = kss_asymmetric_context_init(&asymVerifyCtx, kssObject->keyStore->session, kssObject, algorithm, kMode_KSS_Sign);
+    if (status != kStatus_KSS_Success) {
+        LOGE(TAG, "kss_asymmetric_context_init verify context Failed...\n");
+        return kStatus_KSS_Fail;
     }
 
-    LOG_I("%s: Signing using key '0x%08lX'", __FUNCTION__, pax_ctx->grp.pSSSObject->keyId);
-
-    status = sss_asymmetric_sign_digest(&asymVerifyCtx, (uint8_t *)hash, hash_len, sig, &u16_sig_len);
-    if (status != kStatus_SSS_Success) {
-        LOG_W(" sss_asymmetric_sign_digest Failed...\n");
-        return 1;
+    status = kss_asymmetric_sign_digest(&asymVerifyCtx, (uint8_t *)hash, hash_len, sig, &u16_sig_len);
+    if (status != kStatus_KSS_Success) {
+        LOGE(TAG, " kss_asymmetric_sign_digest Failed...\n");
+        return kStatus_KSS_Fail;
     }
 
     *sig_len = u16_sig_len;
-    */
+
     return (ret);
 }
 //const 나중에 붙여야 함.
@@ -227,28 +226,28 @@ void setup_se_default_pk_info()
 kss_status_t kss_kose_asymmetric_sign_digest(
     kss_kose_asymmetric_t *context, const uint8_t *digest, size_t digestLen, uint8_t *signature, size_t *signatureLen)
 {
-    sss_status_t retval = kStatus_SSS_Fail;
+    kss_status_t retval = kStatus_KSS_Fail;
     smStatus_t status   = SM_NOT_OK;
 
-#if SSSFTR_SE05X_ECC
+#if KSSFTR_SE05X_ECC
     SE05x_ECSignatureAlgo_t ecSignAlgo = kSE05x_ECSignatureAlgo_NA;
 #endif
 
-#if SSSFTR_SE05X_ECC || SSSFTR_SE05X_RSA
-    if (kStatus_SSS_Success != se05x_check_input_len(digestLen, context->algorithm)) {
+#if KSSFTR_SE05X_ECC || KSSFTR_SE05X_RSA
+    if (kStatus_KSS_Success != se05x_check_input_len(digestLen, context->algorithm)) {
         LOG_E("Algorithm and digest length do not match");
-        return kStatus_SSS_Fail;
+        return kStatus_KSS_Fail;
     }
 #endif
 
     switch (context->keyObject->cipherType) {
-#if SSSFTR_SE05X_ECC
-    case kSSS_CipherType_EC_NIST_P:
-#if SSS_HAVE_EC_NIST_K
-    case kSSS_CipherType_EC_NIST_K:
+#if KSSFTR_SE05X_ECC
+    case kKSS_CipherType_EC_NIST_P:
+#if KSS_HAVE_EC_NIST_K
+    case kKSS_CipherType_EC_NIST_K:
 #endif
-#if SSS_HAVE_EC_BP
-    case kSSS_CipherType_EC_BRAINPOOL:
+#if KSS_HAVE_EC_BP
+    case kKSS_CipherType_EC_BRAINPOOL:
 #endif
     {
         ecSignAlgo = se05x_get_ec_sign_hash_mode(context->algorithm);
@@ -260,23 +259,23 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             signature,
             signatureLen);
         if (status == SM_ERR_APDU_THROUGHPUT) {
-            retval = kStatus_SSS_ApduThroughputError;
+            retval = kStatus_KSS_ApduThroughputError;
         }
     } break;
-#if SSS_HAVE_SE05X_VER_GTE_07_02 && SSS_HAVE_EC_MONT
-    case kSSS_CipherType_EC_MONTGOMERY: {
+#if KSS_HAVE_SE05X_VER_GTE_07_02 && KSS_HAVE_EC_MONT
+    case kKSS_CipherType_EC_MONTGOMERY: {
         LOG_W(
             "Sign operation is not supported for "
-            "kSSS_CipherType_EC_MONTGOMERY curve");
-        return kStatus_SSS_Fail;
+            "kKSS_CipherType_EC_MONTGOMERY curve");
+        return kStatus_KSS_Fail;
     } break;
-#endif // SSS_HAVE_SE05X_VER_GTE_07_02 && SSS_HAVE_EC_MONT
-#endif //SSSFTR_SE05X_ECC
-#if SSSFTR_SE05X_RSA && SSS_HAVE_RSA && !SSS_HAVE_HOSTCRYPTO_NONE
-    case kSSS_CipherType_RSA:
-    case kSSS_CipherType_RSA_CRT: {
-        if ((context->algorithm <= kAlgorithm_SSS_RSASSA_PKCS1_PSS_MGF1_SHA512) &&
-            (context->algorithm >= kAlgorithm_SSS_RSASSA_PKCS1_PSS_MGF1_SHA1)) {
+#endif // KSS_HAVE_SE05X_VER_GTE_07_02 && KSS_HAVE_EC_MONT
+#endif //KSSFTR_SE05X_ECC
+#if KSSFTR_SE05X_RSA && KSS_HAVE_RSA && !KSS_HAVE_HOSTCRYPTO_NONE
+    case kKSS_CipherType_RSA:
+    case kKSS_CipherType_RSA_CRT: {
+        if ((context->algorithm <= kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA512) &&
+            (context->algorithm >= kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA1)) {
             /* Perform EMSA encoding on input data and and RSA decrypt on emsa data --> RSA sign without hash */
             /* clang-format off */
             uint8_t emsa_data[512] = {0,}; /* MAX - SHA512*/
@@ -287,10 +286,10 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             encode_ret = emsa_encode(context, digest, digestLen, emsa_data, &emsa_len);
             if (0 != encode_ret) {
                 if (encode_ret == 2) {
-                    return kStatus_SSS_ApduThroughputError;
+                    return kStatus_KSS_ApduThroughputError;
                 }
                 else {
-                    return kStatus_SSS_Fail;
+                    return kStatus_KSS_Fail;
                 }
             }
             status = Se05x_API_RSADecrypt(&context->session->s_ctx,
@@ -301,11 +300,11 @@ kss_status_t kss_kose_asymmetric_sign_digest(
                 signature,
                 signatureLen);
             if (status == SM_ERR_APDU_THROUGHPUT) {
-                retval = kStatus_SSS_ApduThroughputError;
+                retval = kStatus_KSS_ApduThroughputError;
             }
         }
-        else if ((context->algorithm <= kAlgorithm_SSS_RSASSA_PKCS1_V1_5_SHA512) &&
-                 (context->algorithm >= kAlgorithm_SSS_RSASSA_PKCS1_V1_5_SHA1)) {
+        else if ((context->algorithm <= kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA512) &&
+                 (context->algorithm >= kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA1)) {
             uint8_t encode_ret = 0;
             /* Perform PKCS1-v15 encoding on input data and and RSA decrypt on PKCS1-v15 data --> RSA sign without hash */
             /* clang-format off */
@@ -316,10 +315,10 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             encode_ret = pkcs1_v15_encode(context, digest, digestLen, pkcs1v15_encode_data, &encode_data_len);
             if (0 != encode_ret) {
                 if (encode_ret == 2) {
-                    return kStatus_SSS_ApduThroughputError;
+                    return kStatus_KSS_ApduThroughputError;
                 }
                 else {
-                    return kStatus_SSS_Fail;
+                    return kStatus_KSS_Fail;
                 }
             }
             status = Se05x_API_RSADecrypt(&context->session->s_ctx,
@@ -330,10 +329,10 @@ kss_status_t kss_kose_asymmetric_sign_digest(
                 signature,
                 signatureLen);
             if (status == SM_ERR_APDU_THROUGHPUT) {
-                retval = kStatus_SSS_ApduThroughputError;
+                retval = kStatus_KSS_ApduThroughputError;
             }
         }
-        else if (context->algorithm == kAlgorithm_SSS_RSASSA_PKCS1_V1_5_NO_HASH) {
+        else if (context->algorithm == kAlgorithm_KSS_RSASSA_PKCS1_V1_5_NO_HASH) {
             uint8_t encode_ret = 0;
             /* Perform PKCS1-v15 encoding on input data and and RSA decrypt on PKCS1-v15 data --> RSA sign without hash */
             /* clang-format off */
@@ -344,10 +343,10 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             encode_ret = pkcs1_v15_encode_no_hash(context, digest, digestLen, pkcs1v15_encode_data, &encode_data_len);
             if (0 != encode_ret) {
                 if (encode_ret == 2) {
-                    return kStatus_SSS_ApduThroughputError;
+                    return kStatus_KSS_ApduThroughputError;
                 }
                 else {
-                    return kStatus_SSS_Fail;
+                    return kStatus_KSS_Fail;
                 }
             }
             status = Se05x_API_RSADecrypt(&context->session->s_ctx,
@@ -358,10 +357,10 @@ kss_status_t kss_kose_asymmetric_sign_digest(
                 signature,
                 signatureLen);
             if (status == SM_ERR_APDU_THROUGHPUT) {
-                retval = kStatus_SSS_ApduThroughputError;
+                retval = kStatus_KSS_ApduThroughputError;
             }
         }
-        else if (context->algorithm == kAlgorithm_SSS_RSASSA_NO_PADDING) {
+        else if (context->algorithm == kAlgorithm_KSS_RSASSA_NO_PADDING) {
             uint8_t padded_data[512] = {0};
             size_t padded_len        = sizeof(padded_data);
 
@@ -369,11 +368,11 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             uint16_t u16parsedKeyByteLen = 0;
             status = Se05x_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &u16parsedKeyByteLen);
             if (status == SM_ERR_APDU_THROUGHPUT) {
-                return kStatus_SSS_ApduThroughputError;
+                return kStatus_KSS_ApduThroughputError;
             }
             parsedKeyByteLen = u16parsedKeyByteLen;
             if (status != SM_OK) {
-                return kStatus_SSS_Fail;
+                return kStatus_KSS_Fail;
             }
 
             if (digestLen <= parsedKeyByteLen && digestLen > 0) {
@@ -382,7 +381,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
                 padded_len = parsedKeyByteLen;
             }
             else {
-                return kStatus_SSS_Fail;
+                return kStatus_KSS_Fail;
             }
             status = Se05x_API_RSADecrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
@@ -392,21 +391,21 @@ kss_status_t kss_kose_asymmetric_sign_digest(
                 signature,
                 signatureLen);
             if (status == SM_ERR_APDU_THROUGHPUT) {
-                retval = kStatus_SSS_ApduThroughputError;
+                retval = kStatus_KSS_ApduThroughputError;
             }
         }
         else {
             LOG_E("Selected padding is not supported for RSA Sign in SE050");
-            return kStatus_SSS_Fail;
+            return kStatus_KSS_Fail;
         }
     } break;
-#endif // SSSFTR_SE05X_RSA && SSS_HAVE_RSA && !SSS_HAVE_HOSTCRYPTO_NONE
+#endif // KSSFTR_SE05X_RSA && KSS_HAVE_RSA && !KSS_HAVE_HOSTCRYPTO_NONE
     default:
         break;
     }
 
     if (status == SM_OK) {
-        retval = kStatus_SSS_Success;
+        retval = kStatus_KSS_Success;
     }
 
     return retval;

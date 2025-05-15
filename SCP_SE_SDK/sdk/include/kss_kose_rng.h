@@ -18,6 +18,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include "kona_kss_kose_types.h"
 #include "kona_kss_kose_config.h"
 #include "kose_tlv.h"
 #include "kss_kose_uart.h"
@@ -65,6 +66,10 @@ kss_status_t kss_kose_rng_get_random(kss_rng_context_t *context, uint8_t *random
  * @return  status
  */
 kss_status_t kss_kose_rng_context_free(kss_rng_context_t *context);
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  *@}

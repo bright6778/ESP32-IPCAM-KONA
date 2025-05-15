@@ -4,9 +4,11 @@
  * Copyright 2025 KONA I
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#include "kona_kss_kose_types.h"
+#include "kose_APDU_impl.h"
 #include "kss_kose_session.h"
 #include "kona_kss_api.h"
+#include "kose_tlv.h"
 #include "debug.h"
 #include "scp03_Types.h"
 
@@ -16,6 +18,36 @@ extern "C" {
 #endif
 
 static const char *TAG = "kss_kose_session.c";
+
+static smStatus_t kss_kose_TXn(struct KoseSession *pSession,
+    uint8_t *cmdBuf,
+    size_t cmdBufLen,
+    uint8_t *rsp,
+    size_t *rspLen)
+{
+    smStatus_t ret     = SM_NOT_OK;
+    tlvHeader_t outHdr = {
+        0,
+    };
+    uint8_t txBuf[KOSE_MAX_BUF_SIZE_CMD] = {
+        0,
+    };
+    size_t txBufLen = sizeof(txBuf);
+
+    const tlvHeader_t *sendHdr = NULL;
+    uint8_t *sendBuf           = NULL;
+    size_t sendBufLen          = 0;
+
+    KoseSession_t koseSession;
+    
+    if (pSession->connType == kType_SE_Conn_Type_UART) {
+        int rcvlen_int = (int)(*rspLen);  
+        ret = kss_kose_uart_transceive(cmdBuf, cmdBufLen, rsp, &rcvlen_int);
+        *rspLen = (size_t)rcvlen_int;
+    }
+    
+    return ret;
+}
 
 kss_status_t kss_kose_session_create(kss_kose_session_t *session)
 {
@@ -57,7 +89,8 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     pAuthCtx = (SE_Connect_Ctx_t *)connectionData;
     if (pAuthCtx->connType == kType_SE_Conn_Type_UART) {
         koseSession->conn_ctx = pAuthCtx->conn_ctx;
-
+        koseSession->connType = pAuthCtx->connType;
+        
         CommState.connType = pAuthCtx->connType;
         if (1 == pAuthCtx->sessionResume) {
             CommState.sessionResume = 1;
@@ -72,15 +105,6 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
             retval = kStatus_KSS_Fail;
             goto exit;
         }
-
-        // KOSE Select
-        uint8_t *rcvbuf = (uint8_t *)malloc(512); // Loopback + ProcedureBytes + TPDU;
-        int rcvlen;
-        if(kss_kose_uart_transceive((uint8_t *)"\x00\xa4\x04\x00\x01\x0a", 6, rcvbuf, &rcvlen) == false){
-            retval = kStatus_KSS_Fail;
-            goto exit;
-        }
-        status = SM_OK;
 #if 0
         sm_connected = 1;
 
@@ -123,6 +147,19 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
         }
 #endif
     }
+
+    // KOSE Select
+    koseSession->fp_TXn = &kss_kose_TXn;
+    uint8_t rcvbuf[256] = {0};
+    size_t rcvlen;
+
+
+    if(DoAPDUTxRx_s_Case4(koseSession, (uint8_t *)"\x00\xa4\x04\x00\x01\x0a", 6, rcvbuf, &rcvlen) != SM_OK){
+        retval = kStatus_KSS_Fail;
+        goto exit;
+    }
+    
+    status = SM_OK;
 
 #ifdef SSS_USE_SCP03_THREAD_SAFETY /* Disabled by default. Enable in case of multiple applications access platform SCP03 session */
 #if SSS_HAVE_SCP_SCP03_SSS

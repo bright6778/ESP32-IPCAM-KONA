@@ -845,7 +845,7 @@ kss_status_t kss_session_open(kss_session_t *session,
 
 
 #endif
-#if 1
+#if 0
 /** Random number generator context */
 typedef struct
 {
@@ -935,7 +935,7 @@ kss_status_t kss_session_prop_get_au8(kss_session_t *session, uint32_t property,
  */
 void kss_session_close(kss_session_t *session);
 #endif
-#if 0
+#if 1
 /** Counterpart to @ref kss_session_create
  *
  * Similar to contraint on @ref kss_session_create, application
@@ -1753,6 +1753,8 @@ void kss_asymmetric_context_free(kss_asymmetric_t *context);
  *@}
  */ /* end of kss_crypto_asymmetric */
 
+#endif
+#if 0
 /**
  * @addtogroup kss_crypto_derive_key
  * @{

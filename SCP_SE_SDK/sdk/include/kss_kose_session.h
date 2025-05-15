@@ -19,6 +19,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include "kona_kss_kose_types.h"
 #include "kona_kss_kose_config.h"
 #include "kona_kss_api.h"
 #include "kose_tlv.h"
@@ -63,7 +64,7 @@ typedef enum
     /** Software based */
     kType_KSS_mbedTLS
 } kss_type_t;
-#endif
+
 typedef struct _kss_kose_session
 {
     /** Indicates which security subsystem is selected to be used. */
@@ -78,7 +79,7 @@ typedef struct _kss_kose_session
     //kss_kose_tunnel_context_t *ptun_ctx;
 } kss_kose_session_t;
 
-#if 0
+
 /** Destintion connection type */
 typedef enum
 {

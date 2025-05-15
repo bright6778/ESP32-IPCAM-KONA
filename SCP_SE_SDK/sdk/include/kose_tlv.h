@@ -3,7 +3,12 @@
 #ifndef KOSE_TLV_H_INC
 #define KOSE_TLV_H_INC
 
+#include <string.h>
+#include <limits.h>
+#include "sm_api.h"
+
 #define kKOSE_CLA 0x80
+#define kKOSE_CLA_00 0x00
 
 typedef enum
 {
@@ -38,8 +43,7 @@ typedef struct KoseSession
      * Then calls fp_RawTXn
      * Then calls fp_DeCrypt
      */
-    //smStatus_t(*fp_TXn)(struct KoseSession * pSession,
-    //    const tlvHeader_t *hdr, uint8_t *cmdBuf, size_t cmdBufLen, uint8_t *rsp, size_t *rspLen, uint8_t hasle);
+    smStatus_t(*fp_TXn)(struct KoseSession * pSession, uint8_t *cmdBuf, size_t cmdBufLen, uint8_t *rsp, size_t *rspLen);
 
     /** API called by fp_TXn. Helps handle UserID/Applet/ECKey to transform buffer.
      *
@@ -111,6 +115,9 @@ typedef struct KoseSession
     /** pdynScp03Ctx holds the dynamic context information for SCP03 channel */
     //NXSCP03_DynCtx_t *pdynScp03Ctx;
 
+    /**Connection Type */
+    KSS_Conn_Type_t connType;
+
     /**Connection data context */
     void *conn_ctx;
     /** applet version*/
@@ -130,5 +137,9 @@ typedef struct KoseSession
 } KoseSession_t;
 
 typedef KoseSession_t *pKoseSession_t;
+
+smStatus_t DoAPDUTx_s_Case3(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_t cmdBufLen);
+smStatus_t DoAPDUTxRx_s_Case2(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_t cmdBufLen, uint8_t *rspBuf, size_t *pRspBufLen);
+smStatus_t DoAPDUTxRx_s_Case4(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_t cmdBufLen, uint8_t *rspBuf, size_t *pRspBufLen);
 
 #endif

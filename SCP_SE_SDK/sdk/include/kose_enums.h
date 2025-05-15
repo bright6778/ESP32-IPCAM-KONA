@@ -26,6 +26,33 @@ typedef enum
     kKOSE_INS_CONFIGURE_ACCESS_CTRL = 0x41,
     /** INS Manage read counter */
     kKOSE_INS_MANAGE_READ_CTR = 0x42,
+
+
+
+
+    // 여기 아래는 삭제할지 고민중 - uc.nam
+    /** 3 MSBit for instruction characteristics. */
+    kKOSE_INS_MASK_INS_CHAR = 0xE0,
+    /** 5 LSBit for instruction */
+    kKOSE_INS_MASK_INSTRUCTION = 0x1F,
+
+    /** Mask for transient object creation, can only be combined with INS_WRITE. */
+    kKOSE_INS_TRANSIENT = 0x80,
+    /** Mask for authentication object creation, can only be combined with INS_WRITE */
+    kKOSE_INS_AUTH_OBJECT = 0x40,
+    /** Mask for getting attestation data. */
+    kKOSE_INS_ATTEST = 0x20,
+
+    /** Write or create a persistent object. */
+    kKOSE_INS_WRITE = 0x01,
+    /** Read the object */
+    kKOSE_INS_READ = 0x02,
+    /** Perform Security Operation */
+    kKOSE_INS_CRYPTO = 0x03,
+    /** General operation */
+    kKOSE_INS_MGMT = 0x04,
+    /** Process session command */
+    kKOSE_INS_PROCESS = 0x05,
 } KOSE_INS_t;
 
 /** Values for P1 in ISO7816 APDU */
@@ -161,8 +188,8 @@ typedef enum
 #endif
 } KOSE_P2_t;
 
-#if 0
-#include <Applet_SE050_Ver.h>
+#if 1
+//#include <Applet_SE050_Ver.h>
 
 
 /* + more or less machine Generated */
@@ -246,6 +273,7 @@ typedef enum
     kKOSE_SW12_COMMAND_NOT_ALLOWED = 0x6986,
 } KOSE_SW12_t;
 
+#if 0
 /** Values for INS in ISO7816 APDU */
 typedef enum
 {
@@ -274,7 +302,7 @@ typedef enum
     /** Process session command */
     kKOSE_INS_PROCESS = 0x05,
 } KOSE_INS_t;
-
+#endif
 
 
 
@@ -1123,7 +1151,7 @@ typedef enum
 typedef enum
 {
     kKOSE_AttestationType_None = 0,
-    kKOSE_AttestationType_AUTH = kKOSE_INS_AUTH_OBJECT,
+    //kKOSE_AttestationType_AUTH = kKOSE_INS_AUTH_OBJECT,
 } KOSE_AttestationType_t;
 
 /** Symmetric keys */

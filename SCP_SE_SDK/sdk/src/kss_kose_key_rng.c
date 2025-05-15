@@ -18,7 +18,7 @@
 kss_status_t kss_kose_rng_context_init(kss_rng_context_t *context, kss_kose_session_t *session)
 {
     kss_status_t retval = kStatus_KSS_Success;
-    context->session    = session;
+    //context->session    = session;
     return retval;
 }
 
@@ -87,3 +87,6 @@ kss_status_t kss_kose_rng_context_free(kss_rng_context_t *context)
     return retval;
 }
 
+#ifdef __cplusplus
+}
+#endif

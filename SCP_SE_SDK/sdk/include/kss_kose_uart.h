@@ -21,11 +21,12 @@ extern "C" {
 
 #include "kona_kss_kose_config.h"
 #include "smartcard.h"
+#include "kose_tlv.h"
 
 void set_se_uart_init_default(kss_kose_uart_ctx_t *se_uart_init);
 bool kss_kose_uart_init(kss_kose_uart_ctx_t *kose_uart_init_config);
 void kss_kose_uart_close();
-bool kss_kose_uart_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcvlen);
+smStatus_t kss_kose_uart_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcvlen);
 
 #if defined(__cplusplus)
 }

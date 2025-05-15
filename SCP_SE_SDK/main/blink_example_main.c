@@ -129,9 +129,9 @@ void print_manu(){
     printf("CMD : session_create or 2.1     - %s\n", SESSION_CREATE);
     printf("CMD : session_open or 2.2       - %s\n", SESSION_OPEN);
     printf("CMD : session_close or 2.3      - %s\n", SESSION_CLOSE);
+    printf("CMD : generate random 5.1       - %s\n", RANDOM_GEN);
     printf("CMD : mbedtls_pubkey or 9.1     - %s\n", MBEDTLS_ASSOCIATE_PUBKEY);
     printf("CMD : aws_mqtt or 11.1          - %s\n", AWS_IOT_DEMO);
-    printf("CMD : generate random 2.4       - %s\n", RANDOM_GEN);
     printf("//////////////////////////////////////////////////////////////////\n");
 }
 
@@ -237,7 +237,7 @@ void command_task(void *arg)
                     connectionData = &se_conn_ctx;
                     kStatus = kss_session_open(session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
                     if (kStatus_KSS_Success != kStatus) {
-                        LOGE(TAG, "kss_kose_session_create failed");
+                        LOGE(TAG, "kss_kose_session_open failed");
                     }
                     ESP_LOGI(TAG, "%s return : %d", SESSION_OPEN, kStatus);
                     ESP_LOGI(TAG, "End %s", SESSION_OPEN);
@@ -247,17 +247,8 @@ void command_task(void *arg)
                     kss_session_close(session);
                     ESP_LOGI(TAG, "End %s", SESSION_CLOSE);
                 }
-                else if (strcmp((char*)buf, "mbedtls_pubkey") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_associate_pubkey
-                    ESP_LOGI(TAG, "Start %s", MBEDTLS_ASSOCIATE_PUBKEY);
-                    ESP_LOGI(TAG, "End %s", MBEDTLS_ASSOCIATE_PUBKEY);
-                }
-                else if (strcmp((char*)buf, "aws_mqtt") == 0 || strcmp((char*)buf, "11.1") == 0) {    // aws_iot_demo_main
-                    ESP_LOGI(TAG, "Start %s", AWS_IOT_DEMO);
-                    //aws_iot_demo_main(0,NULL);    // AWS IoT Device Embedded C SDK
-                    aws_iot_mbedtls_mqtt_test();    // mbedTLS MQTT
-                    ESP_LOGI(TAG, "End %s", AWS_IOT_DEMO);
-                }
-                else if (strcmp((char*)buf, "generate_random") == 0 || strcmp((char*)buf, "2.4") == 0) {    // kss_kose_rng
+                #if 0
+                else if (strcmp((char*)buf, "generate_random") == 0 || strcmp((char*)buf, "5.1") == 0) {    // kss_kose_rng
                     ESP_LOGI(TAG, "Start %s", RANDOM_GEN);
                     uint8_t *random_data = (uint8_t *)malloc(32); 
                     int dataLen = 32;
@@ -267,7 +258,7 @@ void command_task(void *arg)
                     se_conn_ctx.conn_ctx = &se_uart_init;
                     
                     kStatus = kss_rng_context_init(&rng_ctx, session);
-                    kStatus = kss_rng_get_random(& rng_ctx, &random_data, dataLen);     
+                    //kStatus = kss_rng_get_random(& rng_ctx, &random_data, dataLen);     
 
                     if (kStatus_KSS_Success != kStatus) {
                         LOGE(TAG, "kss_kose_rng failed");
@@ -276,6 +267,17 @@ void command_task(void *arg)
                     ESP_LOGI(TAG, "End %s", RANDOM_GEN);
                     free(random_data);
 
+                }
+                #endif
+                else if (strcmp((char*)buf, "mbedtls_pubkey") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_associate_pubkey
+                    ESP_LOGI(TAG, "Start %s", MBEDTLS_ASSOCIATE_PUBKEY);
+                    ESP_LOGI(TAG, "End %s", MBEDTLS_ASSOCIATE_PUBKEY);
+                }
+                else if (strcmp((char*)buf, "aws_mqtt") == 0 || strcmp((char*)buf, "11.1") == 0) {    // aws_iot_demo_main
+                    ESP_LOGI(TAG, "Start %s", AWS_IOT_DEMO);
+                    //aws_iot_demo_main(0,NULL);    // AWS IoT Device Embedded C SDK
+                    aws_iot_mbedtls_mqtt_test();    // mbedTLS MQTT
+                    ESP_LOGI(TAG, "End %s", AWS_IOT_DEMO);
                 }
                 print_manu();
 

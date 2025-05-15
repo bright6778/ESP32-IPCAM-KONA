@@ -42,7 +42,7 @@ typedef struct mbedtls_pk_info_t{
     /** Make signature */
     int (*sign_func)(void *ctx, mbedtls_md_type_t md_alg,
         const unsigned char *hash, size_t hash_len,
-        unsigned char *sig, size_t *sig_len,
+        unsigned char *sig, size_t sig_size, size_t *sig_len,
         int (*f_rng)(void *, unsigned char *, size_t),
         void *p_rng);
 
@@ -142,6 +142,7 @@ int kss_eckey_sign(void *ctx,
     const unsigned char *hash,
     size_t hash_len,
     unsigned char *sig,
+    size_t sig_size,
     size_t *sig_len,
     int (*f_rng)(void *, unsigned char *, size_t),
     void *p_rng);

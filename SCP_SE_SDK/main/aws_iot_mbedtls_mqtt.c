@@ -18,12 +18,18 @@
 #include "debug.h"
 #endif
 
-#define AWS_IOT_ENDPOINT "a1e21k3qqtkhuy-ats.iot.ap-northeast-2.amazonaws.com"
 #define AWS_IOT_PORT     "8883"
+#define AWS_IOT_ENDPOINT "a1e21k3qqtkhuy-ats.iot.ap-northeast-2.amazonaws.com"
 #define MQTT_CLIENT_ID   "testClient"
 #define MQTT_TOPIC       "kona/topic"
 #define MQTT_PAYLOAD     "hello aws iot"
 
+/*
+#define AWS_IOT_ENDPOINT "a34vuzhubahjfj-ats.iot.ap-northeast-2.amazonaws.com"
+#define MQTT_CLIENT_ID   "ee2e9203f0a0971c599888fb8b67e3a1882626cd-ucnam"
+#define MQTT_TOPIC       "client/test/ee2e9203f0a0971c599888fb8b67e3a1882626cd/la/123456"
+#define MQTT_PAYLOAD     "hello aws iot"
+*/
 static const char *TAG = "aws_iot_mbedtls_mqtt.c";
 
 const int sdk_recommended_ciphersuites[] = {
@@ -42,6 +48,14 @@ extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
 extern mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info; // SE 기반 sign_func 포함
 //extern const mbedtls_pk_info_t mbedtls_eckeypair_pk_info; // SE 기반 sign_func 포함
 extern void *se_key_object;                        // SE 핸들
+
+void my_debug(void *ctx, int level,
+              const char *file, int line,
+              const char *str)
+{
+    ((void) level);
+    fprintf((FILE *) ctx, "%s:%04d: %s", file, line, str);
+}
 
 int mqtt_send_connect(mbedtls_ssl_context *ssl, const char *client_id)
 {
@@ -129,6 +143,9 @@ void aws_iot_mbedtls_mqtt_test(void)
     mbedtls_x509_crt_init(&client_cert);
     mbedtls_pk_init(&client_key);
 
+    mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
+    mbedtls_debug_set_threshold(4);
+
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
 
@@ -149,8 +166,10 @@ void aws_iot_mbedtls_mqtt_test(void)
     ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_start, (root_cert_auth_end - root_cert_auth_start));
     ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));
     
-    setup_se_default_pk_info();
-    client_key.private_pk_info = &kose_mbedtls_eckeypair_pk_info;
+    
+    //setup_se_default_pk_info();
+    
+    //client_key.private_pk_info = &kose_mbedtls_eckeypair_pk_info;
     
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ciphersuites(&conf, sdk_recommended_ciphersuites);
