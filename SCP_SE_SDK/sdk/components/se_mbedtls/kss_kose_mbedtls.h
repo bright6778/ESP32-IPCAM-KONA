@@ -7,9 +7,9 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include "kona_kss_kose_config.h"
-#include "kose_tlv.h"
-#include "kss_kose_uart.h"
+//#include "kona_kss_kose_config.h"
+//#include "kose_tlv.h"
+//#include "kss_kose_uart.h"
 #include "mbedtls/pk.h"
 #include "mbedtls/md.h"
 #include "mbedtls/ssl.h"
@@ -146,6 +146,8 @@ int kss_eckey_sign(void *ctx,
     size_t *sig_len,
     int (*f_rng)(void *, unsigned char *, size_t),
     void *p_rng);
+
+int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyObject);
 
 #ifdef __cplusplus
 }

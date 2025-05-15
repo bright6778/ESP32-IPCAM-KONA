@@ -195,7 +195,7 @@ cleanup:
 #endif
 #if 1
 //int tlvSet_u8buf(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen)
-int tlvSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdLen)
+int dataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdLen)
 {
     uint8_t *pBuf = *buf;
 

@@ -15,10 +15,13 @@
 
 #include <stdio.h>
 
-//#include "kss_kose_uart.h"
-//#include "kss_kose_session.h"
-//#include "smartcard.h"
-
+/*
+#include "kose_tlv.h"
+#include "kona_kss_kose_types.h"
+#include "kss_kose_uart.h"
+#include "smartcard.h"
+#include "kss_kose_session.h"
+*/
 
 //#include <fsl_kss_policy.h>
 //#include <sm_types.h>

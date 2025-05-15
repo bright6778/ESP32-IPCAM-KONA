@@ -6,11 +6,13 @@
  */
 #include "kona_kss_kose_types.h"
 #include "kose_APDU_impl.h"
-#include "kss_kose_session.h"
 #include "kona_kss_api.h"
 #include "kose_tlv.h"
 #include "debug.h"
 #include "scp03_Types.h"
+
+#include "kss_kose_uart.h"
+#include "kss_kose_session.h"
 
 /** @file */
 #ifdef __cplusplus

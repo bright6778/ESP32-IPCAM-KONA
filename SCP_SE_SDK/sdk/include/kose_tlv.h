@@ -7,6 +7,8 @@
 #include <limits.h>
 #include "sm_api.h"
 
+#define AX_UNUSED_ARG(x) (void)(x)
+
 #define kKOSE_CLA 0x80
 #define kKOSE_CLA_00 0x00
 
@@ -137,6 +139,8 @@ typedef struct KoseSession
 } KoseSession_t;
 
 typedef KoseSession_t *pKoseSession_t;
+
+int dataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdLen);
 
 smStatus_t DoAPDUTx_s_Case3(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_t cmdBufLen);
 smStatus_t DoAPDUTxRx_s_Case2(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_t cmdBufLen, uint8_t *rspBuf, size_t *pRspBufLen);

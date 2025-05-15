@@ -3,6 +3,9 @@
 #include "kss_kose_rng.h"
 #include "kss_kose_session.h"
 #include "kss_kose_asymmetric.h"
+#include "debug.h"
+
+static const char *TAG = "kona_kss_api.c";
 
 kss_status_t kss_session_create(kss_session_t *session,
     kss_type_t subsystem,
@@ -49,6 +52,7 @@ kss_status_t kss_asymmetric_context_init(kss_asymmetric_t *context,
     kss_algorithm_t algorithm,
     kss_mode_t mode)
 {
+    LOGI(TAG, "kss_asymmetric_context_init - 0");
 #if KSS_HAVE_SSCP
     if (KSS_SESSION_TYPE_IS_SSCP(session)) {
         kss_sscp_asymmetric_t *sscp_context = (kss_sscp_asymmetric_t *)context;
@@ -61,10 +65,14 @@ kss_status_t kss_asymmetric_context_init(kss_asymmetric_t *context,
     }
 #endif /* KSS_HAVE_SSCP */
 #if KSS_HAVE_APPLET_KOSE_IOT
+    LOGI(TAG, "kss_asymmetric_context_init - 1");
+        
     if (KSS_SESSION_TYPE_IS_KOSE(session)) {
+        LOGI(TAG, "kss_asymmetric_context_init - 2");
         kss_kose_asymmetric_t *kose_context = (kss_kose_asymmetric_t *)context;
         kss_kose_session_t *kose_session    = (kss_kose_session_t *)session;
         kss_kose_object_t *kose_keyObject   = (kss_kose_object_t *)keyObject;
+        LOGI(TAG, "kss_asymmetric_context_init - 3");
         return kss_kose_asymmetric_context_init(kose_context, kose_session, kose_keyObject, algorithm, mode);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */

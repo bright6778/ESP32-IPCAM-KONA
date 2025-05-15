@@ -3,6 +3,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/sdk"
+                         "${CMAKE_CURRENT_LIST_DIR}/sdk/components"
                          "$ENV{IDF_PATH}/examples/common_components/protocol_examples_common"
                          "${CMAKE_CURRENT_LIST_DIR}/libraries/backoffAlgorithm"
 						 "${CMAKE_CURRENT_LIST_DIR}/libraries/coreMQTT"

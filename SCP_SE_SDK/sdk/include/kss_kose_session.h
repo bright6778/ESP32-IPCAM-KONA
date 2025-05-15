@@ -19,18 +19,16 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include "kona_kss_kose_types.h"
-#include "kona_kss_kose_config.h"
-#include "kona_kss_api.h"
-#include "kose_tlv.h"
-#include "kss_kose_uart.h"
+//#include "kona_kss_kose_types.h"
+//#include "kona_kss_kose_config.h"
+//#include "kona_kss_api.h"
+//#include "kose_tlv.h"
+//#include "kss_kose_uart.h"
 
 #ifdef DEBUG_PRINT
 #include "esp_log.h"
 #include "debug.h"
 #endif
-
-#define AX_UNUSED_ARG(x) (void)(x)
 
 //uint8_t kose_aid[] = "\x0F\x4B\x4F\x4E\x41\x01\xFF\x80\x00";
 

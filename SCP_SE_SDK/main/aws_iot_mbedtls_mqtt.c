@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "kona_kss_kose_config.h"
+#include "kona_kss_api.h"
 #include "kss_kose_mbedtls.h"
 
 #ifdef DEBUG_PRINT
@@ -18,18 +19,21 @@
 #include "debug.h"
 #endif
 
+
 #define AWS_IOT_PORT     "8883"
+
+/*
 #define AWS_IOT_ENDPOINT "a1e21k3qqtkhuy-ats.iot.ap-northeast-2.amazonaws.com"
 #define MQTT_CLIENT_ID   "testClient"
 #define MQTT_TOPIC       "kona/topic"
 #define MQTT_PAYLOAD     "hello aws iot"
+*/
 
-/*
 #define AWS_IOT_ENDPOINT "a34vuzhubahjfj-ats.iot.ap-northeast-2.amazonaws.com"
 #define MQTT_CLIENT_ID   "ee2e9203f0a0971c599888fb8b67e3a1882626cd-ucnam"
 #define MQTT_TOPIC       "client/test/ee2e9203f0a0971c599888fb8b67e3a1882626cd/la/123456"
 #define MQTT_PAYLOAD     "hello aws iot"
-*/
+
 static const char *TAG = "aws_iot_mbedtls_mqtt.c";
 
 const int sdk_recommended_ciphersuites[] = {
@@ -170,6 +174,9 @@ void aws_iot_mbedtls_mqtt_test(void)
     //setup_se_default_pk_info();
     
     //client_key.private_pk_info = &kose_mbedtls_eckeypair_pk_info;
+    kss_object_t keyobject;
+    keyobject.cipherType = kKSS_CipherType_EC_NIST_P;
+    kss_mbedtls_associate_keypair(&client_key, &keyobject);
     
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ciphersuites(&conf, sdk_recommended_ciphersuites);

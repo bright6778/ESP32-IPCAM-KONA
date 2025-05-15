@@ -67,6 +67,9 @@ typedef enum
     /** 5 LSBit for credential type */
     kKOSE_P1_MASK_CRED_TYPE = 0x1F,
 
+    /** Select P1 */
+    kKOSE_P1_SELECT_NAME = 0x04,
+
     /** Key pair (private key + public key) */
     kKOSE_P1_KEY_PAIR = 0x60,
     /** Private key */
