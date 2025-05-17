@@ -16,6 +16,7 @@ typedef enum
     kKOSE_INS_NA = 0,
     /** INS Select */
     kKOSE_INS_SELECT = 0xA4,
+    
     /** INS Read Binary */
     kKOSE_INS_READ_BINARY = 0xB0,
     /** INS Update Binary */

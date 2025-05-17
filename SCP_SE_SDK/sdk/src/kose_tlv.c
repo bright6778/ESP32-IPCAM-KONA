@@ -207,8 +207,8 @@ int dataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdL
     *    '0x82' + len_msb + len_lsb == 3 Bytes
     */
     const size_t size_of_length = (cmdLen <= 0x7f ? 1 : (cmdLen <= 0xFf ? 2 : 3));
-    const size_t size_of_tlv    = 1 + size_of_length + cmdLen;
-
+    const size_t size_of_tlv    = size_of_length + cmdLen;
+    
     if ((UINT_MAX - (*bufLen)) < size_of_tlv) {
         return 1;
     }
@@ -217,7 +217,7 @@ int dataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdL
         return 1;
     }
     //*pBuf++ = (uint8_t)tag;
-
+    
     if (cmdLen <= 0x7Fu) {
         *pBuf++ = (uint8_t)cmdLen;
     }
@@ -239,8 +239,8 @@ int dataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdL
         }
     }
 
-    *bufLen += size_of_tlv;
     *buf = pBuf;
+    *bufLen += size_of_tlv;
 
     return 0;
 }
@@ -605,9 +605,7 @@ smStatus_t DoAPDUTxRx_s_Case4(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_
         apduStatus = SM_NOT_OK;
     }
     else {
-        LOGI(TAG, "DoAPDUTxRx_s_Case4");
         apduStatus = pSessionCtx->fp_TXn(pSessionCtx, cmdBuf, cmdBufLen, rspBuf, pRspBufLen);
-        LOGI(TAG, "DoAPDUTxRx_s_Case4 res : %d", apduStatus);
     }
     return apduStatus;
 }

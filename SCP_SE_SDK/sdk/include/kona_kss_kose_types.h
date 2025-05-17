@@ -81,6 +81,14 @@
 /** Are we using KOSE as crypto subsystem? */
 #define KSS_TUNNEL_TYPE_IS_KOSE(context) (context && KSS_SESSION_TYPE_IS_KOSE(context->session))
 
+#define assert_static(e)                    \
+    {                                       \
+        char assert_static__[(e) ? 1 : -1]; \
+    }
+
+/** Compile time assert */
+#define KSS_ASSERT(condition) assert_static(condition)
+
 /* ************************************************************************** */
 /* Structrues and Typedefs                                                    */
 /* ************************************************************************** */

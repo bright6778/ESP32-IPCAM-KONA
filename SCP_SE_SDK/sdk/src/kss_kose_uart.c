@@ -77,14 +77,14 @@ bool kss_kose_uart_init(kss_kose_uart_ctx_t *kose_uart_init_config){
 }
 
 void kss_kose_uart_close(){
-    LOGI(TAG, "kss_kose_uart_close start");
+    LOGD(TAG, "kss_kose_uart_close start");
     ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
     uart_driver_delete(UART_NUM_1);
     uart_set_pin(UART_NUM_1, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE,
                  UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
     if(rcvbuf != NULL){
-        LOGI(TAG, "free");
+        LOGD(TAG, "free");
         free(rcvbuf);
         rcvbuf = NULL;
     }  

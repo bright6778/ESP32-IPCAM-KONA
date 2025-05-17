@@ -41,7 +41,7 @@
 #define MBEDTLS_ASSOCIATE_PUBKEY    "kss_mbedtls_associate_pubkey"
 #define AWS_IOT_DEMO                "aws_iot_demo_main"
 #define RANDOM_GEN                  "kss_kose_rng"
-void aws_iot_mbedtls_mqtt_test(void);
+void aws_iot_mbedtls_mqtt_test(kss_session_t *session);
 int aws_iot_demo_main( int argc, char ** argv );
 
 static const char *TAG = "example";
@@ -182,8 +182,9 @@ void command_task(void *arg)
                     
     // session variables
     //kss_kose_session_t *session = malloc(sizeof(kss_kose_session_t));
-    kss_session_t *session = malloc(sizeof(kss_session_t));
-    memset(session, 0, sizeof(kss_session_t));
+    //kss_session_t *session = malloc(sizeof(kss_session_t));
+    kss_session_t session;
+    memset(&session, 0, sizeof(kss_session_t));
     kss_type_t subsystem = kType_KSS_SecureElement;
     uint32_t application_id = 0;
     kss_connection_type_t connection_type = kKSS_ConnectionType_Plain;
@@ -224,7 +225,7 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "session_create") == 0 || strcmp((char*)buf, "2.1") == 0) {    // kss_kose_session_create
                     ESP_LOGI(TAG, "Start %s", SESSION_CREATE);
-                    kStatus = kss_session_create(session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
+                    kStatus = kss_session_create(&session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
                     if (kStatus_KSS_Success != kStatus) {
                         LOGE(TAG, "kss_kose_session_create failed");
                     }
@@ -237,7 +238,7 @@ void command_task(void *arg)
                     se_conn_ctx.connType = kType_SE_Conn_Type_UART;
                     se_conn_ctx.conn_ctx = &se_uart_init;
                     connectionData = &se_conn_ctx;
-                    kStatus = kss_session_open(session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
+                    kStatus = kss_session_open(&session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
                     if (kStatus_KSS_Success != kStatus) {
                         LOGE(TAG, "kss_kose_session_open failed");
                     }
@@ -246,7 +247,7 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "session_close") == 0 || strcmp((char*)buf, "2.3") == 0) {    // kss_kose_session_close
                     ESP_LOGI(TAG, "Start %s", SESSION_CLOSE);
-                    kss_session_close(session);
+                    kss_session_close(&session);
                     ESP_LOGI(TAG, "End %s", SESSION_CLOSE);
                 }
                 #if 0
@@ -278,7 +279,7 @@ void command_task(void *arg)
                 else if (strcmp((char*)buf, "aws_mqtt") == 0 || strcmp((char*)buf, "11.1") == 0) {    // aws_iot_demo_main
                     ESP_LOGI(TAG, "Start %s", AWS_IOT_DEMO);
                     //aws_iot_demo_main(0,NULL);    // AWS IoT Device Embedded C SDK
-                    aws_iot_mbedtls_mqtt_test();    // mbedTLS MQTT
+                    aws_iot_mbedtls_mqtt_test(&session);    // mbedTLS MQTT
                     ESP_LOGI(TAG, "End %s", AWS_IOT_DEMO);
                 }
                 print_manu();

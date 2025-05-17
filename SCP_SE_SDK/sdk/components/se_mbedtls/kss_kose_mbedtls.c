@@ -80,7 +80,7 @@ int kss_eckey_verify(void *ctx,
     const unsigned char *sig,
     size_t sig_len)
 {
-    LOGI(TAG, "kss_eckey_verify");
+    LOGD(TAG, "kss_eckey_verify");
     /*
     kss_status_t status = kStatus_KSS_Success;
     kss_asymmetric_t asymVerifyCtx;
@@ -138,7 +138,7 @@ int kss_eckey_sign(void *ctx,
     int (*f_rng)(void *, unsigned char *, size_t),
     void *p_rng)
 {
-    LOGI(TAG, "kss_mbedtls_pk_sign");
+    LOGD(TAG, "kss_mbedtls_pk_sign");
     int ret            = 0;
     
     size_t u16_sig_len = 1024;
@@ -169,12 +169,14 @@ int kss_eckey_sign(void *ctx,
         return 1;
     }
 
+    LOGD(TAG, "kss_asymmetric_context_init");
     status = kss_asymmetric_context_init(&asymVerifyCtx, kssObject->keyStore->session, kssObject, algorithm, kMode_KSS_Sign);
     if (status != kStatus_KSS_Success) {
         LOGE(TAG, "kss_asymmetric_context_init verify context Failed...\n");
         return kStatus_KSS_Fail;
     }
 
+    LOGD(TAG, "kss_asymmetric_sign_digest");
     status = kss_asymmetric_sign_digest(&asymVerifyCtx, (uint8_t *)hash, hash_len, sig, &u16_sig_len);
     if (status != kStatus_KSS_Success) {
         LOGE(TAG, " kss_asymmetric_sign_digest Failed...\n");
@@ -242,7 +244,7 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
         pkeyObject->cipherType == kKSS_CipherType_EC_BRAINPOOL ||
         pkeyObject->cipherType == kKSS_CipherType_EC_MONTGOMERY ||
         pkeyObject->cipherType == kKSS_CipherType_EC_TWISTED_ED) {
-        LOGI(TAG, "Associating ECC key-pair %ld", pkeyObject->keyId);
+        LOGD(TAG, "Associating ECC key-pair %ld", pkeyObject->keyId);
 
         pkey->private_pk_info = &kose_mbedtls_eckeypair_pk_info;
         if (pkey->private_pk_ctx == NULL) {

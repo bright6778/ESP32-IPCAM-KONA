@@ -19,12 +19,15 @@
 /////////////////////////////////////////////////////////////////////////////
 // Functions
 /////////////////////////////////////////////////////////////////////////////
+#define LOGI(tag, fmt, ...) printf(ANSI_COLOR_GREEN "[INF] %s: " fmt "\n", tag, ##__VA_ARGS__);
+#define LOGE(tag, fmt, ...) printf(ANSI_COLOR_RED "[ERR] %s: " fmt "\n", tag, ##__VA_ARGS__);
+
 #ifdef DEBUG
-#define LOGI(tag, fmt, ...) printf(ANSI_COLOR_GREEN "[INFO] %s: " fmt "\n", tag, ##__VA_ARGS__);
-#define LOGE(tag, fmt, ...) printf(ANSI_COLOR_RED "[ERR ] %s: " fmt "\n", tag, ##__VA_ARGS__);
+#define LOGD(tag, fmt, ...) printf(ANSI_COLOR_YELLOW "[DBG] %s: " fmt "\n", tag, ##__VA_ARGS__);
 #else
-#define LOGI(tag, fmt, ...) do {} while (0);
-#define LOGE(tag, fmt, ...) do {} while (0);
+//#define LOGI(tag, fmt, ...) do {} while (0);
+//#define LOGE(tag, fmt, ...) do {} while (0);
+#define LOGD(tag, fmt, ...) do {} while (0);
 #endif
 
 void debug_printf(const char *format, ...);

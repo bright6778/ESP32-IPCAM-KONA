@@ -79,7 +79,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
 //#ifdef CONNECT_SE_UART
 #if 0
     if(koseSession->conn_ctx == NULL){
-        LOGI(TAG, "conn_ctx == NULL");
+        LOGD(TAG, "conn_ctx == NULL");
         koseSession->conn_ctx = calloc(1, sizeof(kss_kose_uart_ctx_t));
         set_se_uart_init_default(koseSession->conn_ctx);
     }
@@ -99,7 +99,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
         }
 
         if(koseSession->conn_ctx == NULL){
-            LOGI(TAG, "conn_ctx == NULL");
+            LOGD(TAG, "conn_ctx == NULL");
             koseSession->conn_ctx = calloc(1, sizeof(kss_kose_uart_ctx_t));
             set_se_uart_init_default(koseSession->conn_ctx);
         }
@@ -144,7 +144,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
                     (CommState.appletVersion) >> 8);
             }
 #else
-            LOGI(TAG, "KONA secure element version");
+            LOGD(TAG, "KONA secure element version");
 #endif
         }
 #endif
@@ -155,12 +155,17 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     uint8_t rcvbuf[256] = {0};
     size_t rcvlen;
 
-
+    if((Kose_API_Select(koseSession)) != SM_OK){
+        retval = kStatus_KSS_Fail;
+        goto exit;
+    }
+    /*    
     if(DoAPDUTxRx_s_Case4(koseSession, (uint8_t *)"\x00\xa4\x04\x00\x01\x0a", 6, rcvbuf, &rcvlen) != SM_OK){
         retval = kStatus_KSS_Fail;
         goto exit;
     }
-    
+    */
+
     status = SM_OK;
 
 #ifdef SSS_USE_SCP03_THREAD_SAFETY /* Disabled by default. Enable in case of multiple applications access platform SCP03 session */
@@ -369,6 +374,7 @@ void kss_kose_session_close(kss_kose_session_t *session){
 #endif
    memset(session, 0, sizeof(*session));
 }
+
 #ifdef __cplusplus
 }
 #endif

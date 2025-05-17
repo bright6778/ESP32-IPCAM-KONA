@@ -46,7 +46,7 @@ kss_status_t kss_kose_asymmetric_context_init(kss_kose_asymmetric_t *context,
     kss_algorithm_t algorithm,
     kss_mode_t mode)
 {
-    LOGI(TAG, "kss_kose_asymmetric_context_init");
+    LOGD(TAG, "kss_kose_asymmetric_context_init");
     kss_status_t retval = kStatus_KSS_Success;
     if (context == NULL) {
         return kStatus_KSS_Fail;
@@ -66,7 +66,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
     smStatus_t status   = SM_NOT_OK;
     KOSE_ECSignatureAlgo_t ecSignAlgo = kKOSE_ECSignatureAlgo_NA;
 
-    LOGI(TAG, "kss_kose_asymmetric_sign_digest");
+    LOGD(TAG, "kss_kose_asymmetric_sign_digest");
 
 #if KSSFTR_SE05X_ECC || KSSFTR_SE05X_RSA
     if (kStatus_KSS_Success != se05x_check_input_len(digestLen, context->algorithm)) {

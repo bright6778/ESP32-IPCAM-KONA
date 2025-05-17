@@ -130,7 +130,7 @@ int mqtt_read_response(mbedtls_ssl_context *ssl)
 }
 
 
-void aws_iot_mbedtls_mqtt_test(void)
+void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 {
     char err_buf[256];
 
@@ -171,13 +171,32 @@ void aws_iot_mbedtls_mqtt_test(void)
     ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));
     
     
+
+
+
+    kss_object_t keyobject;
+    kss_key_store_t keystore;
+    kss_status_t kss_status;
+    uint32_t key_id = 0x9f7f;
+
+    memset(&keystore, 0, sizeof(kss_key_store_t));
+        
     //setup_se_default_pk_info();
     
     //client_key.private_pk_info = &kose_mbedtls_eckeypair_pk_info;
-    kss_object_t keyobject;
-    keyobject.cipherType = kKSS_CipherType_EC_NIST_P;
-    kss_mbedtls_associate_keypair(&client_key, &keyobject);
+
+    kss_status = kss_key_store_context_init(&keystore, session);
+    kss_status = kss_key_object_init(&keyobject, &keystore);
+	kss_status = kss_key_object_get_handle(&keyobject, key_id);
+	
+
+    //kss_mbedtls_associate_keypair(&client_key, &keyobject);
     
+
+
+
+
+
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ciphersuites(&conf, sdk_recommended_ciphersuites);
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);

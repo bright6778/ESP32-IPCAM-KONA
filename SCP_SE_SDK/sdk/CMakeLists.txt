@@ -6,6 +6,8 @@ idf_component_register(
         "src/kose_tlv.c"
         "src/kss_kose_asymmetric.c"
         "src/kss_kose_key_rng.c"
+        "src/kss_kose_keyobj.c"
+        "src/kss_kose_keystore.c"
         "src/kss_kose_session.c"
         "src/kss_kose_uart.c"
         "src/smartcard.c" 
