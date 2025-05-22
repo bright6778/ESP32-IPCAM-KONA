@@ -16,6 +16,8 @@ extern "C" {
 #include "mbedtls/ecp.h"
 #include "mbedtls/platform.h"
 
+#include "kona_kss_mbedtls_types.h"
+
 #ifdef DEBUG_PRINT
 #include "esp_log.h"
 #include "debug.h"
@@ -67,22 +69,9 @@ typedef struct mbedtls_pk_info_t{
     int (*debug_func)(const void *, mbedtls_pk_debug_item *items);
 } mbedtls_pk_info_t;
 
-typedef struct
-{
-    /** @copydoc sss_asymmetric_t::session */
-    //kss_kose_session_t *session;
-    /** @copydoc sss_asymmetric_t::keyObject */
-    //kss_kose_object_t *keyObject;
-    /** @copydoc sss_asymmetric_t::algorithm */
-    //kss_algorithm_t algorithm;
-    /** @copydoc sss_asymmetric_t::mode */
-    //kss_mode_t mode;
-
-} kss_se05x_asymmetric_t;
-
 //extern const mbedtls_pk_info_t kose_pk_info;
-extern mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info;
-extern mbedtls_pk_info_t kose_mbedtls_ecpubkey_pk_info;
+extern const mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info;
+extern const mbedtls_pk_info_t kose_mbedtls_ecpubkey_pk_info;
 
 void setup_se_default_pk_info();
 static int kss_eckey_check_pair(const void *pub, const void *prv);
@@ -90,8 +79,7 @@ static int kss_eckeypair_can_do(mbedtls_pk_type_t type);
 static int kss_ecpubkey_can_do(mbedtls_pk_type_t type);
 static void kss_eckeypair_free_func(void *ctx);
 static void kss_ecpubkey_free_func(void *ctx);
-
-void cp_tls_register_with_mbedtls(mbedtls_ssl_config *config);
+static void *kss_eckey_alloc(void);
 
 /**
  * @brief      Associate a keypair provisioned in the secure element for

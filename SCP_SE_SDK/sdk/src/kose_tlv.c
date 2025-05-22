@@ -30,23 +30,23 @@ static const char *TAG = "kose_tlv.c";
 #define VERBOSE_APDU_LOGS 0
 #endif
 
-#if SSS_HAVE_APPLET_SE05X_IOT
-#define SE05X_TLV_BUF_SIZE_CMD SE05X_MAX_BUF_SIZE_CMD
-#define SE05X_TLV_BUF_SIZE_RSP SE05X_MAX_BUF_SIZE_RSP
+#if SSS_HAVE_APPLET_KOSE_IOT
+#define KOSE_TLV_BUF_SIZE_CMD KOSE_MAX_BUF_SIZE_CMD
+#define KOSE_TLV_BUF_SIZE_RSP KOSE_MAX_BUF_SIZE_RSP
 #else
-#define SE05X_TLV_BUF_SIZE_CMD 900
-#define SE05X_TLV_BUF_SIZE_RSP 900
+#define KOSE_TLV_BUF_SIZE_CMD 900
+#define KOSE_TLV_BUF_SIZE_RSP 900
 #endif
 */
-#if 0
-int tlvSet_U8(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint8_t value)
+#if 1
+int tlvSet_U8(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint8_t value)
 {
     uint8_t *pBuf            = *buf;
     const size_t size_of_tlv = 1 + 1 + 1;
     if ((UINT_MAX - size_of_tlv) < (*bufLen)) {
         return 1;
     }
-    if (((*bufLen) + size_of_tlv) > SE05X_TLV_BUF_SIZE_CMD) {
+    if (((*bufLen) + size_of_tlv) > KOSE_TLV_BUF_SIZE_CMD) {
         return 1;
     }
     *pBuf++ = (uint8_t)tag;
@@ -57,7 +57,7 @@ int tlvSet_U8(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint8_t value)
     return 0;
 }
 
-int tlvSet_U16Optional(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint16_t value)
+int tlvSet_U16Optional(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint16_t value)
 {
     if (value == 0) {
         return 0;
@@ -67,14 +67,14 @@ int tlvSet_U16Optional(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint16_t 
     }
 }
 
-int tlvSet_U16(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint16_t value)
+int tlvSet_U16(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint16_t value)
 {
     const size_t size_of_tlv = 1 + 1 + 2;
     uint8_t *pBuf            = *buf;
     if ((UINT_MAX - size_of_tlv) < (*bufLen)) {
         return 1;
     }
-    if (((*bufLen) + size_of_tlv) > SE05X_TLV_BUF_SIZE_CMD) {
+    if (((*bufLen) + size_of_tlv) > KOSE_TLV_BUF_SIZE_CMD) {
         return 1;
     }
     *pBuf++ = (uint8_t)tag;
@@ -86,14 +86,14 @@ int tlvSet_U16(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint16_t value)
     return 0;
 }
 
-int tlvSet_U32(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint32_t value)
+int tlvSet_U32(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint32_t value)
 {
     const size_t size_of_tlv = 1 + 1 + 4;
     uint8_t *pBuf            = *buf;
     if ((UINT_MAX - size_of_tlv) < (*bufLen)) {
         return 1;
     }
-    if (((*bufLen) + size_of_tlv) > SE05X_TLV_BUF_SIZE_CMD) {
+    if (((*bufLen) + size_of_tlv) > KOSE_TLV_BUF_SIZE_CMD) {
         return 1;
     }
     *pBuf++ = (uint8_t)tag;
@@ -107,7 +107,7 @@ int tlvSet_U32(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint32_t value)
     return 0;
 }
 
-int tlvSet_U64_size(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint64_t value, uint16_t size)
+int tlvSet_U64_size(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint64_t value, uint16_t size)
 {
     int8_t pos               = (uint8_t)size;
     const size_t size_of_tlv = 1 + 1 + size;
@@ -115,7 +115,7 @@ int tlvSet_U64_size(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint64_t val
     if ((UINT_MAX - (*bufLen)) < size_of_tlv) {
         return 1;
     }
-    if (((*bufLen) + size_of_tlv) > SE05X_TLV_BUF_SIZE_CMD) {
+    if (((*bufLen) + size_of_tlv) > KOSE_TLV_BUF_SIZE_CMD) {
         return 1;
     }
     *pBuf++ = (uint8_t)tag;
@@ -129,14 +129,15 @@ int tlvSet_U64_size(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint64_t val
     return 0;
 }
 
-int tlvSet_Se05xPolicy(const char *description, uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, Se05xPolicy_t *policy)
+#if 0
+int tlvSet_KosePolicy(const char *description, uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, KosePolicy_t *policy)
 {
     int tlvRet = 0;
     AX_UNUSED_ARG(description);
     if ((policy != NULL) && (policy->value != NULL)) {
         tlvRet = tlvSet_u8buf(buf, bufLen, tag, policy->value, policy->value_len);
 #if VERBOSE_APDU_LOGS
-        nLog("APDU", NX_LEVEL_DEBUG, "kSE05x_TAG_POLICY");
+        nLog("APDU", NX_LEVEL_DEBUG, "kKOSE_TAG_POLICY");
         nLog_au8("APDU", NX_LEVEL_DEBUG, description, policy->value, policy->value_len);
 #endif
         return tlvRet;
@@ -150,16 +151,16 @@ int tlvSet_Se05xPolicy(const char *description, uint8_t **buf, size_t *bufLen, S
     return tlvRet;
 }
 
-int tlvSet_ECCurve(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, SE05x_ECCurve_t value)
+int tlvSet_ECCurve(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, KOSE_ECCurve_t value)
 {
     int retVal = 0;
-    if (value != kSE05x_ECCurve_NA) {
+    if (value != kKOSE_ECCurve_NA) {
         retVal = tlvSet_U8(buf, bufLen, tag, (uint8_t)value);
     }
     return retVal;
 }
 
-int tlvSet_u8bufOptional(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, const uint8_t *cmd, size_t cmdLen)
+int tlvSet_u8bufOptional(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen)
 {
     if (cmdLen == 0) {
         return 0;
@@ -169,7 +170,7 @@ int tlvSet_u8bufOptional(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, const u
     }
 }
 
-int tlvSet_u8bufOptional_ByteShift(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, const uint8_t *cmd, size_t cmdLen)
+int tlvSet_u8bufOptional_ByteShift(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen)
 {
     int ret = 1;
     if (cmdLen == 0) {
@@ -180,7 +181,7 @@ int tlvSet_u8bufOptional_ByteShift(uint8_t **buf, size_t *bufLen, SE05x_TAG_t ta
         ret = tlvSet_u8buf(buf, bufLen, tag, cmd, cmdLen);
     }
     else {
-        uint8_t localBuff[SE05X_MAX_BUF_SIZE_CMD];
+        uint8_t localBuff[KOSE_TLV_BUF_SIZE_CMD];
         ENSURE_OR_GO_CLEANUP((cmdLen + 1) < sizeof(localBuff));
         ENSURE_OR_GO_CLEANUP(cmd != NULL);
         localBuff[0] = '\0';
@@ -191,11 +192,98 @@ int tlvSet_u8bufOptional_ByteShift(uint8_t **buf, size_t *bufLen, SE05x_TAG_t ta
 cleanup:
     return ret;
 }
+#endif
 
 #endif
 #if 1
-//int tlvSet_u8buf(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen)
-int dataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdLen)
+//ISO 7816-4 Annex D.
+int tlvGet_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint8_t *rsp, size_t *pRspLen)
+{
+    int retVal      = 1;
+    uint8_t *pBuf   = buf + (*pBufIndex);
+    uint8_t got_tag = 0;
+    size_t extendedLen;
+    size_t rspLen;
+    //size_t len;
+
+    if (rsp == NULL) {
+        LOGD(TAG, "test1-1");
+        goto cleanup;
+    }
+
+    if (pRspLen == NULL) {
+        LOGD(TAG, "test1-2");
+        goto cleanup;
+    }
+    if (bufLen < 2) {
+        LOGD(TAG, "test1-3");
+        goto cleanup;
+    }
+    if ((*pBufIndex) > (bufLen - 2) /* Tag + len */) {
+        LOGD(TAG, "test1-4");
+        goto cleanup;
+    }
+
+    got_tag = *pBuf++;
+    if (got_tag != tag) {
+        LOGD(TAG, "test1-5");
+        goto cleanup;
+    }
+    rspLen = *pBuf++;
+
+    LOGD(TAG, "test1");
+
+    if (rspLen <= 0x7FU) {
+        extendedLen = rspLen;
+        *pBufIndex += (1 + 1);
+    }
+    else if (rspLen == 0x81) {
+        if ((*pBufIndex) > (bufLen - 3) /* Ext len */) {
+            LOGD(TAG, "test2");
+            goto cleanup;
+        }
+        extendedLen = *pBuf++;
+        *pBufIndex += (1 + 1 + 1);
+    }
+    else if (rspLen == 0x82) {
+        if ((*pBufIndex) > (bufLen - 4) /* Ext len */) {
+            LOGD(TAG, "test3");
+            goto cleanup;
+        }
+        extendedLen = *pBuf++;
+        extendedLen = (extendedLen << 8) | *pBuf++;
+        *pBufIndex += (1 + 1 + 2);
+    }
+    else {
+        LOGD(TAG, "test4");
+        goto cleanup;
+    }
+
+    if (extendedLen > *pRspLen) {
+        LOGD(TAG, "test5");
+        goto cleanup;
+    }
+    if (extendedLen > (bufLen - *pBufIndex)) {
+        LOGD(TAG, "test6");
+        goto cleanup;
+    }
+
+    *pRspLen = extendedLen;
+    *pBufIndex += extendedLen;
+    while (extendedLen-- > 0) {
+        *rsp++ = *pBuf++;
+    }
+    retVal = 0;
+cleanup:
+    if (retVal != 0) {
+        if (pRspLen != NULL) {
+            *pRspLen = 0;
+        }
+    }
+    return retVal;
+}
+
+int lvDataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdLen)
 {
     uint8_t *pBuf = *buf;
 
@@ -244,10 +332,49 @@ int dataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdL
 
     return 0;
 }
+
+int DataSet_u8buf(uint8_t **buf, const uint8_t *data, size_t dataLen)
+{
+    uint8_t *pBuf = *buf;
+
+    if (UINT_MAX < dataLen) {
+        return 1;
+    }
+
+    if ((dataLen > 0) && (data != NULL)) {
+        while (dataLen-- > 0) {
+            *pBuf++ = *data++;
+        }
+    }
+
+    *buf = pBuf;
+    return 0;
+}
+
+int get_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, uint8_t *rsp, size_t *pRspLen)
+{
+    int retVal      = 1;
+    uint8_t *pBuf   = buf + (*pBufIndex);
+    size_t extendedLen;
+    size_t rspLen = bufLen;
+
+    if(rspLen > KOSE_TLV_BUF_SIZE_RSP - 2){
+        return retVal;
+    }
+
+    *pRspLen = rspLen;
+    while (rspLen-- > 0) {
+        *rsp++ = *pBuf++;
+    }
+    retVal = 0;
+    return retVal;
+}
+
+
 #endif
 #if 0
 
-int tlvSet_u8buf_features(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, pSe05xAppletFeatures_t appletVariant)
+int tlvSet_u8buf_features(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, pKoseAppletFeatures_t appletVariant)
 {
     uint8_t features[32] = {0};
     size_t features_size = 0;
@@ -270,7 +397,7 @@ int tlvSet_u8buf_features(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, pSe05x
     return tlvSet_u8buf(buf, bufLen, tag, &features[0], features_size);
 }
 
-int tlvGet_U8(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, SE05x_TAG_t tag, uint8_t *pRsp)
+int tlvGet_U8(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint8_t *pRsp)
 {
     int retVal    = 1;
     uint8_t *pBuf = buf + (*pBufIndex);
@@ -303,7 +430,7 @@ cleanup:
     return retVal;
 }
 
-int tlvSet_KeyID(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint32_t keyID)
+int tlvSet_KeyID(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint32_t keyID)
 {
     int retVal = 0;
     if (keyID != 0) {
@@ -312,7 +439,7 @@ int tlvSet_KeyID(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint32_t keyID)
     return retVal;
 }
 
-int tlvSet_MaxAttemps(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint16_t maxAttemps)
+int tlvSet_MaxAttemps(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint16_t maxAttemps)
 {
     int retVal = 0;
     if (maxAttemps != 0) {
@@ -321,24 +448,24 @@ int tlvSet_MaxAttemps(uint8_t **buf, size_t *bufLen, SE05x_TAG_t tag, uint16_t m
     return retVal;
 }
 
-int tlvGet_SecureObjectType(uint8_t *buf, size_t *pBufIndex, size_t bufLen, SE05x_TAG_t tag, SE05x_SecObjTyp_t *pType)
+int tlvGet_SecureObjectType(uint8_t *buf, size_t *pBufIndex, size_t bufLen, KOSE_TAG_t tag, KOSE_SecObjTyp_t *pType)
 {
     uint8_t uType = 0;
     int retVal    = tlvGet_U8(buf, pBufIndex, bufLen, tag, &uType);
-    *pType        = (SE05x_SecObjTyp_t)uType;
+    *pType        = (KOSE_SecObjTyp_t)uType;
     return retVal;
 }
 
-int tlvGet_Result(uint8_t *buf, size_t *pBufIndex, size_t bufLen, SE05x_TAG_t tag, SE05x_Result_t *presult)
+int tlvGet_Result(uint8_t *buf, size_t *pBufIndex, size_t bufLen, KOSE_TAG_t tag, KOSE_Result_t *presult)
 {
     uint8_t uType   = 0;
     size_t uTypeLen = 1;
     int retVal      = tlvGet_u8buf(buf, pBufIndex, bufLen, tag, &uType, &uTypeLen);
-    *presult        = (SE05x_Result_t)uType;
+    *presult        = (KOSE_Result_t)uType;
     return retVal;
 }
 
-int tlvGet_U16(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, SE05x_TAG_t tag, uint16_t *pRsp)
+int tlvGet_U16(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint16_t *pRsp)
 {
     int retVal    = 1;
     uint8_t *pBuf = buf + (*pBufIndex);
@@ -371,7 +498,7 @@ cleanup:
     return retVal;
 }
 
-int tlvGet_U32(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, SE05x_TAG_t tag, uint32_t *pRsp)
+int tlvGet_U32(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint32_t *pRsp)
 {
     int retVal    = 1;
     uint8_t *pBuf = buf + (*pBufIndex);
@@ -419,7 +546,7 @@ cleanup:
 }
 
 //ISO 7816-4 Annex D.
-int tlvGet_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, SE05x_TAG_t tag, uint8_t *rsp, size_t *pRspLen)
+int tlvGet_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint8_t *rsp, size_t *pRspLen)
 {
     int retVal      = 1;
     uint8_t *pBuf   = buf + (*pBufIndex);
@@ -493,7 +620,7 @@ cleanup:
     return retVal;
 }
 
-int tlvGet_ValueIndex(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, SE05x_TAG_t tag)
+int tlvGet_ValueIndex(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag)
 {
     int retVal      = 1;
     uint8_t *pBuf   = buf + (*pBufIndex);
@@ -545,7 +672,7 @@ cleanup:
     return retVal;
 }
 
-int tlvGet_TimeStamp(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, SE05x_TAG_t tag, SE05x_TimeStamp_t *pTs)
+int tlvGet_TimeStamp(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, KOSE_TimeStamp_t *pTs)
 {
     int retVal        = 1;
     size_t rspBufSize = 0;
@@ -611,7 +738,7 @@ smStatus_t DoAPDUTxRx_s_Case4(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_
 }
 #endif
 #if 0
-smStatus_t DoAPDUTxRx_s_Case4_ext(Se05xSession_t *pSessionCtx,
+smStatus_t DoAPDUTxRx_s_Case4_ext(KoseSession_t *pSessionCtx,
     const tlvHeader_t *hdr,
     uint8_t *cmdBuf,
     size_t cmdBufLen,
@@ -634,7 +761,7 @@ smStatus_t DoAPDUTxRx_s_Case4_ext(Se05xSession_t *pSessionCtx,
 }
 
 smStatus_t DoAPDUTxRx(
-    Se05xSession_t *pSessionCtx, uint8_t *cmdBuf, size_t cmdBufLen, uint8_t *rspBuf, size_t *pRspBufLen)
+    KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_t cmdBufLen, uint8_t *rspBuf, size_t *pRspBufLen)
 {
     smStatus_t apduStatus     = SM_NOT_OK;
     size_t data_offset        = 0;
@@ -670,8 +797,8 @@ smStatus_t DoAPDUTxRx(
     return apduStatus;
 }
 
-#if SSS_HAVE_APPLET_SE05X_IOT
-int tlvSet_u8buf_I2CM(uint8_t **buf, size_t *bufLen, SE05x_I2CM_TAG_t tag, const uint8_t *cmd, size_t cmdLen)
+#if SSS_HAVE_APPLET_KOSE_IOT
+int tlvSet_u8buf_I2CM(uint8_t **buf, size_t *bufLen, KOSE_I2CM_TAG_t tag, const uint8_t *cmd, size_t cmdLen)
 {
     /* if < 0x7F
     *    len = 1 byte
@@ -686,7 +813,7 @@ int tlvSet_u8buf_I2CM(uint8_t **buf, size_t *bufLen, SE05x_I2CM_TAG_t tag, const
     if ((UINT_MAX - (*bufLen)) < size_of_tlv) {
         return 1;
     }
-    if (((*bufLen) + size_of_tlv) > SE05X_I2CM_MAX_BUF_SIZE_CMD) {
+    if (((*bufLen) + size_of_tlv) > KOSE_I2CM_MAX_BUF_SIZE_CMD) {
         LOG_E("Not enough buffer");
         return 1;
     }
@@ -709,7 +836,7 @@ int tlvSet_u8buf_I2CM(uint8_t **buf, size_t *bufLen, SE05x_I2CM_TAG_t tag, const
 }
 #endif
 
-smStatus_t se05x_Transform(struct Se05xSession *pSession,
+smStatus_t se05x_Transform(struct KoseSession *pSession,
     const tlvHeader_t *hdr,
     uint8_t *cmdApduBuf,
     const size_t cmdApduBufLen,
@@ -726,7 +853,7 @@ smStatus_t se05x_Transform(struct Se05xSession *pSession,
     out_hdr->hdr[3] = hdr->hdr[3];
 
     if (pSession->hasSession) {
-#if SSSFTR_SE05X_AuthECKey || SSSFTR_SE05X_AuthSession
+#if SSSFTR_KOSE_AuthECKey || SSSFTR_KOSE_AuthSession
 
         size_t SCmd_Lc = (cmdApduBufLen == 0) ? 0 : (((cmdApduBufLen < 0xFF) && !hasle) ? 1 : 3);
 
@@ -734,17 +861,17 @@ smStatus_t se05x_Transform(struct Se05xSession *pSession,
                            /* cla ins */
                            + 4 + SCmd_Lc + cmdApduBufLen;
 
-        out_hdr->hdr[i++] = kSE05x_CLA;
-        out_hdr->hdr[i++] = kSE05x_INS_PROCESS;
-        out_hdr->hdr[i++] = kSE05x_P1_DEFAULT;
-        out_hdr->hdr[i++] = kSE05x_P2_DEFAULT;
+        out_hdr->hdr[i++] = kKOSE_CLA;
+        out_hdr->hdr[i++] = kKOSE_INS_PROCESS;
+        out_hdr->hdr[i++] = kKOSE_P1_DEFAULT;
+        out_hdr->hdr[i++] = kKOSE_P2_DEFAULT;
 
         i          = 0;
-        txBuf[i++] = kSE05x_TAG_SESSION_ID;
+        txBuf[i++] = kKOSE_TAG_SESSION_ID;
         txBuf[i++] = sizeof(pSession->value);
         memcpy(&txBuf[i], pSession->value, sizeof(pSession->value));
         i += sizeof(pSession->value);
-        txBuf[i++] = kSE05x_TAG_1;
+        txBuf[i++] = kKOSE_TAG_1;
         if (STag1_Len <= 0x7Fu) {
             txBuf[i++] = (uint8_t)STag1_Len;
         }
@@ -798,7 +925,7 @@ smStatus_t se05x_Transform(struct Se05xSession *pSession,
 }
 
 smStatus_t se05x_DeCrypt(
-    struct Se05xSession *pSessionCtx, size_t cmd_cmacLen, uint8_t *rsp, size_t *rspLength, uint8_t hasle)
+    struct KoseSession *pSessionCtx, size_t cmd_cmacLen, uint8_t *rsp, size_t *rspLength, uint8_t hasle)
 {
     U16 rv = SM_NOT_OK;
     AX_UNUSED_ARG(cmd_cmacLen);
@@ -836,7 +963,7 @@ smStatus_t se05x_DeCrypt(
 }
 
 #if SSS_HAVE_SCP_SCP03_SSS
-smStatus_t se05x_Transform_scp(struct Se05xSession *pSession,
+smStatus_t se05x_Transform_scp(struct KoseSession *pSession,
     const tlvHeader_t *hdr,
     uint8_t *cmdApduBuf,
     const size_t cmdApduBufLen,
@@ -850,9 +977,9 @@ smStatus_t se05x_Transform_scp(struct Se05xSession *pSession,
     uint8_t macToAdd[16]    = {0};
     size_t macLen           = 16;
     size_t i                = 0;
-    Se05xApdu_t se05xApdu   = {0};
+    KoseApdu_t se05xApdu   = {0};
 
-#if SSSFTR_SE05X_AuthECKey || SSSFTR_SE05X_AuthSession
+#if SSSFTR_KOSE_AuthECKey || SSSFTR_KOSE_AuthSession
     uint8_t *wsCmd = NULL;
 #endif
 
@@ -867,53 +994,53 @@ smStatus_t se05x_Transform_scp(struct Se05xSession *pSession,
     ENSURE_OR_GO_CLEANUP(sss_status == kStatus_SSS_Success);
 
     if (pSession->hasSession) {
-#if SSSFTR_SE05X_AuthECKey || SSSFTR_SE05X_AuthSession
+#if SSSFTR_KOSE_AuthECKey || SSSFTR_KOSE_AuthSession
         /*With session Final wrapping handled by transcive
         * Copy the Wrapped header in the outhdr buffer */
-        outhdr->hdr[0] = kSE05x_CLA;
-        outhdr->hdr[1] = kSE05x_INS_PROCESS;
-        outhdr->hdr[2] = kSE05x_P1_DEFAULT;
-        outhdr->hdr[3] = kSE05x_P2_DEFAULT;
+        outhdr->hdr[0] = kKOSE_CLA;
+        outhdr->hdr[1] = kKOSE_INS_PROCESS;
+        outhdr->hdr[2] = kKOSE_P1_DEFAULT;
+        outhdr->hdr[3] = kKOSE_P2_DEFAULT;
 
-        /* Add CMAC Length in SE05X command LC */
+        /* Add CMAC Length in KOSE command LC */
         se05xApdu.se05xCmdLC  = se05xApdu.se05xCmdLen + SCP_GP_IU_CARD_CRYPTOGRAM_LEN;
         se05xApdu.se05xCmdLCW = (se05xApdu.se05xCmdLC == 0) ? 0 : (((se05xApdu.se05xCmdLC < 0xFF) && !(hasle)) ? 1 : 3);
 
-        se05xApdu.wsSe05x_tag1Len = sizeof(*(se05xApdu.se05xCmd_hdr)) + se05xApdu.se05xCmdLCW + se05xApdu.se05xCmdLC;
-        se05xApdu.wsSe05x_tag1W   = ((se05xApdu.wsSe05x_tag1Len <= 0x7F) ? 1 :
-                                     (se05xApdu.wsSe05x_tag1Len <= 0xFF) ? 2 :
+        se05xApdu.wsKose_tag1Len = sizeof(*(se05xApdu.se05xCmd_hdr)) + se05xApdu.se05xCmdLCW + se05xApdu.se05xCmdLC;
+        se05xApdu.wsKose_tag1W   = ((se05xApdu.wsKose_tag1Len <= 0x7F) ? 1 :
+                                     (se05xApdu.wsKose_tag1Len <= 0xFF) ? 2 :
                                                                            3);
 
-        se05xApdu.wsSe05x_cmd = se05xApdu.se05xTxBuf;
-        wsCmd                 = se05xApdu.wsSe05x_cmd;
+        se05xApdu.wsKose_cmd = se05xApdu.se05xTxBuf;
+        wsCmd                 = se05xApdu.wsKose_cmd;
 
-        wsCmd[i++] = kSE05x_TAG_SESSION_ID;
+        wsCmd[i++] = kKOSE_TAG_SESSION_ID;
         wsCmd[i++] = sizeof(pSession->value);
         memcpy(&wsCmd[i], pSession->value, sizeof(pSession->value));
         i += sizeof(pSession->value);
 
-        wsCmd[i++] = kSE05x_TAG_1;
+        wsCmd[i++] = kKOSE_TAG_1;
 
-        if (se05xApdu.wsSe05x_tag1W == 1) {
-            wsCmd[i++] = (uint8_t)se05xApdu.wsSe05x_tag1Len;
+        if (se05xApdu.wsKose_tag1W == 1) {
+            wsCmd[i++] = (uint8_t)se05xApdu.wsKose_tag1Len;
         }
-        else if (se05xApdu.wsSe05x_tag1W == 2) {
+        else if (se05xApdu.wsKose_tag1W == 2) {
             wsCmd[i++] = (uint8_t)(0x80 /* Extended */ | 0x01 /* Additional Length */);
-            wsCmd[i++] = (uint8_t)((se05xApdu.wsSe05x_tag1Len >> 0 * 8) & 0xFF);
+            wsCmd[i++] = (uint8_t)((se05xApdu.wsKose_tag1Len >> 0 * 8) & 0xFF);
         }
-        else if (se05xApdu.wsSe05x_tag1W == 3) {
+        else if (se05xApdu.wsKose_tag1W == 3) {
             wsCmd[i++] = (uint8_t)(0x80 /* Extended */ | 0x02 /* Additional Length */);
-            wsCmd[i++] = (uint8_t)((se05xApdu.wsSe05x_tag1Len >> 8) & 0xFF);
-            wsCmd[i++] = (uint8_t)((se05xApdu.wsSe05x_tag1Len) & 0xFF);
+            wsCmd[i++] = (uint8_t)((se05xApdu.wsKose_tag1Len >> 8) & 0xFF);
+            wsCmd[i++] = (uint8_t)((se05xApdu.wsKose_tag1Len) & 0xFF);
         }
 
         if (i > *ptxBufLen) {
             goto cleanup;
         }
-        se05xApdu.wsSe05x_tag1Cmd = &wsCmd[i];
+        se05xApdu.wsKose_tag1Cmd = &wsCmd[i];
         ENSURE_OR_GO_CLEANUP(
             (UINT_MAX - sizeof(*(se05xApdu.se05xCmd_hdr)) - se05xApdu.se05xCmdLCW) >= se05xApdu.se05xCmdLen);
-        se05xApdu.wsSe05x_tag1CmdLen =
+        se05xApdu.wsKose_tag1CmdLen =
             sizeof(*(se05xApdu.se05xCmd_hdr)) + se05xApdu.se05xCmdLCW + se05xApdu.se05xCmdLen;
 
         memcpy(&wsCmd[i], se05xApdu.se05xCmd_hdr, sizeof(*(se05xApdu.se05xCmd_hdr)));
@@ -941,13 +1068,13 @@ smStatus_t se05x_Transform_scp(struct Se05xSession *pSession,
         memcpy(&wsCmd[i], se05xApdu.se05xCmd, se05xApdu.se05xCmdLen);
         ENSURE_OR_GO_CLEANUP((UINT_MAX - i) >= se05xApdu.se05xCmdLen);
         i += se05xApdu.se05xCmdLen;
-        se05xApdu.wsSe05x_cmdLen = i;
-        se05xApdu.dataToMac      = se05xApdu.wsSe05x_tag1Cmd;
-        se05xApdu.dataToMacLen   = se05xApdu.wsSe05x_tag1CmdLen;
+        se05xApdu.wsKose_cmdLen = i;
+        se05xApdu.dataToMac      = se05xApdu.wsKose_tag1Cmd;
+        se05xApdu.dataToMacLen   = se05xApdu.wsKose_tag1CmdLen;
 #endif
     }
     else {
-        /* If there is no session create the tx buffer with SE05X command only*/
+        /* If there is no session create the tx buffer with KOSE command only*/
         se05xApdu.se05xCmdLC  = se05xApdu.se05xCmdLen + SCP_GP_IU_CARD_CRYPTOGRAM_LEN;
         se05xApdu.se05xCmdLCW = (se05xApdu.se05xCmdLC == 0) ? 0 : (((se05xApdu.se05xCmdLC < 0xFF) && !(hasle)) ? 1 : 3);
 

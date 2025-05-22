@@ -29,7 +29,43 @@ kss_status_t kss_kose_key_object_init(kss_kose_object_t *keyObject, kss_kose_key
     return retval;
 }
 
-kss_status_t kss_kose_key_object_get_handle(kss_kose_object_t *keyObject, uint32_t keyId)
+kss_status_t kss_kose_key_object_allocate_handle(kss_kose_object_t *keyObject,
+    uint32_t keyId,
+    kss_key_part_t keyPart,
+    kss_cipher_type_t cipherType,
+    size_t keyByteLenMax,
+    uint32_t options)
+{
+    kss_status_t retval = kStatus_KSS_Success;
+    smStatus_t status;
+    KOSE_Result_t exists = kKOSE_Result_NA;
+    keyObject->objectType = keyPart;
+    keyObject->cipherType = cipherType;
+    keyObject->keyId      = keyId;
+    if (options == kKeyObject_Mode_Persistent) {
+        keyObject->isPersistant = 1;
+    }
+
+    AX_UNUSED_ARG(keyByteLenMax);
+/*
+    status = Kose_API_CheckObjectExists(&keyObject->keyStore->session->s_ctx, keyId, &exists);
+    if (status == SM_OK) {
+        if (exists == kKOSE_Result_SUCCESS) {
+            LOGD(TAG, "Object id 0x%X exists", keyId);
+        }
+    }
+    else {
+        LOGE(TAG, "Couldn't check if object id 0x%X exists", keyId);
+        if (status == SM_ERR_APDU_THROUGHPUT) {
+            return kStatus_KSS_ApduThroughputError;
+        }
+        return kStatus_KSS_Fail;
+    }
+*/
+    return retval;
+}
+
+kss_status_t kss_kose_key_object_get_handle(kss_kose_object_t *keyObject, uint32_t objectId)
 {
     kss_status_t retval = kStatus_KSS_Fail;
 #if KSSFTR_KOSE_KEY_GET
@@ -40,11 +76,13 @@ kss_status_t kss_kose_key_object_get_handle(kss_kose_object_t *keyObject, uint32
     smStatus_t apiRetval                          = SM_NOT_OK;
     smStatus_t apduRetValue                       = SM_NOT_OK;
 
-    keyObject->keyId = keyId;
+    keyObject->keyId = objectId;
 
     LOGD(TAG, "Kose_API_GetData start");
+    /*
     apiRetval = Kose_API_GetData(
-        &keyObject->keyStore->session->s_ctx, keyId, &retObjectType, &retTransientType, attestationType);
+        &keyObject->keyStore->session->s_ctx, objectId, &retObjectType, &retTransientType, attestationType);
+        */
     LOGD(TAG, "Kose_API_GetData end");
 #if 0
         if (apiRetval == SM_OK) {

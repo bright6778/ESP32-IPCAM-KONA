@@ -1,7 +1,11 @@
 //#include "kss_kose_session.h"
+#include <mbedtls/md.h>
+
 #include "kss_kose_asymmetric.h"
 #include "kona_kss_kose_types.h"
 #include "kose_APDU_impl.h"
+#include "kona_kss_mbedtls_types.h"
+#include "kss_kose_mbedtls.h"
 
 static const char *TAG = "kss_kose_asymmetric.c";
 
@@ -46,7 +50,6 @@ kss_status_t kss_kose_asymmetric_context_init(kss_kose_asymmetric_t *context,
     kss_algorithm_t algorithm,
     kss_mode_t mode)
 {
-    LOGD(TAG, "kss_kose_asymmetric_context_init");
     kss_status_t retval = kStatus_KSS_Success;
     if (context == NULL) {
         return kStatus_KSS_Fail;
@@ -67,15 +70,16 @@ kss_status_t kss_kose_asymmetric_sign_digest(
     KOSE_ECSignatureAlgo_t ecSignAlgo = kKOSE_ECSignatureAlgo_NA;
 
     LOGD(TAG, "kss_kose_asymmetric_sign_digest");
-
-#if KSSFTR_SE05X_ECC || KSSFTR_SE05X_RSA
-    if (kStatus_KSS_Success != se05x_check_input_len(digestLen, context->algorithm)) {
+/*
+#if KSSFTR_KOSE_ECC || KSSFTR_KOSE_RSA
+    if (kStatus_KSS_Success != kose_check_input_len(digestLen, context->algorithm)) {
         LOG_E("Algorithm and digest length do not match");
         return kStatus_KSS_Fail;
     }
 #endif
-
+*/
     switch (context->keyObject->cipherType) {
+#if KSSFTR_KOSE_ECC
     case kKSS_CipherType_EC_NIST_P:
         ecSignAlgo = kose_get_ec_sign_hash_mode(context->algorithm);
         status     = Kose_API_ECDSASign(&context->session->s_ctx,
@@ -88,8 +92,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
         if (status == SM_ERR_APDU_THROUGHPUT) {
             retval = kStatus_KSS_ApduThroughputError;
         }
-#if KSSFTR_KOSE_ECC
-    case kKSS_CipherType_EC_NIST_P:
+
 #if KSS_HAVE_EC_NIST_K
     case kKSS_CipherType_EC_NIST_K:
 #endif
@@ -97,8 +100,8 @@ kss_status_t kss_kose_asymmetric_sign_digest(
     case kKSS_CipherType_EC_BRAINPOOL:
 #endif
     {
-        ecSignAlgo = se05x_get_ec_sign_hash_mode(context->algorithm);
-        status     = Se05x_API_ECDSASign(&context->session->s_ctx,
+        ecSignAlgo = kose_get_ec_sign_hash_mode(context->algorithm);
+        status     = Kose_API_ECDSASign(&context->session->s_ctx,
             context->keyObject->keyId,
             ecSignAlgo,
             digest,
@@ -109,16 +112,16 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             retval = kStatus_KSS_ApduThroughputError;
         }
     } break;
-#if KSS_HAVE_SE05X_VER_GTE_07_02 && KSS_HAVE_EC_MONT
+#if KSS_HAVE_KOSE_VER_GTE_07_02 && KSS_HAVE_EC_MONT
     case kKSS_CipherType_EC_MONTGOMERY: {
         LOG_W(
             "Sign operation is not supported for "
             "kKSS_CipherType_EC_MONTGOMERY curve");
         return kStatus_KSS_Fail;
     } break;
-#endif // KSS_HAVE_SE05X_VER_GTE_07_02 && KSS_HAVE_EC_MONT
-#endif //KSSFTR_SE05X_ECC
-#if KSSFTR_SE05X_RSA && KSS_HAVE_RSA && !KSS_HAVE_HOSTCRYPTO_NONE
+#endif // KSS_HAVE_KOSE_VER_GTE_07_02 && KSS_HAVE_EC_MONT
+#endif //KSSFTR_KOSE_ECC
+#if KSSFTR_KOSE_RSA && KSS_HAVE_RSA && !KSS_HAVE_HOSTCRYPTO_NONE
     case kKSS_CipherType_RSA:
     case kKSS_CipherType_RSA_CRT: {
         if ((context->algorithm <= kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA512) &&
@@ -139,7 +142,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
                     return kStatus_KSS_Fail;
                 }
             }
-            status = Se05x_API_RSADecrypt(&context->session->s_ctx,
+            status = Kose_API_RSADecrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kSE05x_RSAEncryptionAlgo_NO_PAD,
                 emsa_data,
@@ -168,7 +171,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
                     return kStatus_KSS_Fail;
                 }
             }
-            status = Se05x_API_RSADecrypt(&context->session->s_ctx,
+            status = Kose_API_RSADecrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kSE05x_RSAEncryptionAlgo_NO_PAD,
                 pkcs1v15_encode_data,
@@ -196,7 +199,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
                     return kStatus_KSS_Fail;
                 }
             }
-            status = Se05x_API_RSADecrypt(&context->session->s_ctx,
+            status = Kose_API_RSADecrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kSE05x_RSAEncryptionAlgo_NO_PAD,
                 pkcs1v15_encode_data,
@@ -213,7 +216,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
 
             size_t parsedKeyByteLen      = 0;
             uint16_t u16parsedKeyByteLen = 0;
-            status = Se05x_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &u16parsedKeyByteLen);
+            status = Kose_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &u16parsedKeyByteLen);
             if (status == SM_ERR_APDU_THROUGHPUT) {
                 return kStatus_KSS_ApduThroughputError;
             }
@@ -230,7 +233,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             else {
                 return kStatus_KSS_Fail;
             }
-            status = Se05x_API_RSADecrypt(&context->session->s_ctx,
+            status = Kose_API_RSADecrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kSE05x_RSAEncryptionAlgo_NO_PAD,
                 padded_data,
@@ -246,11 +249,10 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             return kStatus_KSS_Fail;
         }
     } break;
-#endif // KSSFTR_SE05X_RSA && KSS_HAVE_RSA && !KSS_HAVE_HOSTCRYPTO_NONE
+#endif // KSSFTR_KOSE_RSA && KSS_HAVE_RSA && !KSS_HAVE_HOSTCRYPTO_NONE
     default:
         break;
     }
-
     if (status == SM_OK) {
         retval = kStatus_KSS_Success;
     }
@@ -258,6 +260,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
     return retval;
 }
 
+#if 0
 kss_status_t kss_kose_asymmetric_encrypt(
     kss_kose_asymmetric_t *context, const uint8_t *srcData, size_t srcLen, uint8_t *destData, size_t *destLen)
 {
@@ -268,7 +271,7 @@ kss_status_t kss_kose_asymmetric_encrypt(
     if (context->keyObject == NULL) {
         return kStatus_KSS_Fail;
     }
-    status                                      = Se05x_API_RSAEncrypt(
+    status                                      = Kose_API_RSAEncrypt(
         &context->session->s_ctx, context->keyObject->keyId, rsaEncryptionAlgo, srcData, srcLen, destData, destLen);
     if (status == SM_ERR_APDU_THROUGHPUT) {
         retval = kStatus_KSS_ApduThroughputError;
@@ -297,7 +300,7 @@ kss_status_t kss_kose_asymmetric_decrypt(
     if (context->keyObject == NULL) {
         return retval;
     }
-    status                                      = Se05x_API_RSADecrypt(
+    status                                      = Kose_API_RSADecrypt(
         &context->session->s_ctx, context->keyObject->keyId, rsaEncryptionAlgo, srcData, srcLen, destData, destLen);
     if (status == SM_ERR_APDU_THROUGHPUT) {
         retval = kStatus_KSS_ApduThroughputError;
@@ -345,7 +348,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
 #endif
     {
         ecSignAlgo = kose_get_ec_sign_hash_mode(context->algorithm);
-        status     = Se05x_API_ECDSASign(&context->session->s_ctx,
+        status     = Kose_API_ECDSASign(&context->session->s_ctx,
             context->keyObject->keyId,
             ecSignAlgo,
             digest,
@@ -386,7 +389,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
                     return kStatus_KSS_Fail;
                 }
             }
-            status = Se05x_API_RSADecrypt(&context->session->s_ctx,
+            status = Kose_API_RSADecrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kKOSE_RSAEncryptionAlgo_NO_PAD,
                 emsa_data,
@@ -415,7 +418,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
                     return kStatus_KSS_Fail;
                 }
             }
-            status = Se05x_API_RSADecrypt(&context->session->s_ctx,
+            status = Kose_API_RSADecrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kKOSE_RSAEncryptionAlgo_NO_PAD,
                 pkcs1v15_encode_data,
@@ -443,7 +446,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
                     return kStatus_KSS_Fail;
                 }
             }
-            status = Se05x_API_RSADecrypt(&context->session->s_ctx,
+            status = Kose_API_RSADecrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kKOSE_RSAEncryptionAlgo_NO_PAD,
                 pkcs1v15_encode_data,
@@ -460,7 +463,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
 
             size_t parsedKeyByteLen      = 0;
             uint16_t u16parsedKeyByteLen = 0;
-            status = Se05x_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &u16parsedKeyByteLen);
+            status = Kose_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &u16parsedKeyByteLen);
             if (status == SM_ERR_APDU_THROUGHPUT) {
                 return kStatus_KSS_ApduThroughputError;
             }
@@ -477,7 +480,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             else {
                 return kStatus_KSS_Fail;
             }
-            status = Se05x_API_RSADecrypt(&context->session->s_ctx,
+            status = Kose_API_RSADecrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kKOSE_RSAEncryptionAlgo_NO_PAD,
                 padded_data,
@@ -529,7 +532,7 @@ kss_status_t kss_kose_asymmetric_sign(
 
         if (context->algorithm == kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA512 ||
             context->algorithm == kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA512) {
-            status = Se05x_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &key_size_bytes);
+            status = Kose_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &key_size_bytes);
             if (status == SM_ERR_APDU_THROUGHPUT) {
                 return kStatus_KSS_ApduThroughputError;
             }
@@ -542,7 +545,7 @@ kss_status_t kss_kose_asymmetric_sign(
             }
         }
 
-        status = Se05x_API_RSASign(
+        status = Kose_API_RSASign(
             &context->session->s_ctx, context->keyObject->keyId, rsaSigningAlgo, srcData, srcLen, destData, destLen);
         if (status == SM_ERR_APDU_THROUGHPUT) {
             retval = kStatus_KSS_ApduThroughputError;
@@ -553,7 +556,7 @@ kss_status_t kss_kose_asymmetric_sign(
     case kKSS_CipherType_EC_TWISTED_ED: {
         if (context->algorithm == kAlgorithm_KSS_SHA512) {
             KOSE_EDSignatureAlgo_t ecSignAlgo = kKOSE_EDSignatureAlgo_ED25519PURE_SHA_512;
-            status                             = Se05x_API_EdDSASign(
+            status                             = Kose_API_EdDSASign(
                 &context->session->s_ctx, context->keyObject->keyId, ecSignAlgo, srcData, srcLen, destData, destLen);
             if (status == SM_ERR_APDU_THROUGHPUT) {
                 retval = kStatus_KSS_ApduThroughputError;
@@ -650,7 +653,7 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
 #endif
     {
         KOSE_ECSignatureAlgo_t ecSignAlgo = kose_get_ec_sign_hash_mode(context->algorithm);
-        status                             = Se05x_API_ECDSAVerify(&context->session->s_ctx,
+        status                             = Kose_API_ECDSAVerify(&context->session->s_ctx,
             context->keyObject->keyId,
             ecSignAlgo,
             digest,
@@ -678,7 +681,7 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
             size_t dec_len = sizeof(dec_data);
             /* clang-format on */
 
-            status = Se05x_API_RSAEncrypt(&context->session->s_ctx,
+            status = Kose_API_RSAEncrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kKOSE_RSAEncryptionAlgo_NO_PAD,
                 signature,
@@ -700,7 +703,7 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
             size_t encode_data_len = sizeof(pkcs1v15_encode_data);
             /* clang-format on */
 
-            status = Se05x_API_RSAEncrypt(&context->session->s_ctx,
+            status = Kose_API_RSAEncrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kKOSE_RSAEncryptionAlgo_NO_PAD,
                 signature,
@@ -732,7 +735,7 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
             size_t encode_data_len = sizeof(pkcs1v15_encode_data);
             /* clang-format on */
 
-            status = Se05x_API_RSAEncrypt(&context->session->s_ctx,
+            status = Kose_API_RSAEncrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kKOSE_RSAEncryptionAlgo_NO_PAD,
                 signature,
@@ -767,7 +770,7 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
             size_t parsedKeyByteLen      = 0;
             uint16_t u16parsedKeyByteLen = 0;
 
-            status = Se05x_API_RSAEncrypt(&context->session->s_ctx,
+            status = Kose_API_RSAEncrypt(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kKOSE_RSAEncryptionAlgo_NO_PAD,
                 signature,
@@ -775,7 +778,7 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
                 dec_data,
                 &dec_len);
             if (status == SM_OK) {
-                status = Se05x_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &u16parsedKeyByteLen);
+                status = Kose_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &u16parsedKeyByteLen);
                 if (status == SM_OK) {
                     parsedKeyByteLen = u16parsedKeyByteLen;
                     if (status != SM_OK) {
@@ -845,7 +848,7 @@ kss_status_t kss_kose_asymmetric_verify(kss_kose_asymmetric_t *context,
 
         if (context->algorithm == kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA512 ||
             context->algorithm == kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA512) {
-            status = Se05x_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &key_size_bytes);
+            status = Kose_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &key_size_bytes);
             if (status == SM_ERR_APDU_THROUGHPUT) {
                 return kStatus_KSS_ApduThroughputError;
             }
@@ -858,7 +861,7 @@ kss_status_t kss_kose_asymmetric_verify(kss_kose_asymmetric_t *context,
             }
         }
 
-        status = Se05x_API_RSAVerify(&context->session->s_ctx,
+        status = Kose_API_RSAVerify(&context->session->s_ctx,
             context->keyObject->keyId,
             rsaSigningAlgo,
             srcData,
@@ -930,7 +933,7 @@ kss_status_t kss_kose_asymmetric_verify(kss_kose_asymmetric_t *context,
 
         if (context->algorithm == kAlgorithm_KSS_SHA512) {
             KOSE_EDSignatureAlgo_t ecSignAlgo = kKOSE_EDSignatureAlgo_ED25519PURE_SHA_512;
-            status                             = Se05x_API_EdDSAVerify(&context->session->s_ctx,
+            status                             = Kose_API_EdDSAVerify(&context->session->s_ctx,
                 context->keyObject->keyId,
                 ecSignAlgo,
                 srcData,
@@ -959,6 +962,8 @@ kss_status_t kss_kose_asymmetric_verify(kss_kose_asymmetric_t *context,
 
     return retval;
 }
+
+#endif
 
 void kss_kose_asymmetric_context_free(kss_kose_asymmetric_t *context)
 {

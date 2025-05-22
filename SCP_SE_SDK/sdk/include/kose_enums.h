@@ -16,13 +16,15 @@ typedef enum
     kKOSE_INS_NA = 0,
     /** INS Select */
     kKOSE_INS_SELECT = 0xA4,
+    /** INS Get Data */
+    kKOSE_GET_DATA = 0xCA,
+    /** INS SIGN CDATA */
+    kKOSE_INS_SIGN_CDATA = 0x2A,
     
     /** INS Read Binary */
     kKOSE_INS_READ_BINARY = 0xB0,
     /** INS Update Binary */
     kKOSE_INS_UPDATE_BINARY = 0xD6,
-    /** INS Get Data */
-    kKOSE_GET_DATA = 0xCA,
     /** INS Configure access control */
     kKOSE_INS_CONFIGURE_ACCESS_CTRL = 0x41,
     /** INS Manage read counter */
@@ -71,6 +73,19 @@ typedef enum
     /** Select P1 */
     kKOSE_P1_SELECT_NAME = 0x04,
 
+    /** Key & Signature P1 */
+    kKOSE_P1_ECC_PRIVATE = 0x01,
+    kKOSE_P1_ECC_PUBLIC  = 0x11,
+    kKOSE_P1_RSA_PRIVATE = 0x02,
+    kKOSE_P1_RSA_PUBLIC  = 0x21,
+    kKOSE_P1_AES         = 0x03,
+    kKOSE_P1_3DES        = 0x04,
+    kKOSE_P1_HMAC        = 0x06,
+    kKOSE_P1_CMAC        = 0x07,
+
+
+
+
     /** Key pair (private key + public key) */
     kKOSE_P1_KEY_PAIR = 0x60,
     /** Private key */
@@ -81,9 +96,9 @@ typedef enum
     kKOSE_P1_DEFAULT = 0x00,
     kKOSE_P1_EC = 0x01,
     kKOSE_P1_RSA = 0x02,
-    kKOSE_P1_AES = 0x03,
+    //kKOSE_P1_AES = 0x03,
     kKOSE_P1_DES = 0x04,
-    kKOSE_P1_HMAC = 0x05,
+    //kKOSE_P1_HMAC = 0x05,
     kKOSE_P1_BINARY = 0x06,
     kKOSE_P1_UserID = 0x07,
     kKOSE_P1_COUNTER = 0x08,
@@ -347,7 +362,11 @@ typedef enum
     kKOSE_TAG_IMPORT_AUTH_DATA = 0x13,
     kKOSE_TAG_IMPORT_AUTH_KEY_ID = 0x14,
     kKOSE_TAG_POLICY_CHECK = 0x15,
-    kKOSE_TAG_1 = 0x41,
+
+    kKOSE_TAG_SELECT = 0x31,
+    kKOSE_TAG_RANDOM = 0x41,
+
+    //kKOSE_TAG_1 = 0x41,
     kKOSE_TAG_2 = 0x42,
     kKOSE_TAG_3 = 0x43,
     kKOSE_TAG_4 = 0x44,

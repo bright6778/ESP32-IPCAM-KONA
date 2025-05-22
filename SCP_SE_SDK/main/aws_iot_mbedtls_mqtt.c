@@ -49,7 +49,7 @@ extern const char client_key_end[] asm("_binary_client_key_end");
 extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
 extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
 
-extern mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info; // SE 기반 sign_func 포함
+//extern const mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info; // SE 기반 sign_func 포함
 //extern const mbedtls_pk_info_t mbedtls_eckeypair_pk_info; // SE 기반 sign_func 포함
 extern void *se_key_object;                        // SE 핸들
 
@@ -163,6 +163,8 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
                                  (const unsigned char *)personalization,
                                  strlen(personalization));
 
+    //only test
+    session->subsystem = kType_KSS_mbedTLS;
     ret = mbedtls_pk_parse_key(&client_key, (const unsigned char *)client_key_start, client_key_end - client_key_start, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
     
     // TLS config
@@ -170,10 +172,6 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_start, (root_cert_auth_end - root_cert_auth_start));
     ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));
     
-    
-
-
-
     kss_object_t keyobject;
     kss_key_store_t keystore;
     kss_status_t kss_status;
@@ -181,33 +179,54 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 
     memset(&keystore, 0, sizeof(kss_key_store_t));
         
-    //setup_se_default_pk_info();
-    
-    //client_key.private_pk_info = &kose_mbedtls_eckeypair_pk_info;
-
     kss_status = kss_key_store_context_init(&keystore, session);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_store_context_init failed res : %d", kss_status);
+        return;
+    }
+
     kss_status = kss_key_object_init(&keyobject, &keystore);
-	kss_status = kss_key_object_get_handle(&keyobject, key_id);
-	
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_init failed res : %d", kss_status);
+        return;
+    }
 
-    //kss_mbedtls_associate_keypair(&client_key, &keyobject);
-    
+    kss_status = kss_key_object_allocate_handle(&keyobject, key_id, kKSS_KeyPart_Pair, kKSS_CipherType_EC_NIST_P, 256, kKeyObject_Mode_Persistent);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kss_status);
+        return;
+    }
 
-
-
-
-
+    if(kss_mbedtls_associate_keypair(&client_key, &keyobject) != 0){
+        LOGE(TAG, "kss_mbedtls_associate_keypair failed");
+        return;
+    }
+   
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ciphersuites(&conf, sdk_recommended_ciphersuites);
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
     mbedtls_ssl_conf_own_cert(&conf, &client_cert, &client_key);
     mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
-    mbedtls_ssl_setup(&ssl, &conf);
-    mbedtls_ssl_set_hostname(&ssl, AWS_IOT_ENDPOINT);
+    
+    if(mbedtls_ssl_setup(&ssl, &conf) != 0){
+        LOGE(TAG, "mbedtls_ssl_setup failed");
+        return;
+    }
+    if(mbedtls_ssl_set_hostname(&ssl, AWS_IOT_ENDPOINT)){
+        LOGE(TAG, "mbedtls_ssl_set_hostname failed");
+        return;
+    }
 
     mbedtls_net_connect(&net, AWS_IOT_ENDPOINT, AWS_IOT_PORT, MBEDTLS_NET_PROTO_TCP);
     mbedtls_ssl_set_bio(&ssl, &net, mbedtls_net_send, mbedtls_net_recv, NULL);
-
+/*
+    LOGD(TAG, "=== client_key Context 상태 체크 ===");
+    LOGD(TAG, "client_key.pk_info pointer         = %p", client_key.private_pk_info);
+    LOGD(TAG, "client_key.pk_info->sign pointer   = %p", client_key.private_pk_info ? client_key.private_pk_info->sign_func : NULL);
+    LOGD(TAG, "client_key.pk_ctx pointer          = %p", client_key.private_pk_ctx);
+    LOGD(TAG, "client_key private_grp.id pointer  = %p", &((mbedtls_ecp_keypair *)client_key.private_pk_ctx)->private_grp.id);
+    LOGD(TAG, "client_key pax_ctx.id val          = %d", ((mbedtls_ecp_keypair *)client_key.private_pk_ctx)->private_grp.id);
+*/    
     // TLS handshake
     ret = mbedtls_ssl_handshake(&ssl);
     if (ret != 0) {

@@ -106,7 +106,6 @@ typedef struct mbedtls_ecp_group
     void *t_data;               /*!< Unused. */
     mbedtls_ecp_point *T;       /*!< Pre-computed points for ecp_mul_comb(). */
     size_t T_size;              /*!< The number of pre-computed points. */
-
 #if KSS_HAVE_MBEDTLS_ALT_KSS
     /** Reference to object mapped between KSS Layer        */
     kss_object_t* pKSSObject;

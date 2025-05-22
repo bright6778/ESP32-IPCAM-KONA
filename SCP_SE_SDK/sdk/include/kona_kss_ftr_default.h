@@ -7,6 +7,9 @@
 #ifndef KSS_APIS_INC_FSL_KSS_FTR_H_
 #define KSS_APIS_INC_FSL_KSS_FTR_H_
 
+/* Define ALT functions. */
+#define MBEDTLS_ECP_ALT
+
 /* ************************************************************************** */
 /* Defines                                                                    */
 /* ************************************************************************** */
@@ -24,7 +27,7 @@
  */
 
 /** Compiling without any Applet Support */
-#define KSS_HAVE_APPLET_NONE 0
+#define KSS_HAVE_APPLET_NONE 1
 
 /** KOSE Type A (ECC) */
 #define KSS_HAVE_APPLET_KOSE_A 0
@@ -33,7 +36,7 @@
 #define KSS_HAVE_APPLET_KOSE_B 0
 
 /** KOSE (Super set of A + B) */
-#define KSS_HAVE_APPLET_KOSE_C 1
+#define KSS_HAVE_APPLET_KOSE_C 0
 
 /** SE051UWB (Similar to SE05x) */
 #define KSS_HAVE_APPLET_SE051_UWB 0
@@ -149,7 +152,7 @@
  */
 
 /** Use KSS Layer ALT implementation */
-#define KSS_HAVE_MBEDTLS_ALT_KSS 0
+#define KSS_HAVE_MBEDTLS_ALT_KSS 1
 
 /** Enable TF-M based on PSA as ALT */
 #define KSS_HAVE_MBEDTLS_ALT_PSA 0
@@ -157,7 +160,7 @@
 /** Not using any mbedTLS_ALT
  *
  * When this is selected, cloud demos can not work with mbedTLS */
-#define KSS_HAVE_MBEDTLS_ALT_NONE 1
+#define KSS_HAVE_MBEDTLS_ALT_NONE 0
 
 #if (( 0                             \
     + KSS_HAVE_MBEDTLS_ALT_KSS       \
@@ -380,7 +383,7 @@
 #define KSSFTR_KOSE_ECC 1
 
 /** KOSE Secure Element : RSA */
-#define KSSFTR_KOSE_RSA 1
+#define KSSFTR_KOSE_RSA 0
 
 /** KOSE Secure Element : KEY operations : SET Key */
 #define KSSFTR_KOSE_KEY_SET 1

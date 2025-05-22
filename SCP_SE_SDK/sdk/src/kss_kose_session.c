@@ -10,6 +10,7 @@
 #include "kose_tlv.h"
 #include "debug.h"
 #include "scp03_Types.h"
+#include "kona_kss_ftr_default.h"
 
 #include "kss_kose_uart.h"
 #include "kss_kose_session.h"
@@ -134,7 +135,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
                 LOG_E("Use a library with adjusted PTMW_SE05X_Ver compile time setting");
                 SM_Close(koseSession->conn_ctx, 0);
                 sm_connected = 0;
-                retval       = kStatus_SSS_Fail;
+                retval       = kStatus_KSS_Fail;
                 goto exit;
             }
             else {
@@ -155,27 +156,21 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     uint8_t rcvbuf[256] = {0};
     size_t rcvlen;
 
-    if((Kose_API_Select(koseSession)) != SM_OK){
+    if((Kose_API_Select(koseSession, rcvbuf, &rcvlen)) != SM_OK){
         retval = kStatus_KSS_Fail;
         goto exit;
     }
-    /*    
-    if(DoAPDUTxRx_s_Case4(koseSession, (uint8_t *)"\x00\xa4\x04\x00\x01\x0a", 6, rcvbuf, &rcvlen) != SM_OK){
-        retval = kStatus_KSS_Fail;
-        goto exit;
-    }
-    */
-
+    
     status = SM_OK;
 
-#ifdef SSS_USE_SCP03_THREAD_SAFETY /* Disabled by default. Enable in case of multiple applications access platform SCP03 session */
-#if SSS_HAVE_SCP_SCP03_SSS
-    if (pAuthCtx->auth.authType == kSSS_AuthType_SCP03) {
+#ifdef KSS_USE_SCP03_THREAD_SAFETY /* Disabled by default. Enable in case of multiple applications access platform SCP03 session */
+#if KSS_HAVE_SCP_SCP03_KSS
+    if (pAuthCtx->auth.authType == kKSS_AuthType_SCP03) {
 #if defined(USE_RTOS) && (USE_RTOS == 1)
         koseSession->scp03_lock = xSemaphoreCreateMutex();
         if (koseSession->scp03_lock == NULL) {
             LOG_E("xSemaphoreCreateMutex failed");
-            return kStatus_SSS_Fail;
+            return kStatus_KSS_Fail;
         }
         else {
             koseSession->scp03_lock_init = 1;
@@ -184,7 +179,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
 #elif (__GNUC__ && !AX_EMBEDDED)
         if (pthread_mutex_init(&koseSession->scp03_lock, NULL) != 0) {
             LOG_E("\n mutex init has failed");
-            return kStatus_SSS_Fail;
+            return kStatus_KSS_Fail;
         }
         else {
             koseSession->scp03_lock_init = 1;
@@ -192,25 +187,25 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
         }
 #endif
     }
-#endif //#if SSS_HAVE_SCP_SCP03_SSS
-#endif //#if SSS_USE_SCP03_THREAD_SAFETY
+#endif //#if KSS_HAVE_SCP_SCP03_KSS
+#endif //#if KSS_USE_SCP03_THREAD_SAFETY
 #if 0
-    if (pAuthCtx->auth.authType == kSSS_AuthType_ECKey) {
+    if (pAuthCtx->auth.authType == kKSS_AuthType_ECKey) {
         ENSURE_OR_GO_EXIT(pAuthCtx->auth.ctx.eckey.pDyn_ctx);
         if (CommState.appletVersion == 0) {
             /*Get Applet version from previously opened session*/
             uint8_t appletVersion[32]          = {0};
             uint8_t versionIterator            = 0;
             size_t appletVersionLen            = sizeof(appletVersion);
-            sss_se05x_session_t *se05x_session = (sss_se05x_session_t *)pAuthCtx->tunnelCtx->session;
-            status = Se05x_API_GetVersion(&se05x_session->s_ctx, appletVersion, &appletVersionLen);
+            sss_kose_session_t *kose_session = (sss_kose_session_t *)pAuthCtx->tunnelCtx->session;
+            status = Se05x_API_GetVersion(&kose_session->s_ctx, appletVersion, &appletVersionLen);
             if (status == SM_ERR_APDU_THROUGHPUT) {
-                retval = kStatus_SSS_ApduThroughputError;
+                retval = kStatus_KSS_ApduThroughputError;
                 goto exit;
             }
             if (status != SM_OK) {
                 LOG_E("Unable to retrive applet version");
-                retval = kStatus_SSS_Fail;
+                retval = kStatus_KSS_Fail;
                 goto exit;
             }
             for (versionIterator = 0; versionIterator < 3; versionIterator++) {
@@ -219,81 +214,82 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
             CommState.appletVersion = CommState.appletVersion << 8;
         }
         if (CommState.appletVersion >= 0x03050000) {
-            pAuthCtx->auth.ctx.eckey.pDyn_ctx->authType = kSSS_AuthType_INT_ECKey_Counter;
+            pAuthCtx->auth.ctx.eckey.pDyn_ctx->authType = kKSS_AuthType_INT_ECKey_Counter;
         }
         else {
-            pAuthCtx->auth.ctx.eckey.pDyn_ctx->authType = kSSS_AuthType_ECKey;
+            pAuthCtx->auth.ctx.eckey.pDyn_ctx->authType = kKSS_AuthType_ECKey;
         }
     }
 
-    koseSession->fp_TXn    = &sss_se05x_TXn;
-    koseSession->fp_RawTXn = &sss_se05x_channel_txn;
+    koseSession->fp_TXn    = &sss_kose_TXn;
+    koseSession->fp_RawTXn = &sss_kose_channel_txn;
 
     /* Auth type is None */
     if (1 == pAuthCtx->skip_select_applet) {
         /* Not selecting the applet */
     }
     else {
-        if ((pAuthCtx->auth.authType == kSSS_AuthType_None) && (connection_type == kSSS_ConnectionType_Plain)) {
+        if ((pAuthCtx->auth.authType == kKSS_AuthType_None) && (connection_type == kKSS_ConnectionType_Plain)) {
             LOG_W("Communication channel is Plain.");
             LOG_W("!!!Not recommended for production use.!!!");
-            koseSession->fp_Transform = &se05x_Transform;
-            koseSession->fp_DeCrypt   = &se05x_DeCrypt;
-            koseSession->authType     = kSSS_AuthType_None;
+            koseSession->fp_Transform = &kose_Transform;
+            koseSession->fp_DeCrypt   = &kose_DeCrypt;
+            koseSession->authType     = kKSS_AuthType_None;
             status                     = SM_OK;
         }
     }
 #endif
 
-#if SSS_HAVE_SCP_SCP03_SSS
+#if KSS_HAVE_SCP_SCP03_SSS
     /* Auth type is Platform SCP03 */
-    if ((pAuthCtx->auth.authType == kSSS_AuthType_SCP03) && (connection_type == kSSS_ConnectionType_Encrypted)) {
-        koseSession->fp_Transform = &se05x_Transform;
-        koseSession->fp_DeCrypt   = &se05x_DeCrypt;
-        koseSession->authType     = kSSS_AuthType_SCP03;
+    if ((pAuthCtx->auth.authType == kKSS_AuthType_SCP03) && (connection_type == kKSS_ConnectionType_Encrypted)) {
+        //koseSession->fp_Transform = &kose_Transform;
+        //koseSession->fp_DeCrypt   = &kose_DeCrypt;
+        koseSession->authType     = kKSS_AuthType_SCP03;
         status                     = SM_NOT_OK;
-        retval                     = nxScp03_AuthenticateChannel(koseSession, &pAuthCtx->auth.ctx.scp03);
-        if (retval == kStatus_SSS_Success) {
+        //retval                     = scp03_AuthenticateChannel(koseSession, &pAuthCtx->auth.ctx.scp03);
+        if (retval == kStatus_KSS_Success) {
             /* There is a differnet behaviour of Platform SCP between SE050 and future applet.
              * Here we switch make it clear. */
+            /*
             if (CommState.appletVersion >= 0x04030000) {
-                pAuthCtx->auth.ctx.scp03.pDyn_ctx->authType = (SE_AuthType_t)kSSS_AuthType_AESKey;
+                pAuthCtx->auth.ctx.scp03.pDyn_ctx->authType = (SE_AuthType_t)kKSS_AuthType_AESKey;
             }
             else {
-                pAuthCtx->auth.ctx.scp03.pDyn_ctx->authType = (SE_AuthType_t)kSSS_AuthType_SCP03;
-            }
+                pAuthCtx->auth.ctx.scp03.pDyn_ctx->authType = (SE_AuthType_t)kKSS_AuthType_SCP03;
+            }*/
             /*Auth type to Platform SCP03 again as channel authentication will modify it
             to auth type None*/
-            koseSession->authType     = kSSS_AuthType_SCP03;
-            koseSession->pdynScp03Ctx = pAuthCtx->auth.ctx.scp03.pDyn_ctx;
+            koseSession->authType     = kKSS_AuthType_SCP03;
+            //koseSession->pdynScp03Ctx = pAuthCtx->auth.ctx.scp03.pDyn_ctx;
             status                     = SM_OK;
-            koseSession->fp_Transform = &se05x_Transform_scp;
+            //koseSession->fp_Transform = &kose_Transform_scp;
         }
         else {
-            LOG_E("Could not set SCP03 Secure Channel");
+            LOGE(TAG, "Could not set SCP03 Secure Channel");
         }
     }
 #else
 
 #endif
 
-#if SSSFTR_SE05X_AuthECKey || SSSFTR_SE05X_AuthSession
+#if KSSFTR_SE05X_AuthECKey || KSSFTR_SE05X_AuthSession
     if (pAuthCtx->connType == kType_SE_Conn_Type_Channel) {
-        koseSession->pChannelCtx = (struct _sss_se05x_tunnel_context *)pAuthCtx->tunnelCtx;
-        if (koseSession->pChannelCtx->se05x_session->subsystem == kType_SSS_SE_SE05x) {
-            koseSession->applet_version = koseSession->pChannelCtx->se05x_session->s_ctx.applet_version;
+        koseSession->pChannelCtx = (struct _sss_kose_tunnel_context *)pAuthCtx->tunnelCtx;
+        if (koseSession->pChannelCtx->kose_session->subsystem == kType_KSS_SE_SE05x) {
+            koseSession->applet_version = koseSession->pChannelCtx->kose_session->s_ctx.applet_version;
         }
     }
 
     if ((application_id != 0) &&
-        ((connection_type == kSSS_ConnectionType_Password) || (connection_type == kSSS_ConnectionType_Encrypted))) {
+        ((connection_type == kKSS_ConnectionType_Password) || (connection_type == kKSS_ConnectionType_Encrypted))) {
 #if defined(SMCOM_JRCP_V1_AM)
         {
             // Overwrite session_open_retry_cnt and session_open_retry_dly from env variables
             const char *retry_cnt = NULL;
             const char *retry_dly = NULL;
 
-            retry_cnt = getenv("EX_SSS_SESSION_OPEN_RETRY_CNT");
+            retry_cnt = getenv("EX_KSS_SESSION_OPEN_RETRY_CNT");
             if (retry_cnt != NULL) {
                 session_open_retry_cnt = atoi(retry_cnt);
                 if (session_open_retry_cnt > session_open_retry_cnt_max) {
@@ -302,7 +298,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
                 LOG_I("Session Open Retry Count ='%d' ", session_open_retry_cnt);
             }
 
-            retry_dly = getenv("EX_SSS_SESSION_OPEN_RETRY_DLY");
+            retry_dly = getenv("EX_KSS_SESSION_OPEN_RETRY_DLY");
             if (retry_dly != NULL) {
                 session_open_retry_dly = atoi(retry_dly);
                 if (session_open_retry_dly < 1) {
@@ -322,7 +318,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
             SM_LOCK_CHANNEL();
             retval = sss_session_auth_open(session, subsystem, application_id, connection_type, connectionData);
             SM_UNLOCK_CHANNEL();
-            if (retval == kStatus_SSS_Success) {
+            if (retval == kStatus_KSS_Success) {
                 break;
             }
 
@@ -335,7 +331,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
         SM_UNLOCK_CHANNEL();
 #endif
 
-        if (retval == kStatus_SSS_Success) {
+        if (retval == kStatus_KSS_Success) {
             status = SM_OK;
         }
         else {
@@ -349,7 +345,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
         retval             = kStatus_KSS_Success;
     }
     else {
-        /* Retain the APDU throughput error. Any other error, pass generic kStatus_SSS_Fail */
+        /* Retain the APDU throughput error. Any other error, pass generic kStatus_KSS_Fail */
         if (retval != kStatus_KSS_ApduThroughputError) {
             retval = kStatus_KSS_Fail;
         }

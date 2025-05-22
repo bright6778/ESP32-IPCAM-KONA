@@ -1107,11 +1107,11 @@ kss_status_t kss_key_object_allocate_handle(kss_object_t *keyObject,
  *             kss_key_object_allocate_handle api.
  *
  * @param      keyObject  The key object
- * @param[in]  keyId      The key identifier
+ * @param[in]  objectId   The object identifier
  *
  * @return     The sss status.
  */
-kss_status_t kss_key_object_get_handle(kss_object_t *keyObject, uint32_t keyId);
+kss_status_t kss_key_object_get_data(kss_object_t *keyObject, uint32_t objectId);
 
 /** @brief Assign user to a key object.
  *

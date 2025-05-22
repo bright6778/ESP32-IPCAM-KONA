@@ -15,8 +15,8 @@
 #include "kona_kss_api.h"
 #include "kose_enums.h"
 
-//#include "nxScp03_Types.h"
-//#include "kose_const.h"
+#include "scp03_Types.h"
+#include "kose_const.h"
 #include "sm_api.h"
 
 #if (__GNUC__ && !AX_EMBEDDED)
@@ -294,7 +294,7 @@ typedef enum
 
 
 
-#if 0
+#if 1
 /** Used to enable Applet Features via ``kss_kose_set_feature`` */
 typedef struct
 {
@@ -361,11 +361,11 @@ typedef struct
     size_t outrandomLen;
 #endif
     /** time stamp */
-    KOSE_TimeStamp_t timeStamp;
+    Kose_TimeStamp_t timeStamp;
     /** Length of timeStamp */
     size_t timeStampLen;
     /** Uinquie ID of SE050 */
-    uint8_t chipId[SE050_MODULE_UNIQUE_ID_LEN];
+    uint8_t chipId[KOSE_MODULE_UNIQUE_ID_LEN];
     /** Lenght of the Unique ID */
     size_t chipIdLen;
     /** Attributes */

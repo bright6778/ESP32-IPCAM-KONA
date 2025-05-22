@@ -146,7 +146,7 @@ typedef struct
      * ``pStatic_ctx``.
      */
     SCP03_DynCtx_t  *pDyn_ctx;   // session keys data
-} SE05x_AuthCtx_ECKey_t;
+} KOSE_AuthCtx_ECKey_t;
 
 /** UseID / PIN baed authentication object
  *
@@ -156,7 +156,7 @@ typedef struct
 {
     /** The corresponding authentication object on the Host */
     kss_object_t * pObj;
-} SE05x_AuthCtx_ID_t;
+} KOSE_AuthCtx_ID_t;
 
 
 /** Legacy, only for A71CH with Host Crypto */
@@ -195,10 +195,10 @@ typedef struct _SE_AuthCtx
         SCP03_AuthCtx_t scp03;
 
         /** For ECKey  */
-        SE05x_AuthCtx_ECKey_t eckey;
+        KOSE_AuthCtx_ECKey_t eckey;
 
         /** For UserID/PIN based based Authentication */
-        SE05x_AuthCtx_ID_t idobj;
+        KOSE_AuthCtx_ID_t idobj;
 
         /** Legacy, only for A71CH with Host Crypto */
         SM_SECURE_SCP03_KEYOBJ a71chAuthKeys;
@@ -295,15 +295,15 @@ typedef struct
 
 /* Deprecated */
 
-#define SE05x_AuthCtx_t SE_AuthCtx_t
+#define KOSE_AuthCtx_t SE_AuthCtx_t
 
-#define kSE05x_AuthType_None kKSS_AuthType_None
-#define kSE05x_AuthType_SCP03 kKSS_AuthType_SCP03
-#define kSE05x_AuthType_UserID kKSS_AuthType_ID
-#define kSE05x_AuthType_AESKey kKSS_AuthType_AESKey
-#define kSE05x_AuthType_ECKey kKSS_AuthType_ECKey
+#define kKOSE_AuthType_None kKSS_AuthType_None
+#define kKOSE_AuthType_SCP03 kKSS_AuthType_SCP03
+#define kKOSE_AuthType_UserID kKSS_AuthType_ID
+#define kKOSE_AuthType_AESKey kKSS_AuthType_AESKey
+#define kKOSE_AuthType_ECKey kKSS_AuthType_ECKey
 
 /* For backwards compatibility */
-#define SE05x_AuthType_t SE_AuthType_t
+#define KOSE_AuthType_t SE_AuthType_t
 
 #endif /* SCP03_TYPES_H_ */

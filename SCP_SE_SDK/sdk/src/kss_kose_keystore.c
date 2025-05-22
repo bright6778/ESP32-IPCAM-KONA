@@ -18,6 +18,7 @@ static const char *TAG = "kss_kose_keystore.c";
 
 kss_status_t kss_kose_key_store_context_init(kss_kose_key_store_t *keyStore, kss_kose_session_t *session)
 {
+    LOGD(TAG, "kss_kose_key_store_context_init start");
     kss_status_t retval = kStatus_KSS_Success;
     if (keyStore == NULL) {
         return kStatus_KSS_Fail;

@@ -240,7 +240,7 @@ void command_task(void *arg)
                     connectionData = &se_conn_ctx;
                     kStatus = kss_session_open(&session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
                     if (kStatus_KSS_Success != kStatus) {
-                        LOGE(TAG, "kss_kose_session_open failed");
+                        LOGE(TAG, "kss_kose_session_open failed res : %d", kStatus);
                     }
                     ESP_LOGI(TAG, "%s return : %d", SESSION_OPEN, kStatus);
                     ESP_LOGI(TAG, "End %s", SESSION_OPEN);

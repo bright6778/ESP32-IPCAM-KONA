@@ -9,7 +9,10 @@
 #define ARRAY_SIZE(array) (sizeof(array) / (sizeof(array[0])))
 #endif
 
-smStatus_t Kose_API_Select(pKoseSession_t session_ctx);
+smStatus_t Kose_API_Select(pKoseSession_t session_ctx, uint8_t *fci, size_t *pfciLen);
+
+//smStatus_t Kose_API_GetRandom(pKoseSession_t session_ctx, uint8_t *random);
+smStatus_t Kose_API_GetRandom(pKoseSession_t session_ctx, uint16_t size, uint8_t *randomData, size_t *prandomDataLen);
 
 smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     uint32_t objectID,
@@ -19,8 +22,4 @@ smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     uint8_t *signature,
     size_t *psignatureLen);
 
-smStatus_t Kose_API_GetData(pKoseSession_t session_ctx,
-    uint32_t objectID,
-    KOSE_SecureObjectType_t *ptype,
-    uint8_t *pisTransient,
-    const KOSE_AttestationType_t attestation_type);
+smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint8_t objectID);
