@@ -164,8 +164,8 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
                                  strlen(personalization));
 
     //only test
-    session->subsystem = kType_KSS_mbedTLS;
-    ret = mbedtls_pk_parse_key(&client_key, (const unsigned char *)client_key_start, client_key_end - client_key_start, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
+    //session->subsystem = kType_KSS_mbedTLS;
+    //ret = mbedtls_pk_parse_key(&client_key, (const unsigned char *)client_key_start, client_key_end - client_key_start, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
     
     // TLS config
     mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);

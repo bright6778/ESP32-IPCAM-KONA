@@ -36,6 +36,7 @@ kss_status_t kss_kose_key_object_allocate_handle(kss_kose_object_t *keyObject,
     size_t keyByteLenMax,
     uint32_t options)
 {
+    LOGD(TAG, "kss_kose_key_object_allocate_handle");
     kss_status_t retval = kStatus_KSS_Success;
     smStatus_t status;
     KOSE_Result_t exists = kKOSE_Result_NA;

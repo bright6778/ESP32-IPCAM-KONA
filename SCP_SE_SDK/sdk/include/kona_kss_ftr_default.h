@@ -27,7 +27,7 @@
  */
 
 /** Compiling without any Applet Support */
-#define KSS_HAVE_APPLET_NONE 1
+#define KSS_HAVE_APPLET_NONE 0
 
 /** KOSE Type A (ECC) */
 #define KSS_HAVE_APPLET_KOSE_A 0
@@ -36,7 +36,7 @@
 #define KSS_HAVE_APPLET_KOSE_B 0
 
 /** KOSE (Super set of A + B) */
-#define KSS_HAVE_APPLET_KOSE_C 0
+#define KSS_HAVE_APPLET_KOSE_C 1
 
 /** SE051UWB (Similar to SE05x) */
 #define KSS_HAVE_APPLET_SE051_UWB 0

@@ -179,6 +179,7 @@ kss_status_t kss_key_object_allocate_handle(kss_object_t *keyObject,
     uint32_t options)
 {
 #if KSS_HAVE_APPLET_KOSE_IOT && KSSFTR_KOSE_KEY_SET
+    LOGD(TAG, "kss_key_object_allocate_handle - KSS_HAVE_APPLET_KOSE_IOT");
     if (KSS_OBJECT_TYPE_IS_KOSE(keyObject)) {
         kss_kose_object_t *kose_keyObject = (kss_kose_object_t *)keyObject;
         return kss_kose_key_object_allocate_handle(
@@ -186,8 +187,8 @@ kss_status_t kss_key_object_allocate_handle(kss_object_t *keyObject,
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
 #if KSS_HAVE_HOSTCRYPTO_MBEDTLS
-    if (
-        KSS_OBJECT_TYPE_IS_MBEDTLS(keyObject)) {
+    LOGD(TAG, "kss_key_object_allocate_handle - KSS_HAVE_HOSTCRYPTO_MBEDTLS");
+    if (KSS_OBJECT_TYPE_IS_MBEDTLS(keyObject)) {
         kss_mbedtls_object_t *mbedtls_keyObject = (kss_mbedtls_object_t *)keyObject;
         return kss_mbedtls_key_object_allocate_handle(
             mbedtls_keyObject, keyId, keyPart, cipherType, keyByteLenMax, options);
