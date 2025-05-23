@@ -22,4 +22,4 @@ smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     uint8_t *signature,
     size_t *psignatureLen);
 
-smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint8_t objectID);
+smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint8_t objectID, uint8_t *data, size_t *pdataLen);

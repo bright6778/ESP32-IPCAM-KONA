@@ -711,8 +711,6 @@ typedef struct
     ];
 } tlvHeader_t;
 
-
-#if 0
 /**
  * @addtogroup kss_crypto_tunnel
  * @{
@@ -782,21 +780,11 @@ typedef struct
 
 } kss_rng_context_t;
 
-/** @} */
-
-/*******************************************************************************
- * API
- ******************************************************************************/
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /**
  * @addtogroup kss_session
  * @{
  */
-#endif
-#if 1
+
 /**
  * Same as @ref kss_session_open but to support sub systems
  * that explictily need a create before opening.
@@ -847,7 +835,7 @@ kss_status_t kss_session_open(kss_session_t *session,
     void *connectionData);
 
 
-#endif
+
 #if 0
 /** Random number generator context */
 typedef struct
@@ -1863,6 +1851,8 @@ kss_status_t kss_derive_key_sobj_one_go(kss_derive_key_t *context,
     kss_object_t *derivedKeyObject,
     uint16_t deriveDataLen);
 
+#endif
+#if 1
 /** @brief Asymmetric key derivation Diffie-Helmann
  *  The function cryptographically derives a key from another key.
  *  For example Diffie-Helmann.
@@ -1931,7 +1921,8 @@ kss_status_t kss_rng_get_random(kss_rng_context_t *context, uint8_t *random_data
  * @return  status
  */
 kss_status_t kss_rng_context_free(kss_rng_context_t *context);
-
+#endif
+#if 0
 /**
  *@}
  */ /* end of kss_rng */

@@ -81,18 +81,6 @@ kss_status_t kss_kose_asymmetric_sign_digest(
     switch (context->keyObject->cipherType) {
 #if KSSFTR_KOSE_ECC
     case kKSS_CipherType_EC_NIST_P:
-        ecSignAlgo = kose_get_ec_sign_hash_mode(context->algorithm);
-        status     = Kose_API_ECDSASign(&context->session->s_ctx,
-            context->keyObject->keyId,
-            ecSignAlgo,
-            digest,
-            digestLen,
-            signature,
-            signatureLen);
-        if (status == SM_ERR_APDU_THROUGHPUT) {
-            retval = kStatus_KSS_ApduThroughputError;
-        }
-
 #if KSS_HAVE_EC_NIST_K
     case kKSS_CipherType_EC_NIST_K:
 #endif
@@ -112,14 +100,6 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             retval = kStatus_KSS_ApduThroughputError;
         }
     } break;
-#if KSS_HAVE_KOSE_VER_GTE_07_02 && KSS_HAVE_EC_MONT
-    case kKSS_CipherType_EC_MONTGOMERY: {
-        LOG_W(
-            "Sign operation is not supported for "
-            "kKSS_CipherType_EC_MONTGOMERY curve");
-        return kStatus_KSS_Fail;
-    } break;
-#endif // KSS_HAVE_KOSE_VER_GTE_07_02 && KSS_HAVE_EC_MONT
 #endif //KSSFTR_KOSE_ECC
 #if KSSFTR_KOSE_RSA && KSS_HAVE_RSA && !KSS_HAVE_HOSTCRYPTO_NONE
     case kKSS_CipherType_RSA:

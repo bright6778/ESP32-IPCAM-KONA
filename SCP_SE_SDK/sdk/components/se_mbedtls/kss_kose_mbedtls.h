@@ -118,14 +118,14 @@ static void *kss_eckey_alloc(void);
 
 //int mbedtls_associate_ecdhctx(SST_Index_t key_index, mbedtls_ssl_handshake_params * handshake);
 
-int kss_eckey_verify(void *ctx,
+static int kss_eckey_verify(void *ctx,
     mbedtls_md_type_t md_alg,
     const unsigned char *hash,
     size_t hash_len,
     const unsigned char *sig,
     size_t sig_len);
 
-int kss_eckey_sign(void *ctx,
+static int kss_eckey_sign(void *ctx,
     mbedtls_md_type_t md_alg,
     const unsigned char *hash,
     size_t hash_len,

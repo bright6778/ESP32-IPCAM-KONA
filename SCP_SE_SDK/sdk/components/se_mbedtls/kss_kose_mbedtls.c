@@ -5,6 +5,7 @@
 #include "ensure.h"
 #include "mbedtls/base64.h"
 #include "kss_kose_mbedtls.h"
+#include "kona_kss_util_asn1_der.h"
 //#include "kss_kose_session.h"
 //#include "kss_kose_asymmetric.h"
 
@@ -105,7 +106,7 @@ static void *kss_eckey_alloc(void)
 
 
 // static 붙이기
-int kss_eckey_verify(void *ctx,
+static int kss_eckey_verify(void *ctx,
     mbedtls_md_type_t md_alg,
     const unsigned char *hash,
     size_t hash_len,
@@ -160,7 +161,7 @@ int kss_eckey_verify(void *ctx,
     return (0);
 }
 
-int kss_eckey_sign(void *ctx,
+static int kss_eckey_sign(void *ctx,
     mbedtls_md_type_t md_alg,
     const unsigned char *hash,
     size_t hash_len,
@@ -209,17 +210,8 @@ int kss_eckey_sign(void *ctx,
         ctx = pcheck_ctx->private_pk_ctx;
         pax_ctx = (mbedtls_ecp_keypair *)ctx;
     }
+
     kssObject = pax_ctx->private_grp.pKSSObject;
-    
-/*
-    LOGD(TAG, "check kss_eckey_sign start");
-    LOGD(TAG, "ctx pointer                      = %p", ctx);
-    LOGD(TAG, "ctx private_grp.id pointer       = %p", &((mbedtls_ecp_keypair *)ctx)->private_grp.id);
-    LOGD(TAG, "ctx private_grp.id val           = %d", ((mbedtls_ecp_keypair *)ctx)->private_grp.id);
-    LOGD(TAG, "pax_ctx private_grp.id pointer   = %p", &pax_ctx->private_grp.id);
-    LOGD(TAG, "pax_ctx private_grp.id val       = %d", pax_ctx->private_grp.id);
-    LOGD(TAG, "pax_ctx.pKSSObject->cipherType   = %ld", pax_ctx->private_grp.pKSSObject->cipherType);
-*/    
     
     if(kssObject == NULL){
         return kStatus_KSS_Fail;
@@ -240,7 +232,7 @@ int kss_eckey_sign(void *ctx,
         LOGE(TAG, " kss_asymmetric_sign_digest Failed...\n");
         return kStatus_KSS_Fail;
     }
-
+    
     *sig_len = u16_sig_len;
 
     return (ret);
@@ -257,7 +249,7 @@ const mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info= {
     NULL, // decrypt_func,
     NULL, // encrypt_func,
     &kss_eckey_check_pair,
-    &kss_eckey_alloc, //&ax_eckey_alloc,
+    NULL, //&kss_eckey_alloc,
     &kss_eckeypair_free_func,
     NULL, //&ax_eckey_debug,
 };
@@ -285,6 +277,142 @@ void setup_se_default_pk_info()
     memcpy(&kose_mbedtls_ecpubkey_pk_info, default_info, sizeof(mbedtls_pk_info_t));
 }
 
+int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
+{
+    int ret               = 1;
+    void *pax_ctx         = NULL;
+    uint32_t objectId[16] = {
+        0,
+    };
+    uint8_t objectIdLen = sizeof(objectId);
+    kss_status_t status = kStatus_KSS_Fail;
+
+    if (pkey->private_pk_ctx == NULL) {
+        memset(pkey, 0, sizeof(*pkey));
+    }
+
+    if (pkeyObject->cipherType == kKSS_CipherType_EC_NIST_P || pkeyObject->cipherType == kKSS_CipherType_EC_NIST_K ||
+        pkeyObject->cipherType == kKSS_CipherType_EC_BRAINPOOL ||
+        pkeyObject->cipherType == kKSS_CipherType_EC_MONTGOMERY ||
+        pkeyObject->cipherType == kKSS_CipherType_EC_TWISTED_ED) {
+        LOGD(TAG, "Associating ECC public key '0x%08" PRIX32 "'", pkeyObject->keyId);
+
+        pkey->private_pk_info = &kose_mbedtls_ecpubkey_pk_info;
+        if (pkey->private_pk_ctx == NULL) {
+            pax_ctx = (mbedtls_ecp_keypair *)mbedtls_calloc(1, sizeof(mbedtls_ecp_keypair));
+        }
+        else {
+            pax_ctx = pkey->private_pk_ctx;
+        }
+        if (pax_ctx == NULL) {
+            LOGE(TAG, "Memory allocation for pax_ctx failed");
+            goto cleanup;
+        }
+
+        if (pax_ctx == NULL) {
+            return 1;
+        }
+        ((mbedtls_ecp_keypair *)pax_ctx)->private_grp.pKSSObject = pkeyObject;
+
+        /*
+        status = kss_util_asn1_get_oid_from_kssObj(pkeyObject, objectId, &objectIdLen);
+        if (status != kStatus_KSS_Success) {
+            goto cleanup;
+        }
+
+        ((mbedtls_ecp_keypair *)pax_ctx)->grp.id = (mbedtls_ecp_group_id)get_group_id(objectId, objectIdLen);
+        if (((mbedtls_ecp_keypair *)pax_ctx)->grp.id == MBEDTLS_ECP_DP_NONE) {
+            LOG_E(" kss_mbedtls_associate_pubkey: Group id not found...\n");
+            goto cleanup;
+        }
+        */
+    }
+#ifdef MBEDTLS_RSA_ALT
+    else if (pkeyObject->cipherType == kKSS_CipherType_RSA || pkeyObject->cipherType == kKSS_CipherType_RSA_CRT) {
+        uint8_t pbKey[1400]  = {0};
+        size_t pbKeyBitLen   = 0;
+        size_t pbKeyBytetLen = sizeof(pbKey);
+        uint8_t *modulus     = NULL;
+        size_t modlen        = 0;
+        uint8_t *pubExp      = NULL;
+        size_t pubExplen     = 0;
+
+        pkey->pk_info = &ax_mbedtls_rsapubkey_info;
+        LOG_D("Associating RSA public key '0x%08X'", pkeyObject->keyId);
+        if (pkey->pk_ctx == NULL) {
+            pax_ctx = (mbedtls_rsa_context *)mbedtls_calloc(1, sizeof(mbedtls_rsa_context));
+        }
+        else {
+            pkey->pk_ctx = pax_ctx;
+        }
+        if (pax_ctx == NULL) {
+            LOG_E("Memory allocation for pax_ctx failed");
+            goto cleanup;
+        }
+        ((mbedtls_rsa_context *)pax_ctx)->pKSSObject = pkeyObject;
+
+        status = kss_key_store_get_key(pkeyObject->keyStore, pkeyObject, pbKey, &pbKeyBytetLen, &pbKeyBitLen);
+        if (status != kStatus_KSS_Success) {
+            goto cleanup;
+        }
+
+        status = kss_util_asn1_rsa_parse_public(pbKey, pbKeyBytetLen, &modulus, &modlen, &pubExp, &pubExplen);
+        if (modulus != NULL) {
+            KSS_FREE(modulus);
+            modulus = NULL;
+        }
+        if (pubExp != NULL) {
+            KSS_FREE(pubExp);
+            pubExp = NULL;
+        }
+        if (status != kStatus_KSS_Success) {
+            goto cleanup;
+        }
+
+        if ((SIZE_MAX / 8) < modlen) {
+            goto cleanup;
+        }
+        ((mbedtls_rsa_context *)pax_ctx)->len = (modlen * 8);
+    }
+#endif /* MBEDTLS_RSA_ALT */
+    else {
+        goto cleanup;
+    }
+    if (pkey->private_pk_ctx == NULL) {
+        pkey->private_pk_ctx = pax_ctx;
+    }
+    ret = 0;
+cleanup:
+    if ((pax_ctx != NULL) && (pkey->private_pk_ctx == NULL)) {
+        mbedtls_free(pax_ctx);
+    }
+    return ret;
+}
+
+int kss_mbedtls_associate_ecdhctx(
+    mbedtls_ssl_handshake_params *handshake, kss_object_t *pKSSObject, kss_key_store_t *hostKs)
+{
+    kss_status_t status   = kStatus_KSS_Fail;
+    uint32_t objectId[16] = {
+        0,
+    };
+    uint8_t objectIdLen = sizeof(objectId);
+
+    status = kss_util_asn1_get_oid_from_kssObj(pKSSObject, objectId, &objectIdLen);
+    if (status != kStatus_KSS_Success) {
+        return 1;
+    }
+
+    //handshake->ecdh_ctx.grp.id = (mbedtls_ecp_group_id)get_group_id(objectId, objectIdLen);
+
+    //handshake->ecdh_ctx.grp.pKSSObject = pKSSObject;
+    //handshake->ecdh_ctx.grp.hostKs     = hostKs;
+#if LOG_API_CALLS > 1
+    LOG_I("Associating ECC key-pair '%d' for handshake.\r\n", key_index);
+#endif
+    return 0;
+}
+
 int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
 {
     int ret               = 1;
@@ -303,7 +431,7 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
         pkeyObject->cipherType == kKSS_CipherType_EC_BRAINPOOL ||
         pkeyObject->cipherType == kKSS_CipherType_EC_MONTGOMERY ||
         pkeyObject->cipherType == kKSS_CipherType_EC_TWISTED_ED) {
-        LOGD(TAG, "Associating ECC key-pair %ld", pkeyObject->keyId);
+        LOGD(TAG, "Associating ECC key-pair '0x%08" PRIX32 "'", pkeyObject->keyId);
 
         pkey->private_pk_info = &kose_mbedtls_eckeypair_pk_info;
         if (pkey->private_pk_ctx == NULL) {
@@ -320,7 +448,7 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
         ((mbedtls_ecp_keypair *)pax_ctx)->private_grp.pKSSObject = pkeyObject;
         ((mbedtls_ecp_keypair *)pax_ctx)->private_grp.id = MBEDTLS_ECP_DP_SECP256R1;
         
-        /*
+        /*        
         status = kss_util_asn1_get_oid_from_kssObj(pkeyObject, objectId, &objectIdLen);
         if (status != kStatus_KSS_Success) {
             goto cleanup;
@@ -331,7 +459,6 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
             LOGE(TAG, " kss_mbedtls_associate_keypair: Group id not found...\n");
             goto cleanup;
         }*/
-
     }
 #ifdef MBEDTLS_RSA_ALT
     else if (pkeyObject->cipherType == kKSS_CipherType_RSA || pkeyObject->cipherType == kKSS_CipherType_RSA_CRT) {
@@ -394,15 +521,6 @@ cleanup:
         mbedtls_free(pax_ctx);
     }
 
-    LOGD(TAG, "=== pkey Context 상태 체크 ===");
-    LOGD(TAG, "set pkey.pk_info pointer             = %p", pkey->private_pk_info);
-    LOGD(TAG, "set pkey.pk_info->sign pointer       = %p", pkey->private_pk_info ? pkey->private_pk_info->sign_func : NULL);
-    LOGD(TAG, "set pkey.pk_ctx pointer              = %p", pkey->private_pk_ctx);
-    LOGD(TAG, "set pax_ctx pointer                  = %p", ((mbedtls_ecp_keypair *)pax_ctx));
-    LOGD(TAG, "set pax_ctx private_grp.id pointer   = %p", &((mbedtls_ecp_keypair *)pax_ctx)->private_grp.id);
-    LOGD(TAG, "set pax_ctx.pKSSObject->cipherType   = %ld", ((mbedtls_ecp_keypair *)pax_ctx)->private_grp.pKSSObject->cipherType);
-    //LOGD(TAG, "set pax_ctx.pKSSObject pointer   = %p", ((mbedtls_ecp_keypair *)pax_ctx)->private_grp.pKSSObject);
-    
     return ret;
 }
 
@@ -679,138 +797,4 @@ static mbedtls_md_type_t kss_mbedtls_set_padding_get_hash(kss_algorithm_t algori
     return md_alg;
 }
 
-#if 0
-int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
-{
-    int ret               = 1;
-    void *pax_ctx         = NULL;
-    uint32_t objectId[16] = {
-        0,
-    };
-    uint8_t objectIdLen = sizeof(objectId);
-    kss_status_t status = kStatus_KSS_Fail;
 
-    if (pkey->pk_ctx == NULL) {
-        memset(pkey, 0, sizeof(*pkey));
-    }
-
-    if (pkeyObject->cipherType == kKSS_CipherType_EC_NIST_P || pkeyObject->cipherType == kKSS_CipherType_EC_NIST_K ||
-        pkeyObject->cipherType == kKSS_CipherType_EC_BRAINPOOL ||
-        pkeyObject->cipherType == kKSS_CipherType_EC_MONTGOMERY ||
-        pkeyObject->cipherType == kKSS_CipherType_EC_TWISTED_ED) {
-        LOG_D("Associating ECC public key '0x%08X'", pkeyObject->keyId);
-
-        pkey->pk_info = &ax_mbedtls_ecpubkey_info;
-        if (pkey->pk_ctx == NULL) {
-            pax_ctx = (mbedtls_ecp_keypair *)mbedtls_calloc(1, sizeof(mbedtls_ecp_keypair));
-        }
-        else {
-            pax_ctx = pkey->pk_ctx;
-        }
-        if (pax_ctx == NULL) {
-            LOG_E("Memory allocation for pax_ctx failed");
-            goto cleanup;
-        }
-
-        if (pax_ctx == NULL) {
-            return 1;
-        }
-        ((mbedtls_ecp_keypair *)pax_ctx)->grp.pKSSObject = pkeyObject;
-
-        status = kss_util_asn1_get_oid_from_kssObj(pkeyObject, objectId, &objectIdLen);
-        if (status != kStatus_KSS_Success) {
-            goto cleanup;
-        }
-
-        ((mbedtls_ecp_keypair *)pax_ctx)->grp.id = (mbedtls_ecp_group_id)get_group_id(objectId, objectIdLen);
-        if (((mbedtls_ecp_keypair *)pax_ctx)->grp.id == MBEDTLS_ECP_DP_NONE) {
-            LOG_E(" kss_mbedtls_associate_pubkey: Group id not found...\n");
-            goto cleanup;
-        }
-    }
-#ifdef MBEDTLS_RSA_ALT
-    else if (pkeyObject->cipherType == kKSS_CipherType_RSA || pkeyObject->cipherType == kKSS_CipherType_RSA_CRT) {
-        uint8_t pbKey[1400]  = {0};
-        size_t pbKeyBitLen   = 0;
-        size_t pbKeyBytetLen = sizeof(pbKey);
-        uint8_t *modulus     = NULL;
-        size_t modlen        = 0;
-        uint8_t *pubExp      = NULL;
-        size_t pubExplen     = 0;
-
-        pkey->pk_info = &ax_mbedtls_rsapubkey_info;
-        LOG_D("Associating RSA public key '0x%08X'", pkeyObject->keyId);
-        if (pkey->pk_ctx == NULL) {
-            pax_ctx = (mbedtls_rsa_context *)mbedtls_calloc(1, sizeof(mbedtls_rsa_context));
-        }
-        else {
-            pkey->pk_ctx = pax_ctx;
-        }
-        if (pax_ctx == NULL) {
-            LOG_E("Memory allocation for pax_ctx failed");
-            goto cleanup;
-        }
-        ((mbedtls_rsa_context *)pax_ctx)->pKSSObject = pkeyObject;
-
-        status = kss_key_store_get_key(pkeyObject->keyStore, pkeyObject, pbKey, &pbKeyBytetLen, &pbKeyBitLen);
-        if (status != kStatus_KSS_Success) {
-            goto cleanup;
-        }
-
-        status = kss_util_asn1_rsa_parse_public(pbKey, pbKeyBytetLen, &modulus, &modlen, &pubExp, &pubExplen);
-        if (modulus != NULL) {
-            KSS_FREE(modulus);
-            modulus = NULL;
-        }
-        if (pubExp != NULL) {
-            KSS_FREE(pubExp);
-            pubExp = NULL;
-        }
-        if (status != kStatus_KSS_Success) {
-            goto cleanup;
-        }
-
-        if ((SIZE_MAX / 8) < modlen) {
-            goto cleanup;
-        }
-        ((mbedtls_rsa_context *)pax_ctx)->len = (modlen * 8);
-    }
-#endif /* MBEDTLS_RSA_ALT */
-    else {
-        goto cleanup;
-    }
-    if (pkey->pk_ctx == NULL) {
-        pkey->pk_ctx = pax_ctx;
-    }
-    ret = 0;
-cleanup:
-    if ((pax_ctx != NULL) && (pkey->pk_ctx == NULL)) {
-        mbedtls_free(pax_ctx);
-    }
-    return ret;
-}
-
-int kss_mbedtls_associate_ecdhctx(
-    mbedtls_ssl_handshake_params *handshake, kss_object_t *pKSSObject, kss_key_store_t *hostKs)
-{
-    kss_status_t status   = kStatus_KSS_Fail;
-    uint32_t objectId[16] = {
-        0,
-    };
-    uint8_t objectIdLen = sizeof(objectId);
-
-    status = kss_util_asn1_get_oid_from_kssObj(pKSSObject, objectId, &objectIdLen);
-    if (status != kStatus_KSS_Success) {
-        return 1;
-    }
-
-    handshake->ecdh_ctx.grp.id = (mbedtls_ecp_group_id)get_group_id(objectId, objectIdLen);
-
-    handshake->ecdh_ctx.grp.pKSSObject = pKSSObject;
-    handshake->ecdh_ctx.grp.hostKs     = hostKs;
-#if LOG_API_CALLS > 1
-    LOG_I("Associating ECC key-pair '%d' for handshake.\r\n", key_index);
-#endif
-    return 0;
-}
-#endif

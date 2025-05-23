@@ -250,28 +250,27 @@ void command_task(void *arg)
                     kss_session_close(&session);
                     ESP_LOGI(TAG, "End %s", SESSION_CLOSE);
                 }
-                #if 0
                 else if (strcmp((char*)buf, "generate_random") == 0 || strcmp((char*)buf, "5.1") == 0) {    // kss_kose_rng
                     ESP_LOGI(TAG, "Start %s", RANDOM_GEN);
-                    uint8_t *random_data = (uint8_t *)malloc(32); 
+                    //uint8_t *random_data = (uint8_t *)malloc(32); 
+                    uint8_t random_data[32] = {0}; 
                     int dataLen = 32;
                     kss_rng_context_t rng_ctx;
-                    set_se_uart_init_default(&se_uart_init);
-                    se_conn_ctx.connType = kType_SE_Conn_Type_UART;
-                    se_conn_ctx.conn_ctx = &se_uart_init;
+                    //set_se_uart_init_default(&se_uart_init);
+                    //se_conn_ctx.connType = kType_SE_Conn_Type_UART;
+                    //se_conn_ctx.conn_ctx = &se_uart_init;
                     
-                    kStatus = kss_rng_context_init(&rng_ctx, session);
-                    //kStatus = kss_rng_get_random(& rng_ctx, &random_data, dataLen);     
+                    kStatus = kss_rng_context_init(&rng_ctx, &session);
+                    kStatus = kss_rng_get_random(&rng_ctx, random_data, dataLen);     
 
                     if (kStatus_KSS_Success != kStatus) {
                         LOGE(TAG, "kss_kose_rng failed");
                     }
                     ESP_LOGI(TAG, "%s return : %d", RANDOM_GEN, kStatus);
                     ESP_LOGI(TAG, "End %s", RANDOM_GEN);
-                    free(random_data);
+                    //free(random_data);
 
                 }
-                #endif
                 else if (strcmp((char*)buf, "mbedtls_pubkey") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_associate_pubkey
                     ESP_LOGI(TAG, "Start %s", MBEDTLS_ASSOCIATE_PUBKEY);
                     ESP_LOGI(TAG, "End %s", MBEDTLS_ASSOCIATE_PUBKEY);

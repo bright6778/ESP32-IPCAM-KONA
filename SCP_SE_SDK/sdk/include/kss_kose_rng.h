@@ -30,24 +30,8 @@ extern "C" {
 #endif
 
 #define AX_UNUSED_ARG(x) (void)(x)
-#define SSS_RNG_MAX_CONTEXT_SIZE 32
 
-
-/** Random number generator context */
-typedef struct
-{
-    /** Pointer to the session */
-    kss_session_t *session;
-
-    /** Reserved memory for implementation specific extension */
-    struct
-    {
-        uint8_t data[KSS_RNG_MAX_CONTEXT_SIZE];
-    } context;
-
-} kss_rng_context_t;
-
-kss_status_t kss_kose_rng_context_init(kss_rng_context_t *context, kss_kose_session_t *session);
+kss_status_t kss_kose_rng_context_init(kss_kose_rng_context_t *context, kss_kose_session_t *session);
 
 /**
  * @brief Generate random number.
@@ -57,7 +41,7 @@ kss_status_t kss_kose_rng_context_init(kss_rng_context_t *context, kss_kose_sess
  * @param   dataLen required random number length
  * @return  status
  */
-kss_status_t kss_kose_rng_get_random(kss_rng_context_t *context, uint8_t *random_data, size_t dataLen);
+kss_status_t kss_kose_rng_get_random(kss_kose_rng_context_t *context, uint8_t *random_data, size_t dataLen);
 
 /**
  * @brief free random genertor context.
@@ -65,7 +49,7 @@ kss_status_t kss_kose_rng_get_random(kss_rng_context_t *context, uint8_t *random
  * @param   context generator context.
  * @return  status
  */
-kss_status_t kss_kose_rng_context_free(kss_rng_context_t *context);
+kss_status_t kss_kose_rng_context_free(kss_kose_rng_context_t *context);
 
 #ifdef __cplusplus
 }

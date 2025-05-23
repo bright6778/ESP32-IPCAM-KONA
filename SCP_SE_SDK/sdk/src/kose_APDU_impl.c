@@ -84,7 +84,7 @@ smStatus_t Kose_API_GetRandom(pKoseSession_t session_ctx, uint8_t *random)
 smStatus_t Kose_API_GetRandom(pKoseSession_t session_ctx, uint16_t size, uint8_t *randomData, size_t *prandomDataLen)
 {
     smStatus_t retStatus = SM_NOT_OK;
-    tlvHeader_t hdr = {{kKOSE_CLA, kKOSE_GET_DATA, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
+    tlvHeader_t hdr = {{kKOSE_CLA_00, kKOSE_GET_RANDOM, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
@@ -94,19 +94,19 @@ smStatus_t Kose_API_GetRandom(pKoseSession_t session_ctx, uint16_t size, uint8_t
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     size_t rspIndex                        = 0;
 
+    LOGI(TAG, "Kose_API_GetRandom");
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    cmdbuf[4] = size;
+    cmdbufLen = sizeof(hdr.hdr) + 1;
+
     retStatus = DoAPDUTxRx_s_Case2(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
     if (retStatus == SM_OK) {
-        retStatus = SM_NOT_OK;
-        tlvRet    = tlvGet_u8buf(pRspbuf, &rspIndex, rspbufLen, kKOSE_TAG_RANDOM, randomData, prandomDataLen); /*  */
-        if (0 != tlvRet) {
-            goto cleanup;
-        }
-        if ((rspIndex + 2) == rspbufLen) {
-            retStatus = (smStatus_t)((pRspbuf[rspIndex] << 8) | (pRspbuf[rspIndex + 1]));
+        if(get_u8buf(rspbuf, &rspIndex, rspbufLen - 2, randomData, prandomDataLen) != 0)
+        {
+            *prandomDataLen = 0;
         }
     }
 
-cleanup:
     return retStatus;
 }
 
@@ -195,7 +195,7 @@ smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     return retStatus;
 }
 
-smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint8_t objectID)
+smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint8_t objectID, uint8_t *data, size_t *pdataLen)
 {
     objectID = (objectID & 0xFFFF);
     smStatus_t retStatus = SM_NOT_OK;
@@ -208,10 +208,6 @@ smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint8_t objectID)
     uint8_t *pRspbuf                       = &rspbuf[0];
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     size_t rspIndex                        = 0;
-#if VERBOSE_APDU_LOGS
-    NEWLINE();
-    nLog("APDU", NX_LEVEL_DEBUG, "ReadType []");
-#endif /* VERBOSE_APDU_LOGS */
 
     memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
     pCmdbuf[4] = 0x00;
@@ -219,8 +215,9 @@ smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint8_t objectID)
     
     retStatus = DoAPDUTxRx_s_Case2(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
     if (retStatus == SM_OK) {
-        if ((rspIndex + 2) == rspbufLen) {
-            retStatus = (smStatus_t)((pRspbuf[rspIndex] << 8) | (pRspbuf[rspIndex + 1]));
+        if(get_u8buf(rspbuf, &rspIndex, rspbufLen - 2, data, pdataLen) != 0)
+        {
+            *pdataLen = 0;
         }
     }
 

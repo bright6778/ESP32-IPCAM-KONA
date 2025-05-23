@@ -7,7 +7,7 @@
 #include "kss_kose_keystore.h"
 #include "kona_kss_ftr_default.h"
 #include "kss_kose_mbedtls.h"
-#include "kss_mbedtls.h"
+#include "kss_kose_rng.h"
 #include "debug.h"
 
 static const char *TAG = "kona_kss_api.c";
@@ -65,19 +65,6 @@ kss_status_t kss_asymmetric_context_init(kss_asymmetric_t *context,
         return kss_kose_asymmetric_context_init(kose_context, kose_session, kose_keyObject, algorithm, mode);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
-#if KSS_HAVE_HOSTCRYPTO_MBEDTLS
-    if (KSS_SESSION_TYPE_IS_MBEDTLS(session)) {
-        LOGD(TAG, "KSS_SESSION_TYPE_IS_MBEDTLS");
-        kss_mbedtls_asymmetric_t *mbedtls_context = (kss_mbedtls_asymmetric_t *)context;
-        kss_mbedtls_session_t *mbedtls_session    = (kss_mbedtls_session_t *)session;
-        kss_mbedtls_object_t *mbedtls_keyObject   = (kss_mbedtls_object_t *)keyObject;
-        KSS_ASSERT(sizeof(*mbedtls_context) <= sizeof(*context));
-        KSS_ASSERT(sizeof(*mbedtls_session) <= sizeof(*session));
-        KSS_ASSERT(sizeof(*mbedtls_keyObject) <= sizeof(*keyObject));
-        return kss_mbedtls_asymmetric_context_init(
-            mbedtls_context, mbedtls_session, mbedtls_keyObject, algorithm, mode);
-    }
-#endif /* KSS_HAVE_HOSTCRYPTO_MBEDTLS */
     return kStatus_KSS_InvalidArgument;
 }
 
@@ -114,12 +101,6 @@ kss_status_t kss_asymmetric_sign_digest(
         return kss_kose_asymmetric_sign_digest(kose_context, digest, digestLen, signature, signatureLen);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
-#if KSS_HAVE_HOSTCRYPTO_MBEDTLS
-    if (KSS_ASYMMETRIC_TYPE_IS_KOSE(context)) {
-        kss_mbedtls_asymmetric_t *kose_context = (kss_mbedtls_asymmetric_t *)context;
-        return kss_mbedtls_asymmetric_sign_digest(kose_context, digest, digestLen, signature, signatureLen);
-    }
-#endif /* KSS_HAVE_HOSTCRYPTO_MBEDTLS */
     return kStatus_KSS_InvalidArgument;
 }
 
@@ -159,15 +140,6 @@ kss_status_t kss_key_object_init(kss_object_t *keyObject, kss_key_store_t *keySt
         return kss_kose_key_object_init(kose_keyObject, kose_keyStore);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
-#if KSS_HAVE_HOSTCRYPTO_MBEDTLS
-    if (KSS_KEY_STORE_TYPE_IS_MBEDTLS(keyStore)) {
-        kss_mbedtls_object_t *mbedtls_keyObject   = (kss_mbedtls_object_t *)keyObject;
-        kss_mbedtls_key_store_t *mbedtls_keyStore = (kss_mbedtls_key_store_t *)keyStore;
-        KSS_ASSERT(sizeof(*mbedtls_keyObject) <= sizeof(*keyObject));
-        KSS_ASSERT(sizeof(*mbedtls_keyStore) <= sizeof(*keyStore));
-        return kss_mbedtls_key_object_init(mbedtls_keyObject, mbedtls_keyStore);
-    }
-#endif /* KSS_HAVE_HOSTCRYPTO_MBEDTLS */
     return kStatus_KSS_InvalidArgument;
 }
 
@@ -179,21 +151,12 @@ kss_status_t kss_key_object_allocate_handle(kss_object_t *keyObject,
     uint32_t options)
 {
 #if KSS_HAVE_APPLET_KOSE_IOT && KSSFTR_KOSE_KEY_SET
-    LOGD(TAG, "kss_key_object_allocate_handle - KSS_HAVE_APPLET_KOSE_IOT");
     if (KSS_OBJECT_TYPE_IS_KOSE(keyObject)) {
         kss_kose_object_t *kose_keyObject = (kss_kose_object_t *)keyObject;
         return kss_kose_key_object_allocate_handle(
             kose_keyObject, keyId, keyPart, cipherType, keyByteLenMax, options);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
-#if KSS_HAVE_HOSTCRYPTO_MBEDTLS
-    LOGD(TAG, "kss_key_object_allocate_handle - KSS_HAVE_HOSTCRYPTO_MBEDTLS");
-    if (KSS_OBJECT_TYPE_IS_MBEDTLS(keyObject)) {
-        kss_mbedtls_object_t *mbedtls_keyObject = (kss_mbedtls_object_t *)keyObject;
-        return kss_mbedtls_key_object_allocate_handle(
-            mbedtls_keyObject, keyId, keyPart, cipherType, keyByteLenMax, options);
-    }
-#endif /* SSS_HAVE_HOSTCRYPTO_MBEDTLS */
     return kStatus_KSS_InvalidArgument;
 }
 
@@ -208,6 +171,10 @@ kss_status_t kss_key_object_get_handle(kss_object_t *keyObject, uint32_t objectI
     return kStatus_KSS_InvalidArgument;
 }
 
+/**************************************************************************************
+ * key store
+ **************************************************************************************/
+
 kss_status_t kss_key_store_context_init(kss_key_store_t *keyStore, kss_session_t *session)
 {
 #if KSS_HAVE_APPLET_KOSE_IOT
@@ -220,16 +187,6 @@ kss_status_t kss_key_store_context_init(kss_key_store_t *keyStore, kss_session_t
         return kss_kose_key_store_context_init(kose_keyStore, kose_session);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
-#if KSS_HAVE_HOSTCRYPTO_MBEDTLS
-    if (KSS_SESSION_TYPE_IS_MBEDTLS(session)) {
-        kss_mbedtls_key_store_t *mbedtls_keyStore = (kss_mbedtls_key_store_t *)keyStore;
-        kss_mbedtls_session_t *mbedtls_session    = (kss_mbedtls_session_t *)session;
-        KSS_ASSERT(sizeof(*mbedtls_keyStore) <= sizeof(*keyStore));
-        KSS_ASSERT(sizeof(*mbedtls_session) <= sizeof(*session));
-        return kss_mbedtls_key_store_context_init(mbedtls_keyStore, mbedtls_session);
-    }
-#endif /* KSS_HAVE_HOSTCRYPTO_MBEDTLS */
-
     return kStatus_KSS_InvalidArgument;
 }
 
@@ -239,6 +196,59 @@ kss_status_t kss_key_store_allocate(kss_key_store_t *keyStore, uint32_t keyStore
     if (KSS_KEY_STORE_TYPE_IS_KOSE(keyStore)) {
         kss_kose_key_store_t *kose_keyStore = (kss_kose_key_store_t *)keyStore;
         return kss_kose_key_store_allocate(kose_keyStore, keyStoreId);
+    }
+#endif /* KSS_HAVE_APPLET_KOSE_IOT */
+    return kStatus_KSS_InvalidArgument;
+}
+
+kss_status_t kss_key_store_get_key(
+    kss_key_store_t *keyStore, kss_object_t *keyObject, uint8_t *data, size_t *dataLen, size_t *pKeyBitLen)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT && KSSFTR_KOSE_KEY_GET
+    if (KSS_KEY_STORE_TYPE_IS_KOSE(keyStore)) {
+        kss_kose_key_store_t *kose_keyStore = (kss_kose_key_store_t *)keyStore;
+        kss_kose_object_t *kose_keyObject   = (kss_kose_object_t *)keyObject;
+        return kss_kose_key_store_get_key(kose_keyStore, kose_keyObject, data, dataLen, pKeyBitLen);
+    }
+#endif /* KSS_HAVE_APPLET_KOSE_IOT */
+    return kStatus_KSS_InvalidArgument;
+}
+
+/**************************************************************************************
+ * random
+ **************************************************************************************/
+
+kss_status_t kss_rng_context_init(kss_rng_context_t *context, kss_session_t *session)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT
+    if (KSS_SESSION_TYPE_IS_KOSE(session)) {
+        kss_kose_rng_context_t *kose_context = (kss_kose_rng_context_t *)context;
+        kss_kose_session_t *kose_session     = (kss_kose_session_t *)session;
+        KSS_ASSERT(sizeof(*kose_context) <= sizeof(*context));
+        KSS_ASSERT(sizeof(*kose_session) <= sizeof(*session));
+        return kss_kose_rng_context_init(kose_context, kose_session);
+    }
+#endif /* KSS_HAVE_APPLET_KOSE_IOT */
+    return kStatus_KSS_InvalidArgument;
+}
+
+kss_status_t kss_rng_get_random(kss_rng_context_t *context, uint8_t *random_data, size_t dataLen)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT
+    if (KSS_RNG_CONTEXT_TYPE_IS_KOSE(context)) {
+        kss_kose_rng_context_t *kose_context = (kss_kose_rng_context_t *)context;
+        return kss_kose_rng_get_random(kose_context, random_data, dataLen);
+    }
+#endif /* KSS_HAVE_APPLET_KOSE_IOT */
+    return kStatus_KSS_InvalidArgument;
+}
+
+kss_status_t kss_rng_context_free(kss_rng_context_t *context)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT
+    if (KSS_RNG_CONTEXT_TYPE_IS_KOSE(context)) {
+        kss_kose_rng_context_t *kose_context = (kss_kose_rng_context_t *)context;
+        return kss_kose_rng_context_free(kose_context);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
     return kStatus_KSS_InvalidArgument;
