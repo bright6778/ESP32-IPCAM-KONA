@@ -1006,7 +1006,7 @@ kss_status_t kss_key_store_get_key(
  * @param      keyStore   The key store
  * @param      keyObject  The key object that is to be used as a KEK (Key Encryption Key)
  *
- * @return     The sss status.
+ * @return     The kss status.
  */
 kss_status_t kss_key_store_open_key(kss_key_store_t *keyStore, kss_object_t *keyObject);
 
@@ -1016,7 +1016,7 @@ kss_status_t kss_key_store_open_key(kss_key_store_t *keyStore, kss_object_t *key
  * @param      keyStore   The key store
  * @param      keyObject  The key object to be locked / frozen.
  *
- * @return     The sss status.
+ * @return     The kss status.
  */
 kss_status_t kss_key_store_freeze_key(kss_key_store_t *keyStore, kss_object_t *keyObject);
 
@@ -1026,7 +1026,7 @@ kss_status_t kss_key_store_freeze_key(kss_key_store_t *keyStore, kss_object_t *k
  * @param      keyStore   The key store
  * @param      keyObject  The key object to be deleted
  *
- * @return     The sss status.
+ * @return     The kss status.
  */
 kss_status_t kss_key_store_erase_key(kss_key_store_t *keyStore, kss_object_t *keyObject);
 
@@ -1085,6 +1085,22 @@ kss_status_t kss_key_object_allocate_handle(kss_object_t *keyObject,
     size_t keyByteLenMax,
     uint32_t options); /* Check if this can be made kss_key_object_mode_t */
 
+ /**
+ * @brief      Get handle to an existing allocated/provisioned/created Object
+ *
+ *             See @ref kss_key_object_allocate_handle.
+ *
+ *             After calling this API, Ideally keyObject should become equivlant
+ *             to as set after the calling of @ref
+ *             kss_key_object_allocate_handle api.
+ *
+ * @param      keyObject  The key object
+ * @param[in]  keyId      The key identifier
+ *
+ * @return     The kss status.
+ */
+kss_status_t kss_key_object_get_handle(kss_object_t *keyObject, uint32_t keyId);
+
 /**
  * @brief      Get handle to an existing allocated/provisioned/created Object
  *
@@ -1097,7 +1113,7 @@ kss_status_t kss_key_object_allocate_handle(kss_object_t *keyObject,
  * @param      keyObject  The key object
  * @param[in]  objectId   The object identifier
  *
- * @return     The sss status.
+ * @return     The kss status.
  */
 kss_status_t kss_key_object_get_data(kss_object_t *keyObject, uint32_t objectId);
 
@@ -1745,7 +1761,7 @@ void kss_asymmetric_context_free(kss_asymmetric_t *context);
  */ /* end of kss_crypto_asymmetric */
 
 #endif
-#if 0
+
 /**
  * @addtogroup kss_crypto_derive_key
  * @{
@@ -1851,8 +1867,6 @@ kss_status_t kss_derive_key_sobj_one_go(kss_derive_key_t *context,
     kss_object_t *derivedKeyObject,
     uint16_t deriveDataLen);
 
-#endif
-#if 1
 /** @brief Asymmetric key derivation Diffie-Helmann
  *  The function cryptographically derives a key from another key.
  *  For example Diffie-Helmann.
@@ -2003,6 +2017,5 @@ const char *kss_cipher_type_sz(kss_cipher_type_t cipher_type);
 
 #if defined(__cplusplus)
 }
-#endif
 #endif
 #endif /* _KONA_KSS_API_H_ */

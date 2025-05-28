@@ -6,7 +6,7 @@
 #include "kss_kose_keyobj.h"
 #include "kss_kose_keystore.h"
 #include "kona_kss_ftr_default.h"
-#include "kss_kose_mbedtls.h"
+//#include "kss_kose_mbedtls.h"
 #include "kss_kose_rng.h"
 #include "debug.h"
 
@@ -214,6 +214,37 @@ kss_status_t kss_key_store_get_key(
     return kStatus_KSS_InvalidArgument;
 }
 
+kss_status_t kss_key_store_set_key(kss_key_store_t *keyStore,
+    kss_object_t *keyObject,
+    const uint8_t *data,
+    size_t dataLen,
+    size_t keyBitLen,
+    void *options,
+    size_t optionsLen)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT && KSSFTR_KOSE_KEY_SET
+    if (KSS_KEY_STORE_TYPE_IS_KOSE(keyStore)) {
+        kss_kose_key_store_t *kose_keyStore = (kss_kose_key_store_t *)keyStore;
+        kss_kose_object_t *kose_keyObject   = (kss_kose_object_t *)keyObject;
+        return kss_kose_key_store_set_key(
+            kose_keyStore, kose_keyObject, data, dataLen, keyBitLen, options, optionsLen);
+    }
+#endif /* KSS_HAVE_APPLET_KOSE_IOT */
+    return kStatus_KSS_InvalidArgument;
+}
+
+kss_status_t kss_key_store_erase_key(kss_key_store_t *keyStore, kss_object_t *keyObject)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT
+    if (KSS_KEY_STORE_TYPE_IS_KOSE(keyStore)) {
+        kss_kose_key_store_t *kose_keyStore = (kss_kose_key_store_t *)keyStore;
+        kss_kose_object_t *kose_keyObject   = (kss_kose_object_t *)keyObject;
+        return kss_kose_key_store_erase_key(kose_keyStore, kose_keyObject);
+    }
+#endif /* KSS_HAVE_APPLET_KOSE_IOT */
+    return kStatus_KSS_InvalidArgument;
+}
+
 /**************************************************************************************
  * random
  **************************************************************************************/
@@ -253,23 +284,3 @@ kss_status_t kss_rng_context_free(kss_rng_context_t *context)
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
     return kStatus_KSS_InvalidArgument;
 }
-
-#if 0
-kss_status_t kss_rng_context_init(kss_rng_context_t *context, kss_session_t *session)
-{
-   return kss_kose_rng_context_init(context , session);
-}
-
-kss_status_t kss_rng_get_random(kss_rng_context_t *context, uint8_t *random_data, size_t dataLen)
-{
-    LOG_D("FN: %s", __FUNCTION__);
-    return kss_kose_rng_get_random(context, random_data, dataLen);
-}
-
-kss_status_t kss_rng_context_free(kss_rng_context_t *context)
-{
-    LOG_D("FN: %s", __FUNCTION__);
-    return kss_kose_rng_context_free(context);
-
-}
-#endif

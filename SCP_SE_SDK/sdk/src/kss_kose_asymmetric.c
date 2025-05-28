@@ -1,11 +1,11 @@
 //#include "kss_kose_session.h"
-#include <mbedtls/md.h>
+//#include <mbedtls/md.h>
 
 #include "kss_kose_asymmetric.h"
 #include "kona_kss_kose_types.h"
 #include "kose_APDU_impl.h"
-#include "kona_kss_mbedtls_types.h"
-#include "kss_kose_mbedtls.h"
+//#include "kona_kss_mbedtls_types.h"
+//#include "kss_kose_mbedtls.h"
 
 static const char *TAG = "kss_kose_asymmetric.c";
 
@@ -240,7 +240,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
     return retval;
 }
 
-#if 0
+#if 1
 kss_status_t kss_kose_asymmetric_encrypt(
     kss_kose_asymmetric_t *context, const uint8_t *srcData, size_t srcLen, uint8_t *destData, size_t *destLen)
 {
@@ -297,200 +297,6 @@ kss_status_t kss_kose_asymmetric_decrypt(
 #endif
     return retval;
 }
-
-
-#if 0
-kss_status_t kss_kose_asymmetric_sign_digest(
-    kss_kose_asymmetric_t *context, const uint8_t *digest, size_t digestLen, uint8_t *signature, size_t *signatureLen)
-{
-    kss_status_t retval = kStatus_KSS_Fail;
-    smStatus_t status   = SM_NOT_OK;
-
-#if KSSFTR_KOSE_ECC
-    KOSE_ECSignatureAlgo_t ecSignAlgo = kKOSE_ECSignatureAlgo_NA;
-#endif
-
-#if KSSFTR_KOSE_ECC || KSSFTR_KOSE_RSA
-    if (kStatus_KSS_Success != kose_check_input_len(digestLen, context->algorithm)) {
-        LOG_E("Algorithm and digest length do not match");
-        return kStatus_KSS_Fail;
-    }
-#endif
-
-    switch (context->keyObject->cipherType) {
-#if KSSFTR_KOSE_ECC
-    case kKSS_CipherType_EC_NIST_P:
-#if KSS_HAVE_EC_NIST_K
-    case kKSS_CipherType_EC_NIST_K:
-#endif
-#if KSS_HAVE_EC_BP
-    case kKSS_CipherType_EC_BRAINPOOL:
-#endif
-    {
-        ecSignAlgo = kose_get_ec_sign_hash_mode(context->algorithm);
-        status     = Kose_API_ECDSASign(&context->session->s_ctx,
-            context->keyObject->keyId,
-            ecSignAlgo,
-            digest,
-            digestLen,
-            signature,
-            signatureLen);
-        if (status == SM_ERR_APDU_THROUGHPUT) {
-            retval = kStatus_KSS_ApduThroughputError;
-        }
-    } break;
-#if KSS_HAVE_KOSE_VER_GTE_07_02 && KSS_HAVE_EC_MONT
-    case kKSS_CipherType_EC_MONTGOMERY: {
-        LOG_W(
-            "Sign operation is not supported for "
-            "kKSS_CipherType_EC_MONTGOMERY curve");
-        return kStatus_KSS_Fail;
-    } break;
-#endif // KSS_HAVE_KOSE_VER_GTE_07_02 && KSS_HAVE_EC_MONT
-#endif //KSSFTR_KOSE_ECC
-#if KSSFTR_KOSE_RSA && KSS_HAVE_RSA && !KSS_HAVE_HOSTCRYPTO_NONE
-    case kKSS_CipherType_RSA:
-    case kKSS_CipherType_RSA_CRT: {
-        if ((context->algorithm <= kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA512) &&
-            (context->algorithm >= kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA1)) {
-            /* Perform EMSA encoding on input data and and RSA decrypt on emsa data --> RSA sign without hash */
-            /* clang-format off */
-            uint8_t emsa_data[512] = {0,}; /* MAX - SHA512*/
-            size_t emsa_len = sizeof(emsa_data);
-            uint8_t encode_ret = 0;
-            /* clang-format on */
-
-            encode_ret = emsa_encode(context, digest, digestLen, emsa_data, &emsa_len);
-            if (0 != encode_ret) {
-                if (encode_ret == 2) {
-                    return kStatus_KSS_ApduThroughputError;
-                }
-                else {
-                    return kStatus_KSS_Fail;
-                }
-            }
-            status = Kose_API_RSADecrypt(&context->session->s_ctx,
-                context->keyObject->keyId,
-                kKOSE_RSAEncryptionAlgo_NO_PAD,
-                emsa_data,
-                emsa_len,
-                signature,
-                signatureLen);
-            if (status == SM_ERR_APDU_THROUGHPUT) {
-                retval = kStatus_KSS_ApduThroughputError;
-            }
-        }
-        else if ((context->algorithm <= kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA512) &&
-                 (context->algorithm >= kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA1)) {
-            uint8_t encode_ret = 0;
-            /* Perform PKCS1-v15 encoding on input data and and RSA decrypt on PKCS1-v15 data --> RSA sign without hash */
-            /* clang-format off */
-            uint8_t pkcs1v15_encode_data[512] = {0,}; /* MAX - SHA512*/
-            size_t encode_data_len = sizeof(pkcs1v15_encode_data);
-            /* clang-format on */
-
-            encode_ret = pkcs1_v15_encode(context, digest, digestLen, pkcs1v15_encode_data, &encode_data_len);
-            if (0 != encode_ret) {
-                if (encode_ret == 2) {
-                    return kStatus_KSS_ApduThroughputError;
-                }
-                else {
-                    return kStatus_KSS_Fail;
-                }
-            }
-            status = Kose_API_RSADecrypt(&context->session->s_ctx,
-                context->keyObject->keyId,
-                kKOSE_RSAEncryptionAlgo_NO_PAD,
-                pkcs1v15_encode_data,
-                encode_data_len,
-                signature,
-                signatureLen);
-            if (status == SM_ERR_APDU_THROUGHPUT) {
-                retval = kStatus_KSS_ApduThroughputError;
-            }
-        }
-        else if (context->algorithm == kAlgorithm_KSS_RSASSA_PKCS1_V1_5_NO_HASH) {
-            uint8_t encode_ret = 0;
-            /* Perform PKCS1-v15 encoding on input data and and RSA decrypt on PKCS1-v15 data --> RSA sign without hash */
-            /* clang-format off */
-            uint8_t pkcs1v15_encode_data[512] = {0,}; /* MAX - SHA512*/
-            size_t encode_data_len = sizeof(pkcs1v15_encode_data);
-            /* clang-format on */
-
-            encode_ret = pkcs1_v15_encode_no_hash(context, digest, digestLen, pkcs1v15_encode_data, &encode_data_len);
-            if (0 != encode_ret) {
-                if (encode_ret == 2) {
-                    return kStatus_KSS_ApduThroughputError;
-                }
-                else {
-                    return kStatus_KSS_Fail;
-                }
-            }
-            status = Kose_API_RSADecrypt(&context->session->s_ctx,
-                context->keyObject->keyId,
-                kKOSE_RSAEncryptionAlgo_NO_PAD,
-                pkcs1v15_encode_data,
-                encode_data_len,
-                signature,
-                signatureLen);
-            if (status == SM_ERR_APDU_THROUGHPUT) {
-                retval = kStatus_KSS_ApduThroughputError;
-            }
-        }
-        else if (context->algorithm == kAlgorithm_KSS_RSASSA_NO_PADDING) {
-            uint8_t padded_data[512] = {0};
-            size_t padded_len        = sizeof(padded_data);
-
-            size_t parsedKeyByteLen      = 0;
-            uint16_t u16parsedKeyByteLen = 0;
-            status = Kose_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &u16parsedKeyByteLen);
-            if (status == SM_ERR_APDU_THROUGHPUT) {
-                return kStatus_KSS_ApduThroughputError;
-            }
-            parsedKeyByteLen = u16parsedKeyByteLen;
-            if (status != SM_OK) {
-                return kStatus_KSS_Fail;
-            }
-
-            if (digestLen <= parsedKeyByteLen && digestLen > 0) {
-                memset(padded_data, 0x00, padded_len);
-                memcpy(&padded_data[parsedKeyByteLen - digestLen], &digest[0], digestLen);
-                padded_len = parsedKeyByteLen;
-            }
-            else {
-                return kStatus_KSS_Fail;
-            }
-            status = Kose_API_RSADecrypt(&context->session->s_ctx,
-                context->keyObject->keyId,
-                kKOSE_RSAEncryptionAlgo_NO_PAD,
-                padded_data,
-                padded_len,
-                signature,
-                signatureLen);
-            if (status == SM_ERR_APDU_THROUGHPUT) {
-                retval = kStatus_KSS_ApduThroughputError;
-            }
-        }
-        else {
-            LOG_E("Selected padding is not supported for RSA Sign in SE050");
-            return kStatus_KSS_Fail;
-        }
-    } break;
-#endif // KSSFTR_KOSE_RSA && KSS_HAVE_RSA && !KSS_HAVE_HOSTCRYPTO_NONE
-    default:
-        break;
-    }
-
-    if (status == SM_OK) {
-        retval = kStatus_KSS_Success;
-    }
-
-    return retval;
-}
-#endif
-
-
-
 
 kss_status_t kss_kose_asymmetric_sign(
     kss_kose_asymmetric_t *context, const uint8_t *srcData, size_t srcLen, uint8_t *destData, size_t *destLen)

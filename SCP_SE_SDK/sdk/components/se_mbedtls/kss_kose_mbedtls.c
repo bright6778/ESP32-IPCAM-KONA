@@ -104,8 +104,6 @@ static void *kss_eckey_alloc(void)
     return ctx;
 }
 
-
-// static 붙이기
 static int kss_eckey_verify(void *ctx,
     mbedtls_md_type_t md_alg,
     const unsigned char *hash,
@@ -114,7 +112,6 @@ static int kss_eckey_verify(void *ctx,
     size_t sig_len)
 {
     LOGD(TAG, "kss_eckey_verify");
-    /*
     kss_status_t status = kStatus_KSS_Success;
     kss_asymmetric_t asymVerifyCtx;
     kss_object_t *kssObject = NULL;
@@ -143,21 +140,21 @@ static int kss_eckey_verify(void *ctx,
         return 1;
     }
 
-    LOG_I("%s: Verify using key '0x%08X'", __FUNCTION__, pax_ctx->grp.pKSSObject->keyId);
+    //LOGI(TAG, "%s: Verify using key '0x%08X'", __FUNCTION__, pax_ctx->grp.pKSSObject->keyId);
 
     status = kss_asymmetric_context_init(
         &asymVerifyCtx, kssObject->keyStore->session, kssObject, algorithm, kMode_KSS_Verify);
     if (status != kStatus_KSS_Success) {
-        LOG_E(" kss_asymmetric_context_init verify context Failed...\n");
+        LOGE(TAG, " kss_asymmetric_context_init verify context Failed...\n");
         return 1;
     }
 
     status = kss_asymmetric_verify_digest(&asymVerifyCtx, (uint8_t *)hash, hash_len, (uint8_t *)sig, sig_len);
     if (status != kStatus_KSS_Success) {
-        LOG_E(" kss_asymmetric_verify_digest Failed...\n");
+        LOGE(TAG, " kss_asymmetric_verify_digest Failed...\n");
         return 1;
     }
-    */
+
     return (0);
 }
 
@@ -202,16 +199,16 @@ static int kss_eckey_sign(void *ctx,
         return 1;
     }
 
-    if (pcheck_ctx->private_pk_info == &kose_mbedtls_eckeypair_pk_info &&
-        pcheck_ctx->private_pk_ctx != NULL &&
-        pcheck_ctx->private_pk_ctx != ctx)
+    if (pcheck_ctx->pk_info == &kose_mbedtls_eckeypair_pk_info &&
+        pcheck_ctx->pk_ctx != NULL &&
+        pcheck_ctx->pk_ctx != ctx)
     {
         LOGD(TAG, "[WARN] ctx is pk_context*, fixing...");
-        ctx = pcheck_ctx->private_pk_ctx;
+        ctx = pcheck_ctx->pk_ctx;
         pax_ctx = (mbedtls_ecp_keypair *)ctx;
     }
 
-    kssObject = pax_ctx->private_grp.pKSSObject;
+    kssObject = pax_ctx->grp.pKSSObject;
     
     if(kssObject == NULL){
         return kStatus_KSS_Fail;
@@ -287,7 +284,7 @@ int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObj
     uint8_t objectIdLen = sizeof(objectId);
     kss_status_t status = kStatus_KSS_Fail;
 
-    if (pkey->private_pk_ctx == NULL) {
+    if (pkey->pk_ctx == NULL) {
         memset(pkey, 0, sizeof(*pkey));
     }
 
@@ -297,12 +294,12 @@ int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObj
         pkeyObject->cipherType == kKSS_CipherType_EC_TWISTED_ED) {
         LOGD(TAG, "Associating ECC public key '0x%08" PRIX32 "'", pkeyObject->keyId);
 
-        pkey->private_pk_info = &kose_mbedtls_ecpubkey_pk_info;
-        if (pkey->private_pk_ctx == NULL) {
+        pkey->pk_info = &kose_mbedtls_ecpubkey_pk_info;
+        if (pkey->pk_ctx == NULL) {
             pax_ctx = (mbedtls_ecp_keypair *)mbedtls_calloc(1, sizeof(mbedtls_ecp_keypair));
         }
         else {
-            pax_ctx = pkey->private_pk_ctx;
+            pax_ctx = pkey->pk_ctx;
         }
         if (pax_ctx == NULL) {
             LOGE(TAG, "Memory allocation for pax_ctx failed");
@@ -312,7 +309,7 @@ int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObj
         if (pax_ctx == NULL) {
             return 1;
         }
-        ((mbedtls_ecp_keypair *)pax_ctx)->private_grp.pKSSObject = pkeyObject;
+        ((mbedtls_ecp_keypair *)pax_ctx)->grp.pKSSObject = pkeyObject;
 
         /*
         status = kss_util_asn1_get_oid_from_kssObj(pkeyObject, objectId, &objectIdLen);
@@ -322,7 +319,7 @@ int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObj
 
         ((mbedtls_ecp_keypair *)pax_ctx)->grp.id = (mbedtls_ecp_group_id)get_group_id(objectId, objectIdLen);
         if (((mbedtls_ecp_keypair *)pax_ctx)->grp.id == MBEDTLS_ECP_DP_NONE) {
-            LOG_E(" kss_mbedtls_associate_pubkey: Group id not found...\n");
+            LOGE(TAG, " kss_mbedtls_associate_pubkey: Group id not found...\n");
             goto cleanup;
         }
         */
@@ -346,7 +343,7 @@ int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObj
             pkey->pk_ctx = pax_ctx;
         }
         if (pax_ctx == NULL) {
-            LOG_E("Memory allocation for pax_ctx failed");
+            LOGE(TAG, "Memory allocation for pax_ctx failed");
             goto cleanup;
         }
         ((mbedtls_rsa_context *)pax_ctx)->pKSSObject = pkeyObject;
@@ -378,12 +375,12 @@ int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObj
     else {
         goto cleanup;
     }
-    if (pkey->private_pk_ctx == NULL) {
-        pkey->private_pk_ctx = pax_ctx;
+    if (pkey->pk_ctx == NULL) {
+        pkey->pk_ctx = pax_ctx;
     }
     ret = 0;
 cleanup:
-    if ((pax_ctx != NULL) && (pkey->private_pk_ctx == NULL)) {
+    if ((pax_ctx != NULL) && (pkey->pk_ctx == NULL)) {
         mbedtls_free(pax_ctx);
     }
     return ret;
@@ -423,7 +420,7 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
     uint8_t objectIdLen = sizeof(objectId);
     kss_status_t status = kStatus_KSS_Fail;
 
-    if (pkey->private_pk_ctx == NULL) {
+    if (pkey->pk_ctx == NULL) {
         memset(pkey, 0, sizeof(*pkey));
     }
     
@@ -433,20 +430,20 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
         pkeyObject->cipherType == kKSS_CipherType_EC_TWISTED_ED) {
         LOGD(TAG, "Associating ECC key-pair '0x%08" PRIX32 "'", pkeyObject->keyId);
 
-        pkey->private_pk_info = &kose_mbedtls_eckeypair_pk_info;
-        if (pkey->private_pk_ctx == NULL) {
+        pkey->pk_info = &kose_mbedtls_eckeypair_pk_info;
+        if (pkey->pk_ctx == NULL) {
             pax_ctx = (mbedtls_ecp_keypair *)mbedtls_calloc(1, sizeof(mbedtls_ecp_keypair));
         }
         else {
-            pax_ctx = pkey->private_pk_ctx;
+            pax_ctx = pkey->pk_ctx;
         }
         if (pax_ctx == NULL) {
             LOGE(TAG, "Memory allocation for pax_ctx failed");
             goto cleanup;
         }
         
-        ((mbedtls_ecp_keypair *)pax_ctx)->private_grp.pKSSObject = pkeyObject;
-        ((mbedtls_ecp_keypair *)pax_ctx)->private_grp.id = MBEDTLS_ECP_DP_SECP256R1;
+        ((mbedtls_ecp_keypair *)pax_ctx)->grp.pKSSObject = pkeyObject;
+        ((mbedtls_ecp_keypair *)pax_ctx)->grp.id = MBEDTLS_ECP_DP_SECP256R1;
         
         /*        
         status = kss_util_asn1_get_oid_from_kssObj(pkeyObject, objectId, &objectIdLen);
@@ -480,7 +477,7 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
             pax_ctx = pkey->pk_ctx;
         }
         if (pax_ctx == NULL) {
-            LOG_E("Memory allocation for pax_ctx failed");
+            LOGE(TAG, "Memory allocation for pax_ctx failed");
             goto cleanup;
         }
         ((mbedtls_rsa_context *)pax_ctx)->pKSSObject = pkeyObject;
@@ -512,12 +509,12 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
     else {
         goto cleanup;
     }
-    if (pkey->private_pk_ctx == NULL) {
-        pkey->private_pk_ctx = pax_ctx;
+    if (pkey->pk_ctx == NULL) {
+        pkey->pk_ctx = pax_ctx;
     }
     ret = 0;
 cleanup:
-    if ((pax_ctx != NULL) && (pkey->private_pk_ctx == NULL)) {
+    if ((pax_ctx != NULL) && (pkey->pk_ctx == NULL)) {
         mbedtls_free(pax_ctx);
     }
 
@@ -559,10 +556,10 @@ static kss_status_t kss_mbedtls_set_key(
             ENSURE_OR_GO_EXIT(pEcpPrv);
 
             if (keyBitLen == 256) {
-                ret = mbedtls_ecp_group_load(&pEcpPrv->private_grp, MBEDTLS_ECP_DP_CURVE25519);
+                ret = mbedtls_ecp_group_load(&pEcpPrv->grp, MBEDTLS_ECP_DP_CURVE25519);
             }
             else if (keyBitLen == 448) {
-                ret = mbedtls_ecp_group_load(&pEcpPrv->private_grp, MBEDTLS_ECP_DP_CURVE448);
+                ret = mbedtls_ecp_group_load(&pEcpPrv->grp, MBEDTLS_ECP_DP_CURVE448);
             }
             else {
                 ret = 1;
@@ -631,7 +628,7 @@ static kss_status_t kss_mbedtls_set_key(
                 retval = kStatus_KSS_Success;
             }
 #else
-            ret = mbedtls_mpi_read_binary(&pEcpPrv->private_d, data, dataLen);
+            ret = mbedtls_mpi_read_binary(&pEcpPrv->d, data, dataLen);
             ENSURE_OR_GO_EXIT(ret == 0);
             retval = kStatus_KSS_Success;
 #endif
@@ -656,10 +653,10 @@ static kss_status_t kss_mbedtls_set_key(
             pEcpPub = mbedtls_pk_ec(*pk);
             ENSURE_OR_GO_EXIT(pEcpPub);
             if (keyBitLen == 256) {
-                ret = mbedtls_ecp_group_load(&pEcpPub->private_grp, MBEDTLS_ECP_DP_CURVE25519);
+                ret = mbedtls_ecp_group_load(&pEcpPub->grp, MBEDTLS_ECP_DP_CURVE25519);
             }
             else if (keyBitLen == 448) {
-                ret = mbedtls_ecp_group_load(&pEcpPub->private_grp, MBEDTLS_ECP_DP_CURVE448);
+                ret = mbedtls_ecp_group_load(&pEcpPub->grp, MBEDTLS_ECP_DP_CURVE448);
             }
             else {
                 ret = 1;
@@ -715,13 +712,13 @@ static kss_status_t kss_mbedtls_set_key(
                 ret = mbedtls_mpi_read_binary(&pEcpPub->Q.X, pPublicKey, publicKeyLen);
             }
 #else
-            ret = mbedtls_mpi_read_binary(&pEcpPub->private_Q.private_X, data, dataLen);
+            ret = mbedtls_mpi_read_binary(&pEcpPub->Q.X, data, dataLen);
 #endif // Reverse Endianess
 
             (ret == 0) ? (retval = kStatus_KSS_Success) : (retval = kStatus_KSS_Fail);
 
             if (retval == kStatus_KSS_Success) {
-                ret = mbedtls_mpi_lset(&pEcpPub->private_Q.private_Z, 1);
+                ret = mbedtls_mpi_lset(&pEcpPub->Q.Z, 1);
                 (ret == 0) ? (retval = kStatus_KSS_Success) : (retval = kStatus_KSS_Fail);
             }
         }

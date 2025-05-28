@@ -252,13 +252,9 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "generate_random") == 0 || strcmp((char*)buf, "5.1") == 0) {    // kss_kose_rng
                     ESP_LOGI(TAG, "Start %s", RANDOM_GEN);
-                    //uint8_t *random_data = (uint8_t *)malloc(32); 
                     uint8_t random_data[32] = {0}; 
                     int dataLen = 32;
                     kss_rng_context_t rng_ctx;
-                    //set_se_uart_init_default(&se_uart_init);
-                    //se_conn_ctx.connType = kType_SE_Conn_Type_UART;
-                    //se_conn_ctx.conn_ctx = &se_uart_init;
                     
                     kStatus = kss_rng_context_init(&rng_ctx, &session);
                     kStatus = kss_rng_get_random(&rng_ctx, random_data, dataLen);     
@@ -268,8 +264,6 @@ void command_task(void *arg)
                     }
                     ESP_LOGI(TAG, "%s return : %d", RANDOM_GEN, kStatus);
                     ESP_LOGI(TAG, "End %s", RANDOM_GEN);
-                    //free(random_data);
-
                 }
                 else if (strcmp((char*)buf, "mbedtls_pubkey") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_associate_pubkey
                     ESP_LOGI(TAG, "Start %s", MBEDTLS_ASSOCIATE_PUBKEY);
@@ -298,7 +292,7 @@ void command_task(void *arg)
 
 void command_task_create(void)
 {
-    xTaskCreate(command_task, "command_task", 8192, NULL, 1, NULL);
+    xTaskCreate(command_task, "command_task", 16384, NULL, 1, NULL);
 }
 
 void app_main(void)

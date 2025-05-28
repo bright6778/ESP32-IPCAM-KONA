@@ -13,13 +13,15 @@
 #include "kona_kss_kose_config.h"
 #include "kona_kss_api.h"
 #include "kss_kose_mbedtls.h"
+#include "kss_kose_keystore.h"
+//#include "ecdsa_verify_alt.h"
 
 #ifdef DEBUG_PRINT
 #include "esp_log.h"
 #include "debug.h"
 #endif
 
-
+#define ONLY_MBEDTLS_TEST
 #define AWS_IOT_PORT     "8883"
 
 /*
@@ -41,6 +43,9 @@ const int sdk_recommended_ciphersuites[] = {
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
     0
 };
+
+/*The size of the client certificate should be checked when script is used to store it in GP storage and updated here */
+#define SIZE_CLIENT_CERTIFICATE 2048
 
 extern const char client_cert_start[] asm("_binary_client_crt_start");
 extern const char client_cert_end[] asm("_binary_client_crt_end");
@@ -133,7 +138,8 @@ int mqtt_read_response(mbedtls_ssl_context *ssl)
 void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 {
     char err_buf[256];
-
+    uint8_t aclient_cer[SIZE_CLIENT_CERTIFICATE] = {0}; 
+    
     mbedtls_net_context net;
     mbedtls_ssl_context ssl;
     mbedtls_ssl_config conf;
@@ -164,43 +170,128 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
                                  (const unsigned char *)personalization,
                                  strlen(personalization));
 
-    //only test
-    //ret = mbedtls_pk_parse_key(&client_key, (const unsigned char *)client_key_start, client_key_end - client_key_start, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
-    
     // TLS config
     mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
-    ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_start, (root_cert_auth_end - root_cert_auth_start));
-    ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));
     
-    kss_object_t keyobject;
+    kss_object_t keyobject; // device private key object
+    kss_object_t dev_cert;  // device cert object
+    kss_object_t pub_obj;   // CA cert object
+    
     kss_key_store_t keystore;
     kss_status_t kss_status;
     uint32_t key_id = 0x9f7f;
 
     memset(&keystore, 0, sizeof(kss_key_store_t));
-        
+    
     kss_status = kss_key_store_context_init(&keystore, session);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_store_context_init failed res : %d", kss_status);
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    //////////////////// device private key handle /////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    // keypair init
     kss_status = kss_key_object_init(&keyobject, &keystore);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_init failed res : %d", kss_status);
         return;
     }
 
+    // 오브젝트가 할당되어 있다면 kss_key_object_get_handle 호출
+    /* 
     kss_status = kss_key_object_allocate_handle(&keyobject, key_id, kKSS_KeyPart_Pair, kKSS_CipherType_EC_NIST_P, 256, kKeyObject_Mode_Persistent);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kss_status);
         return;
     }
+    */
+
+    kss_status = kss_key_object_get_handle(&keyobject, 0x0100);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
+        return;
+    }
+
+#ifdef ONLY_MBEDTLS_TEST
+    //only test
+    ret = mbedtls_pk_parse_key(&client_key, (const unsigned char *)client_key_start, client_key_end - client_key_start, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
+#endif
+    ////////////////////////////////////////////////////////////////////////
+    //////////////////////// device cert handle ////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    // keypair init
+    kss_status = kss_key_object_init(&dev_cert, &keystore);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_init failed res : %d", kss_status);
+        return;
+    }
+
+    // 오브젝트가 할당되어 있다면 kss_key_object_get_handle 호출
+    /* 
+    kss_status = kss_key_object_allocate_handle(&dev_cert, key_id, kKSS_KeyPart_Pair, kKSS_CipherType_EC_NIST_P, 256, kKeyObject_Mode_Persistent);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kss_status);
+        return;
+    }
+    */
+
+    kss_status = kss_key_object_get_handle(&dev_cert, 0x0700);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
+        return;
+    }
+
+#ifdef ONLY_MBEDTLS_TEST
+    /* doc+:load-certificate-from-se */
+    ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));    //저장된 cert 사용 시
+#endif
+
+    // SE에 저장된 public key를 가져오는 부분
+    /*
+    size_t KeyBitLen = SIZE_CLIENT_CERTIFICATE * 8;
+    size_t KeyByteLen = SIZE_CLIENT_CERTIFICATE;
+
+    kss_status = kss_key_store_get_key(&keystore, &dev_cert, aclient_cer, &KeyByteLen, &KeyBitLen);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_store_get_key failed res : %d", kss_status);
+        return;
+    }
+
+    ret = mbedtls_x509_crt_parse_der(&client_cert, (const unsigned char *)aclient_cer, sizeof(aclient_cer));
+    if (ret < 0) {
+        LOGE(TAG, " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", (unsigned int) -ret);
+        return;
+    }
+    */
+
+    ////////////////////////////////////////////////////////////////////////
+    //////////////////////// Load the trusted CA////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    //펌웨어에서 CA cert 보관 시
+    ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_start, (root_cert_auth_end - root_cert_auth_start)); 
+/*
+    // SE에서 CA Cert 보관 시
+    // mbedtls_pk_free(&cacert.pk); //SE에서 CA Cert 보관 시엔 기존 cacert를 free
+    ret = kss_mbedtls_associate_pubkey(&cacert.pk, &pub_obj);
+    
+    //mbedtls_pk_free(&cacert.pk);
+    kss_kose_set_kss_keystore(&keystore);
+    #if defined(MBEDTLS_ECDSA_VERIFY_ALT)
+        LOGI(TAG, "MBEDTLS_ECDSA_VERIFY_ALT define");
+    #endif
 
     if(kss_mbedtls_associate_keypair(&client_key, &keyobject) != 0){
         LOGE(TAG, "kss_mbedtls_associate_keypair failed");
         return;
     }
+*/
+
+   
+    
+
+
    
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ciphersuites(&conf, sdk_recommended_ciphersuites);
@@ -218,6 +309,9 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     }
 
     mbedtls_net_connect(&net, AWS_IOT_ENDPOINT, AWS_IOT_PORT, MBEDTLS_NET_PROTO_TCP);
+
+
+
     mbedtls_ssl_set_bio(&ssl, &net, mbedtls_net_send, mbedtls_net_recv, NULL);
 /*
     LOGD(TAG, "=== client_key Context 상태 체크 ===");

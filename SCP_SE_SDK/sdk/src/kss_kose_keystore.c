@@ -4,12 +4,13 @@ extern "C" {
 #endif
 
 #include "kona_kss_api.h"
-#include "kona_kss_kose_types.h"
 #include "kona_kss_ftr_default.h"
 #include "kose_APDU_impl.h"
-#include "kss_kose_keystore.h"
 #include "ensure.h"
 #include "kona_kss_util_asn1_der.h"
+#include "kona_kss_policy.h"
+#include "ecdsa_verify_alt.h"
+#include "kss_kose_keystore.h"
 #include "debug.h"
 
 static const char *TAG = "kss_kose_keystore.c";
@@ -238,6 +239,103 @@ exit:
     return;
 }
 
+#if KSSFTR_KOSE_ECC && KSSFTR_KOSE_KEY_SET
+static smStatus_t kss_kose_LL_set_ec_key(pKoseSession_t session_ctx,
+    pKosePolicy_t policy,
+    KOSE_MaxAttemps_t maxAttempt,
+    uint32_t objectID,
+    KOSE_ECCurve_t curveID,
+    const uint8_t *privKey,
+    size_t privKeyLen,
+    const uint8_t *pubKey,
+    size_t pubKeyLen,
+    const KOSE_INS_t ins_type,
+    const KOSE_KeyPart_t key_part,
+    KOSE_Result_t obj_exists)
+{
+    smStatus_t status = SM_NOT_OK;
+#if KSS_HAVE_KOSE_VER_GTE_07_02
+    fp_Ec_KeyWrite_t fpEcKey_Ver = NULL;
+    /* Call APIs For SE051 */
+    if (obj_exists == kKOSE_Result_FAILURE) {
+        fpEcKey_Ver = &Kose_API_WriteECKey_Ver;
+    }
+    else if (obj_exists == kKOSE_Result_SUCCESS) {
+        fpEcKey_Ver = &Kose_API_UpdateECKey_Ver;
+    }
+
+    if (fpEcKey_Ver != NULL) {
+        status = fpEcKey_Ver(session_ctx,
+            policy,
+            maxAttempt,
+            objectID,
+            curveID,
+            privKey,
+            privKeyLen,
+            pubKey,
+            pubKeyLen,
+            ins_type,
+            key_part,
+            0);
+    }
+    else {
+        LOG_E("Invalid Object exist status!!!");
+    }
+
+#else
+    /* Call APIs For KOSE */
+    #if 0 //구현예정
+    AX_UNUSED_ARG(obj_exists);
+    status = Kose_API_WriteECKey(
+        session_ctx, policy, maxAttempt, objectID, curveID, privKey, privKeyLen, pubKey, pubKeyLen, ins_type, key_part);
+    #endif
+#endif
+    return status;
+}
+#endif //KSSFTR_KOSE_ECC
+
+#if KSSFTR_KOSE_KEY_SET
+static smStatus_t kss_kose_LL_set_symm_key(pKoseSession_t session_ctx,
+    pKosePolicy_t policy,
+    KOSE_MaxAttemps_t maxAttempt,
+    uint32_t objectID,
+    KOSE_KeyID_t kekID,
+    const uint8_t *keyValue,
+    size_t keyValueLen,
+    const KOSE_INS_t ins_type,
+    const KOSE_SymmKeyType_t type,
+    KOSE_Result_t obj_exists)
+{
+    smStatus_t status = SM_NOT_OK;
+#if KSS_HAVE_KOSE_VER_GTE_07_02
+    fp_Symm_KeyWrite_t fpSymmKey_Ver = NULL;
+    /* Call APIs For SE051 */
+    if (obj_exists == kKOSE_Result_FAILURE) {
+        fpSymmKey_Ver = &Kose_API_WriteSymmKey_Ver;
+    }
+    else if (obj_exists == kKOSE_Result_SUCCESS) {
+        fpSymmKey_Ver = &Kose_API_UpdateSymmKey_Ver;
+    }
+
+    if (fpSymmKey_Ver != NULL) {
+        status = (*fpSymmKey_Ver)(
+            session_ctx, policy, maxAttempt, objectID, kekID, keyValue, keyValueLen, ins_type, type, 0);
+    }
+    else {
+        LOG_E("Invalid Object exist status!!!");
+    }
+#else
+    /* Call APIs For KOSE */
+    #if 0 //구현예정
+    AX_UNUSED_ARG(obj_exists);
+    status =
+        Kose_API_WriteSymmKey(session_ctx, policy, maxAttempt, objectID, kekID, keyValue, keyValueLen, ins_type, type);
+    #endif
+#endif
+    return status;
+}
+#endif //KSSFTR_KOSE_AES && KSSFTR_KOSE_KEY_SET
+
 /* ************************************************************************** */
 /* Functions : kss_kose_keystore                                             */
 /* ************************************************************************** */
@@ -259,6 +357,11 @@ kss_status_t kss_kose_key_store_allocate(kss_kose_key_store_t *keyStore, uint32_
     AX_UNUSED_ARG(keyStore);
     AX_UNUSED_ARG(keyStoreId);
     return kStatus_KSS_Success;
+}
+
+void kss_kose_set_kss_keystore(kss_key_store_t *ksskeystore)
+{
+    kss_mbedtls_set_kss_keystore(ksskeystore);
 }
 
 kss_status_t kss_kose_key_store_get_key(
@@ -443,6 +546,730 @@ kss_status_t kss_kose_key_store_get_key(
 exit:
     return retval;
 }
+
+
+static kss_status_t kss_kose_key_store_set_ecc_public_key(kss_kose_key_store_t *keyStore,
+    kss_kose_object_t *keyObject,
+    const uint8_t *key,
+    size_t keyLen,
+    size_t keyBitLen,
+    void *policy_buff,
+    size_t policy_buff_len)
+{
+    kss_status_t retval     = kStatus_KSS_Fail;
+    kss_status_t asn_retval = kStatus_KSS_Fail;
+    smStatus_t status       = SM_NOT_OK;
+    KosePolicy_t kose_policy;
+    KOSE_INS_t transient_type;
+    KOSE_ECCurve_t curveId    = keyObject->curve_id;
+    KOSE_KeyPart_t key_part   = kKOSE_KeyPart_NA;
+    KOSE_Result_t exists      = kKOSE_Result_NA;
+    KOSE_ECCurve_t retCurveId = keyObject->curve_id;
+    size_t std_pubKey_len      = 0;
+    size_t std_privKey_len     = 0;
+#if KSS_HAVE_EC_MONT || KSS_HAVE_EC_ED
+    uint8_t pubKeyReversed[64] = {
+        0,
+    };
+#endif
+    const uint8_t *pPublicKey = NULL;
+    size_t publicKeyLen       = 0;
+    uint16_t publicKeyIndex   = 0;
+#if 0
+    /* Assign proper instruction type based on keyObject->isPersistant  */
+    (keyObject->isPersistant) ? (transient_type = kKOSE_INS_NA) : (transient_type = kKOSE_INS_TRANSIENT);
+
+    kose_policy.value     = (uint8_t *)policy_buff;
+    kose_policy.value_len = policy_buff_len;
+
+    if (keyObject->curve_id == 0) {
+        keyObject->curve_id =
+            (KOSE_ECCurve_t)kose_kssKeyTypeLenToCurveId((kss_cipher_type_t)keyObject->cipherType, keyBitLen);
+    }
+
+    if (keyObject->curve_id <= 0) {
+        goto exit;
+    }
+
+    status = kss_kose_create_curve_if_needed(&keyObject->keyStore->session->s_ctx, keyObject->curve_id);
+    if (status == SM_NOT_OK) {
+        goto exit;
+    }
+    else if (status == SM_ERR_APDU_THROUGHPUT) {
+        retval = kStatus_KSS_ApduThroughputError;
+        goto exit;
+    }
+    else if (status == SM_ERR_CONDITIONS_NOT_SATISFIED) {
+        LOGI(TAG, "Allowing SM_ERR_CONDITIONS_NOT_SATISFIED for CreateCurve");
+    }
+
+    status = Kose_API_CheckObjectExists(&keyStore->session->s_ctx, keyObject->keyId, &exists);
+    if (status == SM_ERR_APDU_THROUGHPUT) {
+        retval = kStatus_KSS_ApduThroughputError;
+        goto exit;
+    }
+    ENSURE_OR_GO_EXIT(status == SM_OK);
+
+    if (exists == kKOSE_Result_SUCCESS) {
+        /* Check if object is of same curve id */
+        status = Kose_API_EC_CurveGetId(&keyObject->keyStore->session->s_ctx, keyObject->keyId, &retCurveId);
+        if (status == SM_ERR_APDU_THROUGHPUT) {
+            retval = kStatus_KSS_ApduThroughputError;
+            goto exit;
+        }
+        ENSURE_OR_GO_EXIT(status == SM_OK);
+
+        if (retCurveId == keyObject->curve_id) {
+            curveId = kKOSE_ECCurve_NA;
+        }
+        else {
+            LOGI(TAG, "Cannot overwrite object with different curve id");
+            goto exit;
+        }
+    }
+    else {
+        curveId = keyObject->curve_id;
+    }
+
+    if (exists == kKOSE_Result_FAILURE) {
+        key_part = kKOSE_KeyPart_Public;
+    }
+
+    switch (keyObject->curve_id) {
+    default: {
+        asn_retval = kss_util_pkcs8_asn1_get_ec_public_key_index(key, keyLen, &publicKeyIndex, &publicKeyLen);
+        if (asn_retval != kStatus_KSS_Success) {
+            LOGI(TAG, "error in kss_util_pkcs8_asn1_get_ec_public_key_index");
+            goto exit;
+        }
+
+        asn_retval = getEccPrivPubKeyLen((uint32_t)keyObject->curve_id, &std_pubKey_len, &std_privKey_len);
+        if (asn_retval != kStatus_KSS_Success) {
+            LOGI(TAG, "error in getEccPrivPubKeyLen");
+            goto exit;
+        }
+
+        if (publicKeyLen != std_pubKey_len) {
+            if (key[publicKeyIndex] == 0) {
+                publicKeyIndex++;
+                publicKeyLen--;
+            }
+        }
+        if (publicKeyLen != std_pubKey_len) {
+            LOGI(TAG, "error in public key length");
+            goto exit;
+        }
+    }
+    }
+
+#ifdef TMP_ENDIAN_VERBOSE
+    {
+        printf("Pub Key Before Reverse:\n");
+        for (size_t z = 0; z < publicKeyLen; z++) {
+            printf("%02X.", key[publicKeyIndex + z]);
+        }
+        printf("\n");
+    }
+#endif
+
+    // Conditionally Reverse Endianness
+#if KSS_HAVE_EC_MONT || KSS_HAVE_EC_ED
+    if ((keyObject->curve_id == kKOSE_ECCurve_ECC_MONT_DH_25519) ||
+        (keyObject->curve_id == kKOSE_ECCurve_ECC_MONT_DH_448) ||
+        (keyObject->curve_id == kKOSE_ECCurve_ECC_ED_25519)) {
+        size_t i        = 0;
+        size_t nByteKey = 32; // Corresponds to kKOSE_ECCurve_ECC_MONT_DH_25519
+
+        if (keyObject->curve_id == kKOSE_ECCurve_ECC_MONT_DH_448) {
+            nByteKey = 56;
+        }
+
+        while (i < nByteKey) {
+            pubKeyReversed[i] = key[publicKeyIndex + publicKeyLen - i - 1];
+            i++;
+        }
+        pPublicKey = &pubKeyReversed[0];
+    }
+    else
+#endif // KSS_HAVE_EC_MONT || KSS_HAVE_EC_ED
+    {
+        pPublicKey = &key[publicKeyIndex];
+    }
+
+#ifdef TMP_ENDIAN_VERBOSE
+    {
+        printf("Pub Key After Reverse:\n");
+        for (size_t z = 0; z < publicKeyLen; z++) {
+            printf("%02X.", pPublicKey[z]);
+        }
+        printf("\n");
+    }
+#endif
+
+    status = kss_kose_LL_set_ec_key(&keyStore->session->s_ctx,
+        &kose_policy,
+        KOSE_MaxAttemps_NA,
+        keyObject->keyId,
+        curveId,
+        NULL,
+        0,
+        pPublicKey,
+        publicKeyLen,
+        transient_type,
+        key_part,
+        exists);
+    if (status == SM_ERR_APDU_THROUGHPUT) {
+        retval = kStatus_KSS_ApduThroughputError;
+        goto exit;
+    }
+    ENSURE_OR_GO_EXIT(status == SM_OK);
+
+    retval = kStatus_KSS_Success;
+exit:
+#endif  //0
+    return retval;
+}
+
+static kss_status_t kss_kose_key_store_set_ecc_keypair(kss_kose_key_store_t *keyStore,
+    kss_kose_object_t *keyObject,
+    const uint8_t *key,
+    size_t keyLen,
+    size_t keyBitLen,
+    void *policy_buff,
+    size_t policy_buff_len)
+{
+    kss_status_t retval     = kStatus_KSS_Fail;
+    kss_status_t asn_retval = kStatus_KSS_Fail;
+    smStatus_t status       = SM_NOT_OK;
+    KosePolicy_t kose_policy;
+    KOSE_INS_t transient_type;
+    KOSE_ECCurve_t curveId    = keyObject->curve_id;
+    KOSE_KeyPart_t key_part   = kKOSE_KeyPart_NA;
+    KOSE_Result_t exists      = kKOSE_Result_NA;
+    KOSE_ECCurve_t retCurveId = keyObject->curve_id;
+    size_t std_pubKey_len      = 0;
+    size_t std_privKey_len     = 0;
+#if KSS_HAVE_EC_MONT || KSS_HAVE_EC_ED
+    uint8_t privKeyReversed[64] = {
+        0,
+    };
+    uint8_t pubKeyReversed[64] = {
+        0,
+    };
+#endif
+    const uint8_t *pPrivateKey = NULL;
+    const uint8_t *pPublicKey  = NULL;
+    size_t privateKeyLen       = 0;
+    size_t publicKeyLen        = 0;
+    uint16_t privateKeyIndex   = 0;
+    uint16_t publicKeyIndex    = 0;
+#if 0
+    /* Assign proper instruction type based on keyObject->isPersistant  */
+    (keyObject->isPersistant) ? (transient_type = kKOSE_INS_NA) : (transient_type = kKOSE_INS_TRANSIENT);
+
+    kose_policy.value     = (uint8_t *)policy_buff;
+    kose_policy.value_len = policy_buff_len;
+
+    if (keyObject->curve_id == 0) {
+        keyObject->curve_id =
+            (KOSE_ECCurve_t)kose_kssKeyTypeLenToCurveId((kss_cipher_type_t)keyObject->cipherType, keyBitLen);
+    }
+
+    if (keyObject->curve_id <= 0) {
+        goto exit;
+    }
+
+    status = kss_kose_create_curve_if_needed(&keyObject->keyStore->session->s_ctx, keyObject->curve_id);
+
+    if (status == SM_NOT_OK) {
+        goto exit;
+    }
+    else if (status == SM_ERR_CONDITIONS_NOT_SATISFIED) {
+        LOGI(TAG, "Allowing SM_ERR_CONDITIONS_NOT_SATISFIED for CreateCurve");
+    }
+    status = Kose_API_CheckObjectExists(&keyStore->session->s_ctx, keyObject->keyId, &exists);
+    if (status == SM_ERR_APDU_THROUGHPUT) {
+        retval = kStatus_KSS_ApduThroughputError;
+        goto exit;
+    }
+    ENSURE_OR_GO_EXIT(status == SM_OK);
+
+    if (exists == kKOSE_Result_SUCCESS) {
+        /* Check if object is of same curve id */
+        status = Kose_API_EC_CurveGetId(&keyObject->keyStore->session->s_ctx, keyObject->keyId, &retCurveId);
+        if (status == SM_ERR_APDU_THROUGHPUT) {
+            retval = kStatus_KSS_ApduThroughputError;
+            goto exit;
+        }
+        ENSURE_OR_GO_EXIT(status == SM_OK);
+
+        if (retCurveId == keyObject->curve_id) {
+            curveId = kKOSE_ECCurve_NA;
+        }
+        else {
+            LOGI(TAG, "Cannot overwrite object with different curve id");
+            goto exit;
+        }
+    }
+    else {
+        curveId = keyObject->curve_id;
+    }
+
+    if (exists == kKOSE_Result_FAILURE) {
+        key_part = kKOSE_KeyPart_Pair;
+    }
+
+#if KSS_HAVE_EC_MONT || KSS_HAVE_EC_ED
+    if ((keyObject->curve_id == kKOSE_ECCurve_ECC_MONT_DH_25519) ||
+        (keyObject->curve_id == kKOSE_ECCurve_ECC_MONT_DH_448) ||
+        (keyObject->curve_id == kKOSE_ECCurve_ECC_ED_25519)) {
+        asn_retval = kss_util_rfc8410_asn1_get_ec_pair_key_index(
+            key, keyLen, &publicKeyIndex, &publicKeyLen, &privateKeyIndex, &privateKeyLen);
+        if (asn_retval != kStatus_KSS_Success) {
+            LOGI(TAG, "error in kss_util_rfc8410_asn1_get_ec_pair_key_index");
+            goto exit;
+        }
+    }
+    else
+#endif // KSS_HAVE_EC_MONT || KSS_HAVE_EC_ED
+    {
+        asn_retval = kss_util_pkcs8_asn1_get_ec_pair_key_index(
+            key, keyLen, &publicKeyIndex, &publicKeyLen, &privateKeyIndex, &privateKeyLen);
+        if (asn_retval != kStatus_KSS_Success) {
+            LOGI(TAG, "error in kss_util_pkcs8_asn1_get_ec_pair_key_index");
+            goto exit;
+        }
+    }
+
+    asn_retval = getEccPrivPubKeyLen((uint32_t)keyObject->curve_id, &std_pubKey_len, &std_privKey_len);
+    if (asn_retval != kStatus_KSS_Success) {
+        LOGI(TAG, "error in getEccPrivPubKeyLen");
+        goto exit;
+    }
+
+    if (privateKeyLen != std_privKey_len) {
+        if (key[privateKeyIndex] == 0) {
+            privateKeyIndex++;
+            privateKeyLen--;
+        }
+    }
+    if (privateKeyLen != std_privKey_len) {
+        LOGI(TAG, "error in private key length");
+        goto exit;
+    }
+
+    if (publicKeyLen != std_pubKey_len) {
+        if (key[publicKeyIndex] == 0) {
+            publicKeyIndex++;
+            publicKeyLen--;
+        }
+    }
+    if (publicKeyLen != std_pubKey_len) {
+        LOGI(TAG, "error in public key length");
+        goto exit;
+    }
+
+    // Conditionally Reverse Endianness
+#if KSS_HAVE_EC_MONT || KSS_HAVE_EC_ED
+    if ((keyObject->curve_id == kKOSE_ECCurve_ECC_MONT_DH_25519) ||
+        (keyObject->curve_id == kKOSE_ECCurve_ECC_MONT_DH_448) ||
+        (keyObject->curve_id == kKOSE_ECCurve_ECC_ED_25519)) {
+        size_t i        = 0;
+        size_t nByteKey = 32; // Corresponds to kKOSE_ECCurve_ECC_MONT_DH_25519
+
+        if (keyObject->curve_id == kKOSE_ECCurve_ECC_MONT_DH_448) {
+            nByteKey = 56;
+        }
+
+        if (keyObject->curve_id != kKOSE_ECCurve_ECC_ED_25519) {
+            while (i < nByteKey) {
+                privKeyReversed[i] = key[privateKeyIndex + privateKeyLen - i - 1];
+                i++;
+            }
+            pPrivateKey = &privKeyReversed[0];
+        }
+        else {
+            // KOSE expects private key to be in litte endian format
+            pPrivateKey = &key[privateKeyIndex];
+        }
+        i = 0;
+        while (i < nByteKey) {
+            pubKeyReversed[i] = key[publicKeyIndex + publicKeyLen - i - 1];
+            i++;
+        }
+        pPublicKey = &pubKeyReversed[0];
+    }
+    else
+#endif // KSS_HAVE_EC_MONT || KSS_HAVE_EC_ED
+    {
+        pPrivateKey = &key[privateKeyIndex];
+        pPublicKey  = &key[publicKeyIndex];
+    }
+
+#ifdef TMP_ENDIAN_VERBOSE
+    {
+        printf("Private Key After Reverse:\n");
+        for (size_t z = 0; z < privateKeyLen; z++) {
+            printf("%02X.", pPrivateKey[z]);
+        }
+        printf("\n");
+    }
+#endif
+
+    status = kss_kose_LL_set_ec_key(&keyStore->session->s_ctx,
+        &kose_policy,
+        KOSE_MaxAttemps_UNLIMITED,
+        keyObject->keyId,
+        curveId,
+        pPrivateKey,
+        privateKeyLen,
+        pPublicKey,
+        publicKeyLen,
+        transient_type,
+        key_part,
+        exists);
+    if (status == SM_ERR_APDU_THROUGHPUT) {
+        retval = kStatus_KSS_ApduThroughputError;
+        goto exit;
+    }
+    ENSURE_OR_GO_EXIT(status == SM_OK);
+
+    retval = kStatus_KSS_Success;
+exit:
+#endif //0
+    return retval;
+}
+
+static kss_status_t kss_kose_key_store_set_ecc_private_key(kss_kose_key_store_t *keyStore,
+    kss_kose_object_t *keyObject,
+    const uint8_t *key,
+    size_t keyLen,
+    size_t keyBitLen,
+    void *policy_buff,
+    size_t policy_buff_len)
+{
+    kss_status_t retval     = kStatus_KSS_Fail;
+    kss_status_t asn_retval = kStatus_KSS_Fail;
+    smStatus_t status       = SM_NOT_OK;
+    KosePolicy_t kose_policy;
+    KOSE_INS_t transient_type;
+    KOSE_ECCurve_t curveId    = keyObject->curve_id;
+    KOSE_KeyPart_t key_part   = kKOSE_KeyPart_NA;
+    KOSE_Result_t exists      = kKOSE_Result_NA;
+    KOSE_ECCurve_t retCurveId = keyObject->curve_id;
+    size_t std_pubKey_len      = 0;
+    size_t std_privKey_len     = 0;
+    const uint8_t *pPrivKey    = NULL;
+    size_t privKeyLen          = keyLen;
+    uint16_t privateKeyIndex   = 0;
+#if 0
+    /* Assign proper instruction type based on keyObject->isPersistant  */
+    (keyObject->isPersistant) ? (transient_type = kKOSE_INS_NA) : (transient_type = kKOSE_INS_TRANSIENT);
+
+    kose_policy.value     = (uint8_t *)policy_buff;
+    kose_policy.value_len = policy_buff_len;
+
+    if (keyObject->curve_id == 0) {
+        keyObject->curve_id =
+            (KOSE_ECCurve_t)kose_kssKeyTypeLenToCurveId((kss_cipher_type_t)keyObject->cipherType, keyBitLen);
+    }
+
+    if (keyObject->curve_id <= 0) {
+        goto exit;
+    }
+
+    status = kss_kose_create_curve_if_needed(&keyObject->keyStore->session->s_ctx, keyObject->curve_id);
+
+    if (status == SM_NOT_OK) {
+        goto exit;
+    }
+    else if (status == SM_ERR_CONDITIONS_NOT_SATISFIED) {
+        LOGI(TAG, "Allowing SM_ERR_CONDITIONS_NOT_SATISFIED for CreateCurve");
+    }
+    status = Kose_API_CheckObjectExists(&keyStore->session->s_ctx, keyObject->keyId, &exists);
+    if (status == SM_ERR_APDU_THROUGHPUT) {
+        retval = kStatus_KSS_ApduThroughputError;
+        goto exit;
+    }
+    ENSURE_OR_GO_EXIT(status == SM_OK);
+
+    if (exists == kKOSE_Result_SUCCESS) {
+        /* Check if object is of same curve id */
+        status = Kose_API_EC_CurveGetId(&keyObject->keyStore->session->s_ctx, keyObject->keyId, &retCurveId);
+        if (status == SM_ERR_APDU_THROUGHPUT) {
+            retval = kStatus_KSS_ApduThroughputError;
+            goto exit;
+        }
+        ENSURE_OR_GO_EXIT(status == SM_OK);
+
+        if (retCurveId == keyObject->curve_id) {
+            curveId = kKOSE_ECCurve_NA;
+        }
+        else {
+            LOGI(TAG, "Cannot overwrite object with different curve id");
+            goto exit;
+        }
+    }
+    else {
+        curveId = keyObject->curve_id;
+    }
+
+    if (exists == kKOSE_Result_FAILURE) {
+        key_part = kKOSE_KeyPart_Private;
+    }
+
+    LOGI(TAG, "Private key should be passed without header");
+
+    switch (keyObject->curve_id) {
+#if KSS_HAVE_KOSE_VER_GTE_07_02 && KSS_HAVE_EC_MONT
+    case kKOSE_ECCurve_RESERVED_ID_ECC_MONT_DH_448: {
+        LOGI(TAG, 
+            "Private Key injection is not supported for "
+            "ECC_MONT_DH_448 curve");
+        goto exit;
+    }
+#endif
+    default: {
+        asn_retval = getEccPrivPubKeyLen((uint32_t)keyObject->curve_id, &std_pubKey_len, &std_privKey_len);
+        if (asn_retval != kStatus_KSS_Success) {
+            LOGI(TAG, "error in getEccPrivPubKeyLen");
+            goto exit;
+        }
+
+        if (keyLen != std_privKey_len) {
+            if (key[0] == 0) {
+                privKeyLen      = keyLen - 1;
+                privateKeyIndex = 1;
+            }
+        }
+        if (privKeyLen != std_privKey_len) {
+            LOGI(TAG, "error in private key length");
+            goto exit;
+        }
+    } break;
+    }
+
+    pPrivKey = &key[privateKeyIndex];
+
+    status = kss_kose_LL_set_ec_key(&keyStore->session->s_ctx,
+        &kose_policy,
+        KOSE_MaxAttemps_NA,
+        keyObject->keyId,
+        curveId,
+        pPrivKey,
+        privKeyLen,
+        NULL,
+        0,
+        transient_type,
+        key_part,
+        exists);
+    if (status == SM_ERR_APDU_THROUGHPUT) {
+        retval = kStatus_KSS_ApduThroughputError;
+        goto exit;
+    }
+    ENSURE_OR_GO_EXIT(status == SM_OK);
+
+    retval = kStatus_KSS_Success;
+exit:
+#endif //0
+    return retval;
+}
+
+static kss_status_t kss_kose_key_store_set_ecc_key(kss_kose_key_store_t *keyStore,
+    kss_kose_object_t *keyObject,
+    const uint8_t *key,
+    size_t keyLen,
+    size_t keyBitLen,
+    void *policy_buff,
+    size_t policy_buff_len)
+{
+    kss_status_t retval    = kStatus_KSS_Fail;
+    kss_status_t kssStatus = kStatus_KSS_Fail;
+
+    if (keyObject->objectType == kKSS_KeyPart_Pair) {
+        kssStatus = kss_kose_key_store_set_ecc_keypair(
+            keyStore, keyObject, key, keyLen, keyBitLen, policy_buff, policy_buff_len);
+        if (kssStatus != kStatus_KSS_Success) {
+            LOGE(TAG, "Error in kss_kose_key_store_set_ecc_keypair");
+            retval = kssStatus;
+            goto exit;
+        }
+    }
+    else if (keyObject->objectType == kKSS_KeyPart_Public) {
+        kssStatus = kss_kose_key_store_set_ecc_public_key(
+            keyStore, keyObject, key, keyLen, keyBitLen, policy_buff, policy_buff_len);
+        if (kssStatus != kStatus_KSS_Success) {
+            LOGE(TAG, "Error in kss_kose_key_store_set_ecc_keypair");
+            retval = kssStatus;
+            goto exit;
+        }
+    }
+    else if (keyObject->objectType == kKSS_KeyPart_Private) {
+        kssStatus = kss_kose_key_store_set_ecc_private_key(
+            keyStore, keyObject, key, keyLen, keyBitLen, policy_buff, policy_buff_len);
+        if (kssStatus != kStatus_KSS_Success) {
+            LOGE(TAG, "Error in kss_kose_key_store_set_ecc_keypair");
+            retval = kssStatus;
+            goto exit;
+        }
+    }
+    else {
+        goto exit;
+    }
+
+    retval = kStatus_KSS_Success;
+exit:
+    return retval;
+}
+
+kss_status_t kss_kose_key_store_set_key(kss_kose_key_store_t *keyStore,
+    kss_kose_object_t *keyObject,
+    const uint8_t *key,
+    size_t keyLen,
+    size_t keyBitLen,
+    void *options,
+    size_t optionsLen)
+{
+    kss_status_t retval = kStatus_KSS_Fail;
+
+#if KSSFTR_KOSE_KEY_SET
+
+    kss_cipher_type_t cipher_type = kKSS_CipherType_NONE;
+    kss_policy_t *policies        = (kss_policy_t *)options;
+    uint8_t *ppolicySet;
+    size_t valid_policy_buff_len                  = 0;
+    uint8_t policies_buff[MAX_POLICY_BUFFER_SIZE] = {
+        0,
+    };
+    kss_status_t kssStatus = kStatus_KSS_Fail;
+
+    AX_UNUSED_ARG(optionsLen);
+
+    ENSURE_OR_GO_EXIT(keyStore);
+    ENSURE_OR_GO_EXIT(keyObject);
+
+    if (keyBitLen) {
+        ENSURE_OR_GO_EXIT(key);
+    }
+    cipher_type = (kss_cipher_type_t)keyObject->cipherType;
+/*
+    if (policies) {
+        if (kStatus_KSS_Success !=
+            kss_kose_create_object_policy_buffer(policies, &policies_buff[0], &valid_policy_buff_len)) {
+            goto exit;
+        }
+        ppolicySet = policies_buff;
+    }
+    else {
+        ppolicySet = NULL;
+    }
+*/
+    ppolicySet = NULL;
+
+    switch (cipher_type) {
+#if KSSFTR_KOSE_RSA && KSS_HAVE_RSA
+    case kKSS_CipherType_RSA:
+    case kKSS_CipherType_RSA_CRT:
+        kssStatus = kss_kose_key_store_set_rsa_key(
+            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
+        if (kssStatus != kStatus_KSS_Success) {
+            retval = kssStatus;
+            goto exit;
+        }
+        break;
+#endif
+#if KSSFTR_KOSE_ECC
+    case kKSS_CipherType_EC_NIST_P:
+#if KSS_HAVE_EC_NIST_K
+    case kKSS_CipherType_EC_NIST_K:
+#endif
+#if KSS_HAVE_EC_BP
+    case kKSS_CipherType_EC_BRAINPOOL:
+#endif
+#if KSS_HAVE_EC_MONT
+    case kKSS_CipherType_EC_MONTGOMERY:
+#endif
+#if KSS_HAVE_EC_ED
+    case kKSS_CipherType_EC_TWISTED_ED:
+#endif
+        kssStatus = kss_kose_key_store_set_ecc_key(
+            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
+        if (kssStatus != kStatus_KSS_Success) {
+            retval = kssStatus;
+            goto exit;
+        }
+        break;
+#endif // KSSFTR_KOSE_ECC
+#if 0 // 미구현
+    case kKSS_CipherType_AES:
+        if ((keyLen != 16 && keyLen != 24 && keyLen != 32 && keyLen != 40)) {
+            goto exit;
+        }
+        /* fall through */
+    case kKSS_CipherType_CMAC:
+    case kKSS_CipherType_HMAC:
+#if KSSFTR_KOSE_AES && KSSFTR_KOSE_KEY_SET
+        kssStatus = kss_kose_key_store_set_aes_key(
+            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
+        if (kssStatus != kStatus_KSS_Success) {
+            retval = kssStatus;
+            goto exit;
+        }
+#else
+        goto exit;
+#endif
+        break;
+    case kKSS_CipherType_DES:
+        kssStatus = kss_kose_key_store_set_des_key(
+            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
+        if (kssStatus != kStatus_KSS_Success) {
+            retval = kssStatus;
+            goto exit;
+        }
+        break;
+    case kKSS_CipherType_Binary:
+    case kKSS_CipherType_Certificate: {
+        kssStatus = kss_kose_key_store_set_cert(
+            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
+        if (kssStatus != kStatus_KSS_Success) {
+            retval = kssStatus;
+            goto exit;
+        }
+    } break;
+#endif // 미구현
+    default:
+        goto exit;
+    }
+    retval = kStatus_KSS_Success;
+exit:
+#endif /* KSSFTR_KOSE_KEY_SET */
+    return retval;
+}
+
+kss_status_t kss_kose_key_store_erase_key(kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject)
+{
+    kss_status_t retval = kStatus_KSS_Fail;
+    smStatus_t status   = SM_NOT_OK;
+    ENSURE_OR_GO_EXIT(keyStore);
+    ENSURE_OR_GO_EXIT(keyObject);
+#if 0
+    status = Kose_API_DeleteSecureObject(&keyStore->session->s_ctx, keyObject->keyId);
+    if (SM_OK == status) {
+        LOGD(TAG, "Erased Key id %X", keyObject->keyId);
+        retval = kStatus_KSS_Success;
+    }
+    else {
+        LOGI(TAG, "Could not delete Key id %X", keyObject->keyId);
+        if (status == SM_ERR_APDU_THROUGHPUT) {
+            retval = kStatus_KSS_ApduThroughputError;
+            goto exit;
+        }
+    }
+#endif
+exit:
+    return retval;
+}
+
 
 #ifdef __cplusplus
 }

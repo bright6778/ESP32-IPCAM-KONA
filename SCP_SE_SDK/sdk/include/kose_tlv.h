@@ -177,17 +177,17 @@ typedef struct
     size_t ws_LC;
     /** With Session LC Width 1 or 3 bytes */
     size_t ws_LCW;
-    /** WithSession SE05X command */
+    /** WithSession KOSE  command */
     uint8_t *wsKose_cmd;
-    /** WithSession SE05X command Length */
+    /** WithSession KOSE  command Length */
     size_t wsKose_cmdLen;
-    /** WithSession SE05X Tag1 len */
+    /** WithSession KOSE  Tag1 len */
     size_t wsKose_tag1Len;
-    /** WithSession SE05X Tag1 Width */
+    /** WithSession KOSE  Tag1 Width */
     size_t wsKose_tag1W;
-    /** WithSession SE05X Tag1 Command Data */
+    /** WithSession KOSE  Tag1 Command Data */
     uint8_t *wsKose_tag1Cmd;
-    /** WithSession SE05X Tag1 Command Data Len */
+    /** WithSession KOSE  Tag1 Command Data Len */
     size_t wsKose_tag1CmdLen;
      /** Kose Command Header */
     const tlvHeader_t *koseCmd_hdr;
@@ -270,7 +270,7 @@ typedef struct KoseSession
         uint8_t *pInRxBuf,
         size_t *pInRxBufLen,
         uint8_t hasle);
-#if KSS_HAVE_APPLET_SE05X_IOT
+#if KSS_HAVE_APPLET_KOSE _IOT
     /** It's either a minimal/single implemntation that calls smCom_TransceiveRaw()
      *
      * if pTunnelCtx is Null, directly call smCom_TransceiveRaw()
@@ -301,7 +301,7 @@ typedef struct KoseSession
         uint8_t hasle);
 #endif
     /** pdynScp03Ctx holds the dynamic context information for SCP03 channel */
-    NXSCP03_DynCtx_t *pdynScp03Ctx;
+    SCP03_DynCtx_t *pdynScp03Ctx;
 
     /**Connection data context */
     void *conn_ctx;
@@ -320,7 +320,9 @@ typedef struct KoseSession
 #endif // KSS_HAVE_SCP_SCP03_KSS
 */
 } KoseSession_t;
+#endif
 
+#if 1
 /** KosePolicy_t representing policy in Kose
 * KosePolicy_t structure defines a policy in Kose with a policy value
 * and its length
@@ -332,9 +334,7 @@ typedef struct
     /** Length of Policy value */
     size_t value_len;
 } KosePolicy_t;
-#endif
 
-#if 1
 /**Kose_TimeStamp_t Representing timestamp in Kose
 */
 typedef struct
@@ -344,7 +344,7 @@ typedef struct
 } Kose_TimeStamp_t;
 #endif
 
-#if 0
+
 
 /**Kose_ExtendedFeatures_t Representing Extended feature in Kose
 */
@@ -359,7 +359,7 @@ typedef struct
 typedef struct
 {
     /** Variant of the Kose applet features. */
-    Kose_Variant_t variant;
+    KOSE_Variant_t variant;
     /** Pointer to extended_features. */
     Kose_ExtendedFeatures_t *extended_features;
 } Kose_AppletFeatures_t;
@@ -368,6 +368,7 @@ typedef Kose_AppletFeatures_t *pKoseAppletFeatures_t;
 typedef KoseSession_t *pKoseSession_t;
 typedef KosePolicy_t *pKosePolicy_t;
 
+#if 0 //미구현
 #if defined(VERBOSE_APDU_LOGS) && (VERBOSE_APDU_LOGS == 1)
 #define DO_LOG_V(TAG, DESCRIPTION, VALUE) nLog("APDU", NX_LEVEL_DEBUG, #TAG " [" DESCRIPTION "] = 0x%X", VALUE);
 #define DO_LOG_A(TAG, DESCRIPTION, ARRAY, ARRAY_LEN) \
@@ -574,11 +575,11 @@ smStatus_t DoAPDUTxRx(KoseSession_t *pSessionCtx,
     uint8_t *rspBuf,
     size_t *pRspBufLen);
 
-#if KSS_HAVE_APPLET_SE05X_IOT
+#if KSS_HAVE_APPLET_KOSE_IOT
 smStatus_t Kose_API_I2CM_Send(
     pKoseSession_t sessionId, const uint8_t *buffer, size_t bufferLen, uint8_t *result, size_t *presultLen);
 #endif
-#endif
+#endif //미구현0
 
 typedef KoseSession_t *pKoseSession_t;
 
