@@ -22,6 +22,7 @@
 #endif
 
 #define ONLY_MBEDTLS_TEST
+#define AWS_CA_CERT_ECC
 #define AWS_IOT_PORT     "8883"
 
 /*
@@ -53,6 +54,8 @@ extern const char client_key_start[] asm("_binary_client_key_start");
 extern const char client_key_end[] asm("_binary_client_key_end");
 extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
 extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
+extern const char root_cert_auth_ecc_start[]   asm("_binary_root_cert_auth_ecc_crt_start");
+extern const char root_cert_auth_ecc_end[]   asm("_binary_root_cert_auth_ecc_crt_end");
 
 //extern const mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info; // SE 기반 sign_func 포함
 //extern const mbedtls_pk_info_t mbedtls_eckeypair_pk_info; // SE 기반 sign_func 포함
@@ -243,13 +246,36 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    //////////////////////////// CA cert handle ////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    // CA object init
+    kss_status = kss_key_object_init(&pub_obj, &keystore);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_init failed res : %d", kss_status);
+        return;
+    }
+
+    // 오브젝트가 할당되어 있다면 kss_key_object_get_handle 호출
+    /* 
+    kss_status = kss_key_object_allocate_handle(&pub_obj, key_id, kKSS_KeyPart_Pair, kKSS_CipherType_EC_NIST_P, 256, kKeyObject_Mode_Persistent);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kss_status);
+        return;
+    }
+    */
+
+    kss_status = kss_key_object_get_handle(&pub_obj, 0x0800);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
+        return;
+    }
+
 #ifdef ONLY_MBEDTLS_TEST
     /* doc+:load-certificate-from-se */
     ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));    //저장된 cert 사용 시
-#endif
-
+#else
     // SE에 저장된 public key를 가져오는 부분
-    /*
     size_t KeyBitLen = SIZE_CLIENT_CERTIFICATE * 8;
     size_t KeyByteLen = SIZE_CLIENT_CERTIFICATE;
 
@@ -264,24 +290,44 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         LOGE(TAG, " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", (unsigned int) -ret);
         return;
     }
-    */
+#endif
+
+    
 
     ////////////////////////////////////////////////////////////////////////
     //////////////////////// Load the trusted CA////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     //펌웨어에서 CA cert 보관 시
+#ifdef AWS_CA_CERT_ECC
+    ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_ecc_start, (root_cert_auth_ecc_end - root_cert_auth_ecc_start)); 
+#else
     ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_start, (root_cert_auth_end - root_cert_auth_start)); 
-/*
+#endif
+
     // SE에서 CA Cert 보관 시
     // mbedtls_pk_free(&cacert.pk); //SE에서 CA Cert 보관 시엔 기존 cacert를 free
-    ret = kss_mbedtls_associate_pubkey(&cacert.pk, &pub_obj);
     
+    
+    ret = kss_mbedtls_associate_pubkey(&cacert.pk, &pub_obj);
+    LOGD(TAG, "=== cacert Context 상태 체크 ===");
+    LOGD(TAG, "cacert.pk_info pointer         = %p", cacert.pk.private_pk_info);
+    LOGD(TAG, "cacert.pk_info->sign pointer   = %p", cacert.pk.private_pk_info ? cacert.pk.private_pk_info->verify_func : NULL);
+    LOGD(TAG, "cacert.pk_ctx pointer          = %p", cacert.pk.private_pk_ctx);
+    LOGD(TAG, "cacert private_grp.id pointer  = %p", &((mbedtls_ecp_keypair *)cacert.pk.private_pk_ctx)->private_grp.id);
+    LOGD(TAG, "cacert pax_ctx.id val          = %d", ((mbedtls_ecp_keypair *)cacert.pk.private_pk_ctx)->private_grp.id);
+
+
+
+/*    
     //mbedtls_pk_free(&cacert.pk);
     kss_kose_set_kss_keystore(&keystore);
     #if defined(MBEDTLS_ECDSA_VERIFY_ALT)
         LOGI(TAG, "MBEDTLS_ECDSA_VERIFY_ALT define");
     #endif
+*/
 
+
+/*
     if(kss_mbedtls_associate_keypair(&client_key, &keyobject) != 0){
         LOGE(TAG, "kss_mbedtls_associate_keypair failed");
         return;

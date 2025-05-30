@@ -17,6 +17,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(SCP_SE_SDK)
 
 target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/root_cert_auth.crt" TEXT)
+target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/root_cert_auth_ecc.crt" TEXT)
 target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/client.crt" TEXT)
 target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/client.key" TEXT)
 

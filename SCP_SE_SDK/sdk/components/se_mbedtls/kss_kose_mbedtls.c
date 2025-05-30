@@ -140,7 +140,7 @@ static int kss_eckey_verify(void *ctx,
         return 1;
     }
 
-    //LOGI(TAG, "%s: Verify using key '0x%08X'", __FUNCTION__, pax_ctx->grp.pKSSObject->keyId);
+    LOGD(TAG, "%s: Verify using key %08" PRIX32"", __FUNCTION__, pax_ctx->grp.pKSSObject->keyId);
 
     status = kss_asymmetric_context_init(
         &asymVerifyCtx, kssObject->keyStore->session, kssObject, algorithm, kMode_KSS_Verify);
@@ -155,7 +155,7 @@ static int kss_eckey_verify(void *ctx,
         return 1;
     }
 
-    return (0);
+    return 0;
 }
 
 static int kss_eckey_sign(void *ctx,
@@ -310,6 +310,7 @@ int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObj
             return 1;
         }
         ((mbedtls_ecp_keypair *)pax_ctx)->grp.pKSSObject = pkeyObject;
+        ((mbedtls_ecp_keypair *)pax_ctx)->grp.id = MBEDTLS_ECP_DP_SECP256R1;
 
         /*
         status = kss_util_asn1_get_oid_from_kssObj(pkeyObject, objectId, &objectIdLen);
@@ -334,8 +335,8 @@ int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObj
         uint8_t *pubExp      = NULL;
         size_t pubExplen     = 0;
 
-        pkey->pk_info = &ax_mbedtls_rsapubkey_info;
-        LOG_D("Associating RSA public key '0x%08X'", pkeyObject->keyId);
+        //pkey->pk_info = &ax_mbedtls_rsapubkey_info;
+        LOGD(TAG, "Associating RSA public key %08" PRIX32 "", pkeyObject->keyId);
         if (pkey->pk_ctx == NULL) {
             pax_ctx = (mbedtls_rsa_context *)mbedtls_calloc(1, sizeof(mbedtls_rsa_context));
         }
@@ -355,11 +356,11 @@ int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObj
 
         status = kss_util_asn1_rsa_parse_public(pbKey, pbKeyBytetLen, &modulus, &modlen, &pubExp, &pubExplen);
         if (modulus != NULL) {
-            KSS_FREE(modulus);
+            free(modulus);
             modulus = NULL;
         }
         if (pubExp != NULL) {
-            KSS_FREE(pubExp);
+            free(pubExp);
             pubExp = NULL;
         }
         if (status != kStatus_KSS_Success) {
@@ -457,7 +458,7 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
             goto cleanup;
         }*/
     }
-#ifdef MBEDTLS_RSA_ALT
+#ifdef MBEDTLS_RSA_ALT_ // SE에선 현재 미적용
     else if (pkeyObject->cipherType == kKSS_CipherType_RSA || pkeyObject->cipherType == kKSS_CipherType_RSA_CRT) {
         uint8_t pbKey[1024]  = {0};
         size_t pbKeyBitLen   = 0;
@@ -467,9 +468,9 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
         uint8_t *pubExp      = NULL;
         size_t pubExplen     = 0;
 
-        LOG_D("Associating RSA key-pair '0x%08X'", pkeyObject->keyId);
+        LOGD(TAG, "Associating RSA key-pair '0x%08X'", pkeyObject->keyId);
 
-        pkey->pk_info = &ax_mbedtls_rsakeypair_info;
+        //pkey->pk_info = &_mbedtls_rsakeypair_info;
         if (pkey->pk_ctx == NULL) {
             pax_ctx = (mbedtls_rsa_context *)mbedtls_calloc(1, sizeof(mbedtls_rsa_context));
         }
@@ -489,11 +490,11 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
 
         status = kss_util_asn1_rsa_parse_public(pbKey, pbKeyBytetLen, &modulus, &modlen, &pubExp, &pubExplen);
         if (modulus != NULL) {
-            KSS_FREE(modulus);
+            free(modulus);
             modulus = NULL;
         }
         if (pubExp != NULL) {
-            KSS_FREE(pubExp);
+            free(pubExp);
             pubExp = NULL;
         }
         if (status != kStatus_KSS_Success) {

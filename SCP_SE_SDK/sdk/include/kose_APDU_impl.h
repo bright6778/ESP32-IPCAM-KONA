@@ -22,4 +22,22 @@ smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     uint8_t *signature,
     size_t *psignatureLen);
 
+smStatus_t Kose_API_EdDSAVerify(pKoseSession_t session_ctx,
+    uint32_t objectID,
+    KOSE_EDSignatureAlgo_t edSignAlgo,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    const uint8_t *signature,
+    size_t signatureLen,
+    KOSE_Result_t *presult);
+
+smStatus_t Kose_API_ECDSAVerify(pKoseSession_t session_ctx,
+    uint32_t objectID,
+    KOSE_ECSignatureAlgo_t ecSignAlgo,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    const uint8_t *signature,
+    size_t signatureLen,
+    KOSE_Result_t *presult);
+
 smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint8_t objectID, uint8_t *data, size_t *pdataLen);

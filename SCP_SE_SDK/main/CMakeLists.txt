@@ -21,3 +21,7 @@ target_include_directories(${COMPONENT_LIB} PUBLIC
 )
 
 add_compile_options(-I${CMAKE_SOURCE_DIR}/sdk/components/se_mbedtls)
+
+set_property(TARGET mbedtls APPEND PROPERTY
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/sdk/include"
+)

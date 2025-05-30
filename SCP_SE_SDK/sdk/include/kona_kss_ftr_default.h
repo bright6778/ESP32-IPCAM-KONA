@@ -383,7 +383,7 @@
 #define KSSFTR_KOSE_ECC 1
 
 /** KOSE Secure Element : RSA */
-#define KSSFTR_KOSE_RSA 0
+#define KSSFTR_KOSE_RSA 1
 
 /** KOSE Secure Element : KEY operations : SET Key */
 #define KSSFTR_KOSE_KEY_SET 1
@@ -477,7 +477,7 @@
 #define KSS_HAVE_ECC 1
 
 /* RSA is available */
-#define KSS_HAVE_RSA 1
+#define KSS_HAVE_RSA 0
 
 /* Edwards Curve is enabled */
 #define KSS_HAVE_EC_ED 1

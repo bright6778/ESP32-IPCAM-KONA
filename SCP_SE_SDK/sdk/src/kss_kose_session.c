@@ -8,6 +8,7 @@
 #include "kose_APDU_impl.h"
 #include "kona_kss_api.h"
 #include "kose_tlv.h"
+#include "ensure.h"
 #include "debug.h"
 #include "scp03_Types.h"
 #include "kona_kss_ftr_default.h"

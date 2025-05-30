@@ -4,6 +4,7 @@
 #include "kss_kose_asymmetric.h"
 #include "kona_kss_kose_types.h"
 #include "kose_APDU_impl.h"
+#include "kona_kss_ftr_default.h"
 //#include "kona_kss_mbedtls_types.h"
 //#include "kss_kose_mbedtls.h"
 
@@ -70,6 +71,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
     KOSE_ECSignatureAlgo_t ecSignAlgo = kKOSE_ECSignatureAlgo_NA;
 
     LOGD(TAG, "kss_kose_asymmetric_sign_digest");
+    LOGD(TAG, "context->keyObject->cipherType : %lu", context->keyObject->cipherType);
 /*
 #if KSSFTR_KOSE_ECC || KSSFTR_KOSE_RSA
     if (kStatus_KSS_Success != kose_check_input_len(digestLen, context->algorithm)) {
@@ -101,6 +103,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
         }
     } break;
 #endif //KSSFTR_KOSE_ECC
+LOGD(TAG, "KSSFTR_KOSE_ECC end");
 #if KSSFTR_KOSE_RSA && KSS_HAVE_RSA && !KSS_HAVE_HOSTCRYPTO_NONE
     case kKSS_CipherType_RSA:
     case kKSS_CipherType_RSA_CRT: {
@@ -297,7 +300,7 @@ kss_status_t kss_kose_asymmetric_decrypt(
 #endif
     return retval;
 }
-
+/*
 kss_status_t kss_kose_asymmetric_sign(
     kss_kose_asymmetric_t *context, const uint8_t *srcData, size_t srcLen, uint8_t *destData, size_t *destLen)
 {
@@ -409,7 +412,7 @@ kss_status_t kss_kose_asymmetric_sign(
 
     return retval;
 }
-
+*/
 kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
     const uint8_t *digest,
     size_t digestLen,
@@ -423,11 +426,12 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
 #endif // KSSFTR_KOSE_ECC || KSSFTR_KOSE_RSA
 
 #if KSSFTR_KOSE_ECC || KSSFTR_KOSE_RSA
+/*
     if (kStatus_KSS_Success != kose_check_input_len(digestLen, context->algorithm)) {
-        LOG_E("Algorithm and digest length do not match");
+        LOGE(TAG, "Algorithm and digest length do not match");
         return kStatus_KSS_Fail;
     }
-
+*/
     switch (context->keyObject->cipherType) {
 #if KSSFTR_KOSE_ECC
     case kKSS_CipherType_EC_NIST_P:

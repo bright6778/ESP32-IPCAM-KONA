@@ -11,7 +11,6 @@ extern "C" {
 #include "debug.h"
 
 static const char *TAG = "kss_kose_keyobj.c";
-
 /* ************************************************************************** */
 /* Functions : kss_kose_keyobj                                                */
 /* ************************************************************************** */
@@ -85,6 +84,19 @@ kss_status_t kss_kose_key_object_get_handle(kss_kose_object_t *keyObject, uint32
         &keyObject->keyStore->session->s_ctx, objectId, &retObjectType, &retTransientType, attestationType);
         */
     LOGD(TAG, "Kose_API_GetData end");
+
+    keyObject->cipherType = kKSS_CipherType_EC_NIST_P;
+    keyObject->curve_id = kKOSE_ECCurve_NIST_P256;
+    //keyObject->objectType = kKSS_KeyPart_Pair;
+    if(objectId >= ECC_KEYPAIR_PRIVATE_START && objectId <= ECC_KEYPAIR_PRIVATE_END)
+    {
+        keyObject->objectType = kKSS_KeyPart_Private;
+    }
+    else if(objectId >= ECC_KEYPAIR_PUBLIC_START && objectId <= ECC_KEYPAIR_PUBLIC_END)
+    {
+        keyObject->objectType = kKSS_KeyPart_Public;
+    }
+    
 #if 0
         if (apiRetval == SM_OK) {
         keyObject->isPersistant = retTransientType;

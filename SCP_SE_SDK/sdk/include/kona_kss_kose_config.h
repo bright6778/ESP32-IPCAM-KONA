@@ -24,7 +24,7 @@ extern "C" {
 
 #define KSS_SESSION_MAX_CONTEXT_SIZE 100
 #define DEBUG_PRINT
-#define KSS_HAVE_APPLET_KOSE_IOT 1
+//#define KSS_HAVE_APPLET_KOSE_IOT 1
 
 /* clang-format off */
 /*

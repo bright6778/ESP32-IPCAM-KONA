@@ -1,3 +1,13 @@
+/* ************************************************************************** */
+/* Defines : kss_kose_keyobj                                                */
+/* ************************************************************************** */
+#define SYSTEM_FILE_START           0x0000
+#define SYSTEM_FILE_END             0x00FF
+#define ECC_KEYPAIR_PRIVATE_START   0x0100
+#define ECC_KEYPAIR_PRIVATE_END     0X01FF
+#define ECC_KEYPAIR_PUBLIC_START    0x0200
+#define ECC_KEYPAIR_PUBLIC_END      0X02FF
+
 /**
  * @addtogroup kss_kose_keyobj
  * @{

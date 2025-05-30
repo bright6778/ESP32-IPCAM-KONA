@@ -16,9 +16,11 @@
  
  #include <string.h>
  #include <limits.h>
+ #include "kona_kss_kose_types.h"
  #include "kose_APDU_impl.h"
  #include "kss_kose_uart.h"
  #include "kose_tlv.h"
+ #include "kss_kose_keyobj.h"
 
  static const char *TAG = "kose_APDU_impl.c";
 
@@ -166,9 +168,137 @@ smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     uint8_t *signature,
     size_t *psignatureLen)
 {
-    objectID = (objectID & 0xFFFF);
+    LOGD(TAG, "Kose_API_ECDSASign");
+    objectID = (objectID & 0xFF00) | (objectID & 0x00FF);
     smStatus_t retStatus = SM_NOT_OK;
-    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_SIGN_CDATA, kKOSE_P1_ECC_PRIVATE, kKOSE_P2_DEFAULT}};
+    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_SIGN_CDATA, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    int tlvRet                             = 0;
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    uint8_t *pRspbuf                       = &rspbuf[0];
+    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
+    size_t rspIndex                        = 0;
+
+    uint8_t *pLc = &pCmdbuf[4]; // lc pointer
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    DataSet_u8buf(&pData, (uint8_t*)&objectID, 2);
+    DataSet_u8buf(&pData, inputData, inputDataLen);
+    lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, inputDataLen + 2);
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+
+    retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+    if (retStatus == SM_OK) {
+        if(get_u8buf(rspbuf, &rspIndex, rspbufLen - 2, signature, psignatureLen) != 0)
+        {
+            *psignatureLen = 0;
+        }
+    }
+
+    return retStatus;
+}
+
+smStatus_t Kose_API_ECDSAVerify(pKoseSession_t session_ctx,
+    uint32_t objectID,
+    KOSE_ECSignatureAlgo_t ecSignAlgo,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    const uint8_t *signature,
+    size_t signatureLen,
+    KOSE_Result_t *presult)
+{
+    uint8_t hdr_p1 = kKOSE_P1_DEFAULT;
+    objectID = (objectID & 0xFFFF);
+    if(objectID >= ECC_KEYPAIR_PRIVATE_START && objectID <= ECC_KEYPAIR_PRIVATE_END)
+    {
+        hdr_p1 = kKOSE_P1_ECC_PRIVATE;
+    }
+    
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_VERIFY_SIGNATURE, hdr_p1, kKOSE_P2_DEFAULT}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    int tlvRet                             = 0;
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    uint8_t *pRspbuf                       = &rspbuf[0];
+    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
+    size_t rspIndex                        = 0;
+
+    LOGD(TAG, "Kose_API_ECDSAVerify");
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    uint8_t *pLc = &pCmdbuf[4];
+    lvDataSet_u8buf(&pLc, &cmdbufLen, inputData, inputDataLen);
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+
+    retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+    /*
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kKOSE_CLA, kKOSE_INS_CRYPTO, kKOSE_P1_SIGNATURE, kKOSE_P2_VERIFY}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    int tlvRet                             = 0;
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    uint8_t *pRspbuf                       = &rspbuf[0];
+    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
+    size_t rspIndex                        = 0;
+
+    tlvRet = TLVSET_U32("objectID", &pCmdbuf, &cmdbufLen, kKOSE_TAG_1, objectID);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_ECSignatureAlgo("ecSignAlgo", &pCmdbuf, &cmdbufLen, kKOSE_TAG_2, ecSignAlgo);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_u8bufOptional("inputData", &pCmdbuf, &cmdbufLen, kKOSE_TAG_3, inputData, inputDataLen);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_u8bufOptional("signature", &pCmdbuf, &cmdbufLen, kKOSE_TAG_5, signature, signatureLen);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    retStatus = DoAPDUTxRx_s_Case4(session_ctx, &hdr, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+    if (retStatus == SM_OK) {
+        retStatus = SM_NOT_OK;
+        tlvRet    = tlvGet_Result(pRspbuf, &rspIndex, rspbufLen, kKOSE_TAG_1, presult);
+        if (0 != tlvRet) {
+            goto cleanup;
+        }
+        if ((rspIndex + 2) == rspbufLen) {
+            retStatus = (smStatus_t)((pRspbuf[rspIndex] << 8) | (pRspbuf[rspIndex + 1]));
+        }
+    }
+
+cleanup:
+*/
+    return retStatus;
+}
+
+smStatus_t Kose_API_EdDSAVerify(pKoseSession_t session_ctx,
+    uint32_t objectID,
+    KOSE_EDSignatureAlgo_t edSignAlgo,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    const uint8_t *signature,
+    size_t signatureLen,
+    KOSE_Result_t *presult)
+{
+    uint8_t hdr_p1 = kKOSE_P1_DEFAULT;
+    objectID = (objectID & 0xFFFF);
+    if(objectID >= ECC_KEYPAIR_PRIVATE_START && objectID <= ECC_KEYPAIR_PRIVATE_END)
+    {
+        hdr_p1 = kKOSE_P1_ECC_PRIVATE;
+    }
+    
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_VERIFY_SIGNATURE, hdr_p1, kKOSE_P2_DEFAULT}};
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
@@ -185,12 +315,57 @@ smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
 
     retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+    /*
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kKOSE_CLA, kKOSE_INS_CRYPTO, kKOSE_P1_SIGNATURE, kKOSE_P2_VERIFY}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    int tlvRet                             = 0;
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    uint8_t *pRspbuf                       = &rspbuf[0];
+    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
+    size_t rspIndex                        = 0;
+    
+    tlvRet = TLVSET_U32("objectID", &pCmdbuf, &cmdbufLen, kKOSE_TAG_1, objectID);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_EDSignatureAlgo("edSignAlgo", &pCmdbuf, &cmdbufLen, kKOSE_TAG_2, edSignAlgo);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_u8bufOptional("inputData", &pCmdbuf, &cmdbufLen, kKOSE_TAG_3, inputData, inputDataLen);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    tlvRet = TLVSET_u8bufOptional("signature", &pCmdbuf, &cmdbufLen, kKOSE_TAG_5, signature, signatureLen);
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+
+    retStatus = DoAPDUTxRx_s_Case4(session_ctx, &hdr, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+    if (retStatus == SM_OK) {
+        retStatus = SM_NOT_OK;
+        tlvRet    = tlvGet_Result(pRspbuf, &rspIndex, rspbufLen, kKOSE_TAG_1, presult);
+        if (0 != tlvRet) {
+            goto cleanup;
+        }
+        if ((rspIndex + 2) == rspbufLen) {
+            retStatus = (smStatus_t)((pRspbuf[rspIndex] << 8) | (pRspbuf[rspIndex + 1]));
+        }
+    }
+    */
+
+    /*
     if (retStatus == SM_OK) {
         if(get_u8buf(rspbuf, &rspIndex, rspbufLen - 2, signature, psignatureLen) != 0)
         {
             *psignatureLen = 0;
         }
     }
+cleanup:
+    */
 
     return retStatus;
 }

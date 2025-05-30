@@ -47,6 +47,21 @@ typedef struct mbedtls_pk_info_t{
         unsigned char *sig, size_t sig_size, size_t *sig_len,
         int (*f_rng)(void *, unsigned char *, size_t),
         void *p_rng);
+        
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+    /** Verify signature (restartable) */
+    int (*verify_rs_func)(void *ctx, mbedtls_md_type_t md_alg,
+                          const unsigned char *hash, size_t hash_len,
+                          const unsigned char *sig, size_t sig_len,
+                          void *rs_ctx);
+
+    /** Make signature (restartable) */
+    int (*sign_rs_func)(void *ctx, mbedtls_md_type_t md_alg,
+                        const unsigned char *hash, size_t hash_len,
+                        unsigned char *sig, size_t *sig_len,
+                        int (*f_rng)(void *, unsigned char *, size_t),
+                        void *p_rng, void *rs_ctx);
+#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
 
     /** Decrypt message */
     int (*decrypt_func)(void *ctx, const unsigned char *input, size_t ilen,
@@ -66,12 +81,22 @@ typedef struct mbedtls_pk_info_t{
     void *(*ctx_alloc_func)(void);
     void (*ctx_free_func)(void *);
 
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+    /** Allocate the restart context */
+    void *(*rs_alloc_func)(void);
+
+    /** Free the restart context */
+    void (*rs_free_func)(void *rs_ctx);
+#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+
     int (*debug_func)(const void *, mbedtls_pk_debug_item *items);
 } mbedtls_pk_info_t;
 
 //extern const mbedtls_pk_info_t kose_pk_info;
 extern const mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info;
 extern const mbedtls_pk_info_t kose_mbedtls_ecpubkey_pk_info;
+extern const mbedtls_pk_info_t kose_mbedtls_rsakeypair_info;
+extern const mbedtls_pk_info_t kose_mbedtls_rsapubkey_info;
 
 void setup_se_default_pk_info();
 static int kss_eckey_check_pair(const void *pub, const void *prv);

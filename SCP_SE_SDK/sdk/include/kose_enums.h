@@ -20,6 +20,8 @@ typedef enum
     kKOSE_GET_DATA = 0xCA,
     /** INS SIGN CDATA */
     kKOSE_INS_SIGN_CDATA = 0x2A,
+    /** INS VERIFY SIGNATURE */
+    kKOSE_INS_VERIFY_SIGNATURE = 0x20,
     /** INS Get Random */
     kKOSE_GET_RANDOM = 0x84,
     
