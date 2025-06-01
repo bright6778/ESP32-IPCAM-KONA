@@ -146,6 +146,7 @@ void print_manu(){
     printf("CMD : com_initialize_update or 3.3      - %s\n", APDU_INITIALIZE_UPDATE);
     printf("CMD : com_external_authenticate or 3.4  - %s\n", APDU_EXTERNAL_AUTHENTICATE);
     printf("CMD : com_store_data or 3.5             - %s\n", APDU_STORE_DATA);
+    printf("CMD : com_put_key or 3.6                - %s\n", APDU_PUT_KEY);
     printf("CMD : generate random 5.1               - %s\n", RANDOM_GEN);
     printf("CMD : mbedtls_pubkey or 9.1             - %s\n", MBEDTLS_ASSOCIATE_PUBKEY);
     printf("CMD : aws_mqtt or 11.1                  - %s\n", AWS_IOT_DEMO);
@@ -297,6 +298,12 @@ void command_task(void *arg)
                     size_t recLen = 0;
                     Kose_API_StoreData(&kose_session->s_ctx, 0x22337788, 0x010203, 0x01, 0x00, (uint8_t *)"\x01\x02\x03\x04\x05\x06\x07\x08", 8);
                     ESP_LOGI(TAG, "End %s", APDU_STORE_DATA);
+                }
+                else if (strcmp((char*)buf, "com_put_key") == 0 || strcmp((char*)buf, "3.6") == 0) {    // SE Command - PUT KEY
+                    ESP_LOGI(TAG, "Start %s", APDU_PUT_KEY);
+                    size_t recLen = 0;
+                    Kose_API_PutKey(&kose_session->s_ctx, 0x22337788, 0x010203, 0x01, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
+                    ESP_LOGI(TAG, "End %s", APDU_PUT_KEY);
                 }
                 else if (strcmp((char*)buf, "generate_random") == 0 || strcmp((char*)buf, "5.1") == 0) {    // kss_kose_rng
                     ESP_LOGI(TAG, "Start %s", RANDOM_GEN);
