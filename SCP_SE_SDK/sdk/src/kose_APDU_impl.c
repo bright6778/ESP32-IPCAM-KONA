@@ -24,7 +24,20 @@
 
  static const char *TAG = "kose_APDU_impl.c";
 
-#if 1
+ 
+static void uint32_to_buffer(uint32_t val, size_t bufSzie, uint8_t *buffer) {
+    size_t offset = 0;
+    switch(bufSzie){
+        case 4 : buffer[offset] = (val >> 24) & 0xFF;
+        offset++;
+        case 3 : buffer[offset] = (val >> 16) & 0xFF;
+        offset++;
+        case 2 : buffer[offset] = (val >> 8) & 0xFF;
+        offset++;
+        case 1 : buffer[offset] = val & 0xFF;
+    }
+}
+
 // SE Select
 smStatus_t Kose_API_Select(pKoseSession_t session_ctx, uint8_t *fci, size_t *pfciLen)
 {
@@ -112,53 +125,175 @@ smStatus_t Kose_API_GetRandom(pKoseSession_t session_ctx, uint16_t size, uint8_t
     return retStatus;
 }
 
-// SE STORE CERT
-smStatus_t KOSE_API_STORE_CERT(
-    pKoseSession_t session_ctx, uint32_t authObjectID, uint8_t *sessionId, size_t *psessionIdLen)
+smStatus_t Kose_API_Initialize_Update(pKoseSession_t session_ctx, uint8_t *resData, size_t *presLen, uint32_t objectID, uint8_t *hostChallenge)
 {
     smStatus_t retStatus = SM_NOT_OK;
-    //tlvHeader_t hdr      = {{kKOSE_CLA, kKOSE_INS_SELECT, kKOSE_P1_DEFAULT, kKOSE_P2_SESSION_CREATE}};
+    tlvHeader_t hdr = {{kKOSE_CLA, kKOSE_INS_INITIALIZE_UPDATE, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
     int tlvRet                             = 0;
-    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_CMD] = {0};
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
     uint8_t *pRspbuf                       = &rspbuf[0];
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     size_t rspIndex                        = 0;
 
-    uint8_t *rcvbuf = (uint8_t *)malloc(512); // Loopback + ProcedureBytes + TPDU;
-    int rcvlen;
-    if(kss_kose_uart_transceive((uint8_t *)"\x00\xa4\x04\x00\x01\xa0", 6, pRspbuf, &rcvlen) == false){
-        //retval = kStatus_KSS_Fail;
-        //goto exit;
-    }
-#if VERBOSE_APDU_LOGS
-    NEWLINE();
-    nLog("APDU", NX_LEVEL_DEBUG, "CreateSession []");
-#endif /* VERBOSE_APDU_LOGS */
-/*
-    tlvRet = TLVSET_U32("auth", &pCmdbuf, &cmdbufLen, kKOSE_TAG_1, authObjectID);
-    if (0 != tlvRet) {
-        goto cleanup;
-    }
-    retStatus = DoAPDUTxRx_s_Case4(session_ctx, &hdr, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+    objectID = (objectID & 0xFF00) | (objectID & 0x00FF);
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    uint8_t *pLc = &pCmdbuf[4];
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+
+    DataSet_u8buf(&pData, (uint8_t*)&objectID, 2);  //Object ID
+    DataSet_u8buf(&pData, hostChallenge, 8);       //Host Challenge
+    lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, 10);
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    
+    retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
     if (retStatus == SM_OK) {
-        retStatus = SM_NOT_OK;
-        tlvRet    = tlvGet_u8buf(pRspbuf, &rspIndex, rspbufLen, kKOSE_TAG_1, sessionId, psessionIdLen); 
-        if (0 != tlvRet) {
-            goto cleanup;
-        }
-        if ((rspIndex + 2) == rspbufLen) {
-            retStatus = (smStatus_t)((pRspbuf[rspIndex] << 8) | (pRspbuf[rspIndex + 1]));
+        if(get_u8buf(rspbuf, &rspIndex, rspbufLen - 2, resData, presLen) != 0)
+        {
+            *presLen = 0;
         }
     }
 
-cleanup:
-    */
     return retStatus;
 }
-#endif
+
+// External_Authenticate
+smStatus_t Kose_API_External_Authenticate(pKoseSession_t session_ctx, kss_object_t *keyObj, uint8_t security_level, const uint8_t *hostCrypto, const uint8_t *cmac)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_EXTERNAL_AUTHENTICATE, kKOSE_P1_DEFAULT, security_level}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD] = {0};
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    int tlvRet                             = 0;
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    uint8_t *pRspbuf                       = &rspbuf[0];
+    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
+    size_t rspIndex                        = 0;
+
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    
+    uint8_t *pLc = &pCmdbuf[4];
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    
+    DataSet_u8buf(&pData, hostCrypto, 8);  //hostCrypto
+    DataSet_u8buf(&pData, cmac, 8);        //C-MAC
+    lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, 16);
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    
+    retStatus = DoAPDUTx_s_Case3(session_ctx, cmdbuf, cmdbufLen);
+
+    return retStatus;
+}
+
+
+// STORE DATA
+smStatus_t Kose_API_StoreData(
+    pKoseSession_t session_ctx, uint32_t objectID, uint32_t acl, uint8_t p1, uint8_t p2, const uint8_t *objectData, const size_t objectDataLen)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr = {{kKOSE_CLA, kKOSE_STORE_DATA, p1, p2}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD] = {0};
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    int tlvRet                             = 0;
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    uint8_t *pRspbuf                       = &rspbuf[0];
+    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
+    size_t rspIndex                        = 0;
+    uint8_t bufObjectID[2] = {0}; 
+    uint8_t bufAcl[3] = {0};
+
+    uint32_to_buffer(objectID, 2, bufObjectID);
+    uint32_to_buffer(acl, 3, bufAcl);
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    
+    uint8_t *pLc = &pCmdbuf[4];
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    size_t totalSize = 0;
+
+    if(p2 == 0){
+        DataSet_u8buf(&pData, bufObjectID, sizeof(bufObjectID));  //Object ID
+        DataSet_u8buf(&pData, bufAcl, sizeof(bufAcl));  //ACL
+        lvDataSet_u8buf(&pData, &totalSize, objectData, objectDataLen);
+        totalSize += (sizeof(bufObjectID) + sizeof(bufAcl));
+        lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalSize);
+        cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    }
+    else{
+        lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, objectDataLen);
+        cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    }
+    
+    retStatus = DoAPDUTx_s_Case3(session_ctx, cmdbuf, cmdbufLen);
+
+    return retStatus;
+}
+
+// PUT KEY
+smStatus_t Kose_API_PutKey(
+    pKoseSession_t session_ctx, uint32_t objectID, uint32_t acl, uint8_t p1, const uint8_t *objectData, const size_t objectDataLen)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_PUT_KEY, p1, kKOSE_P2_DEFAULT}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD] = {0};
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    int tlvRet                             = 0;
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    uint8_t *pRspbuf                       = &rspbuf[0];
+    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
+    size_t rspIndex                        = 0;
+
+    objectID = (objectID & 0xFF00) | (objectID & 0x00FF);
+    acl = (objectID & 0xFF0000) | (objectID & 0x00FF00) | (objectID & 0x0000FF);
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    debug_showframe(TAG, pCmdbuf, 5);
+    
+    uint8_t *pLc = &pCmdbuf[4];
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    
+    DataSet_u8buf(&pData, (uint8_t*)&objectID, 2);  //Object ID
+    DataSet_u8buf(&pData, (uint8_t*)&acl, 3);  //ACL
+    cmdbufLen = 5;
+    lvDataSet_u8buf(&pData, &cmdbufLen, objectData, objectDataLen);
+    lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, cmdbufLen);
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    
+    retStatus = DoAPDUTx_s_Case3(session_ctx, cmdbuf, cmdbufLen);
+
+    return retStatus;
+}
+
+// Set Lock State
+smStatus_t Kose_API_SetLockState(pKoseSession_t session_ctx)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr = {{kKOSE_CLA, kKOSE_SET_LOCK_STATE, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD] = {0};
+    size_t cmdbufLen                       = 5;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    int tlvRet                             = 0;
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    uint8_t *pRspbuf                       = &rspbuf[0];
+    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
+    size_t rspIndex                        = 0;
+
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    pCmdbuf[5] = 0x00;
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    
+    retStatus = DoAPDUTx_s_Case3(session_ctx, cmdbuf, cmdbufLen);
+
+    return retStatus;
+}
+
 
 smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     uint32_t objectID,

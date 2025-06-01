@@ -368,7 +368,6 @@ typedef Kose_AppletFeatures_t *pKoseAppletFeatures_t;
 typedef KoseSession_t *pKoseSession_t;
 typedef KosePolicy_t *pKosePolicy_t;
 
-#if 0 //미구현
 #if defined(VERBOSE_APDU_LOGS) && (VERBOSE_APDU_LOGS == 1)
 #define DO_LOG_V(TAG, DESCRIPTION, VALUE) nLog("APDU", NX_LEVEL_DEBUG, #TAG " [" DESCRIPTION "] = 0x%X", VALUE);
 #define DO_LOG_A(TAG, DESCRIPTION, ARRAY, ARRAY_LEN) \
@@ -465,8 +464,8 @@ typedef KosePolicy_t *pKosePolicy_t;
 /** See @ref TLVSET_U16 */
 #define TLVSET_CryptoObjectID TLVSET_U16
 
-// #define TLVSET_pVoid(DESCRIPTION, PBUF, PBUFLEN, TAG, VALUE) (0)
-// #define tlvGet_pVoid(DESCRIPTION, PBUF, PBUFLEN, TAG, VALUE) (0)
+#define TLVSET_pVoid(DESCRIPTION, PBUF, PBUFLEN, TAG, VALUE) (0)
+#define tlvGet_pVoid(DESCRIPTION, PBUF, PBUFLEN, TAG, VALUE) (0)
 
 #define TLVSET_u8buf(DESCRIPTION, PBUF, PBUFLEN, TAG, CMD, CMDLEN) \
     tlvSet_u8buf(PBUF, PBUFLEN, TAG, CMD, CMDLEN);                 \
@@ -486,39 +485,39 @@ typedef KosePolicy_t *pKosePolicy_t;
     DO_LOG_A(TAG, DESCRIPTION, CMD, CMDLEN)
 
 
-int tlvSet_U8(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, uint8_t value);
-int tlvSet_U16(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, uint16_t value);
-int tlvSet_U16Optional(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, uint16_t value);
-int tlvSet_U32(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, uint32_t value);
-int tlvSet_U64_size(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, uint64_t value,uint16_t size);
-int tlvSet_u8buf(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
-int tlvSet_u8bufOptional(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
+int tlvSet_U8(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint8_t value);
+int tlvSet_U16(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint16_t value);
+int tlvSet_U16Optional(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint16_t value);
+int tlvSet_U32(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint32_t value);
+int tlvSet_U64_size(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint64_t value,uint16_t size);
+int tlvSet_u8buf(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
+int tlvSet_u8bufOptional(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
 /* Same as tlvSet_u8bufOptional, but some time, Most Significant Byte needs to be shifted and Plus by 1 */
-int tlvSet_u8bufOptional_ByteShift(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
-int tlvSet_KosePolicy(const char *description, uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, KosePolicy_t *policy);
-int tlvSet_KeyID(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, uint32_t keyID);
-int tlvSet_MaxAttemps(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, uint16_t maxAttemps);
-int tlvSet_ECCurve(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, Kose_ECCurve_t value);
-int tlvSet_u8buf_features(uint8_t **buf, size_t *bufLen, Kose_TAG_t tag, pKoseAppletFeatures_t appletVariant);
+int tlvSet_u8bufOptional_ByteShift(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
+int tlvSet_KosePolicy(const char *description, uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, KosePolicy_t *policy);
+int tlvSet_KeyID(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint32_t keyID);
+int tlvSet_MaxAttemps(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint16_t maxAttemps);
+int tlvSet_ECCurve(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, KOSE_ECCurve_t value);
+int tlvSet_u8buf_features(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, pKoseAppletFeatures_t appletVariant);
 
-int tlvGet_U8(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, Kose_TAG_t tag, uint8_t *pRsp);
-int tlvGet_U16(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, Kose_TAG_t tag, uint16_t *pRsp);
-int tlvGet_U32(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, Kose_TAG_t tag, uint32_t *pRsp);
+int tlvGet_U8(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint8_t *pRsp);
+int tlvGet_U16(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint16_t *pRsp);
+int tlvGet_U32(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint32_t *pRsp);
 
-int tlvGet_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, Kose_TAG_t tag, uint8_t *rsp, size_t *pRspLen);
-int tlvGet_ValueIndex(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, Kose_TAG_t tag);
+int tlvGet_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint8_t *rsp, size_t *pRspLen);
+int tlvGet_ValueIndex(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag);
 int tlvGet_KoseSession(
-    uint8_t *buf, size_t *pBufIndex, const size_t bufLen, Kose_TAG_t tag, pKoseSession_t *pSessionId);
-int tlvGet_TimeStamp(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, Kose_TAG_t tag, Kose_TimeStamp_t *pTs);
+    uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, pKoseSession_t *pSessionId);
+int tlvGet_TimeStamp(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, Kose_TimeStamp_t *pTs);
 
-int tlvSet_u8buf_I2CM(uint8_t **buf, size_t *bufLen, Kose_I2CM_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
+//int tlvSet_u8buf_I2CM(uint8_t **buf, size_t *bufLen, Kose_I2CM_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
 
-int tlvGet_SecureObjectType(uint8_t *buf, size_t *pBufIndex, size_t bufLen, Kose_TAG_t tag, Kose_SecObjTyp_t *pType);
+int tlvGet_SecureObjectType(uint8_t *buf, size_t *pBufIndex, size_t bufLen, KOSE_TAG_t tag, KOSE_SecObjTyp_t *pType);
 
-int tlvGet_Result(uint8_t *buf, size_t *pBufIndex, size_t bufLen, Kose_TAG_t tag, Kose_Result_t *presult);
+int tlvGet_Result(uint8_t *buf, size_t *pBufIndex, size_t bufLen, KOSE_TAG_t tag, KOSE_Result_t *presult);
 
 
-
+#if 0
 smStatus_t kose_Transform(struct KoseSession *pSession,
     const tlvHeader_t *hdr,
     uint8_t *cmdApduBuf,
@@ -579,7 +578,7 @@ smStatus_t DoAPDUTxRx(KoseSession_t *pSessionCtx,
 smStatus_t Kose_API_I2CM_Send(
     pKoseSession_t sessionId, const uint8_t *buffer, size_t bufferLen, uint8_t *result, size_t *presultLen);
 #endif
-#endif //미구현0
+#endif //별도 구현
 
 typedef KoseSession_t *pKoseSession_t;
 

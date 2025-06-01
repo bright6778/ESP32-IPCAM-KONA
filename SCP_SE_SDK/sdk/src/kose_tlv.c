@@ -328,8 +328,8 @@ int lvDataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cm
     }
 
     *buf = pBuf;
+    
     *bufLen += size_of_tlv;
-
     return 0;
 }
 

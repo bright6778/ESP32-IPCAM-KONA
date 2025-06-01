@@ -16,6 +16,10 @@ typedef enum
     kKOSE_INS_NA = 0,
     /** INS Select */
     kKOSE_INS_SELECT = 0xA4,
+    /** INS Initialize Update */
+    kKOSE_INS_INITIALIZE_UPDATE = 0x50,
+    /** INS External Authenticate */
+    kKOSE_INS_EXTERNAL_AUTHENTICATE = 0x82,
     /** INS Get Data */
     kKOSE_GET_DATA = 0xCA,
     /** INS SIGN CDATA */
@@ -24,6 +28,12 @@ typedef enum
     kKOSE_INS_VERIFY_SIGNATURE = 0x20,
     /** INS Get Random */
     kKOSE_GET_RANDOM = 0x84,
+    /** INS Store Data */
+    kKOSE_STORE_DATA = 0xE2,
+    /** INS Put Key */
+    kKOSE_PUT_KEY = 0xD8,
+    /** INS Set Lock State */
+    kKOSE_SET_LOCK_STATE = 0xF0,
     
     /** INS Read Binary */
     kKOSE_INS_READ_BINARY = 0xB0,
@@ -370,7 +380,7 @@ typedef enum
     kKOSE_TAG_SELECT = 0x31,
     kKOSE_TAG_RANDOM = 0x41,
 
-    //kKOSE_TAG_1 = 0x41,
+    kKOSE_TAG_1 = 0x41,
     kKOSE_TAG_2 = 0x42,
     kKOSE_TAG_3 = 0x43,
     kKOSE_TAG_4 = 0x44,
