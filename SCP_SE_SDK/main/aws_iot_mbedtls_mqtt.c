@@ -21,7 +21,8 @@
 #include "debug.h"
 #endif
 
-#define ONLY_MBEDTLS_TEST
+#define ONLY_MBEDTLS_TEST_CERTFILE
+//#define ONLY_MBEDTLS_TEST
 #define AWS_CA_CERT_ECC
 #define AWS_IOT_PORT     "8883"
 
@@ -41,7 +42,6 @@ static const char *TAG = "aws_iot_mbedtls_mqtt.c";
 
 const int sdk_recommended_ciphersuites[] = {
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-    MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
     0
 };
 
@@ -56,9 +56,6 @@ extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start
 extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
 extern const char root_cert_auth_ecc_start[]   asm("_binary_root_cert_auth_ecc_crt_start");
 extern const char root_cert_auth_ecc_end[]   asm("_binary_root_cert_auth_ecc_crt_end");
-
-//extern const mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info; // SE 기반 sign_func 포함
-//extern const mbedtls_pk_info_t mbedtls_eckeypair_pk_info; // SE 기반 sign_func 포함
 extern void *se_key_object;                        // SE 핸들
 
 void my_debug(void *ctx, int level,
@@ -217,7 +214,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
-#ifdef ONLY_MBEDTLS_TEST
+#ifdef ONLY_MBEDTLS_TEST_CERTFILE
     //only test
     ret = mbedtls_pk_parse_key(&client_key, (const unsigned char *)client_key_start, client_key_end - client_key_start, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
 #endif
@@ -271,7 +268,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
-#ifdef ONLY_MBEDTLS_TEST
+#ifdef ONLY_MBEDTLS_TEST_CERTFILE
     /* doc+:load-certificate-from-se */
     ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));    //저장된 cert 사용 시
 #else
@@ -304,10 +301,9 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_start, (root_cert_auth_end - root_cert_auth_start)); 
 #endif
 
+#ifndef ONLY_MBEDTLS_TEST
     // SE에서 CA Cert 보관 시
-    // mbedtls_pk_free(&cacert.pk); //SE에서 CA Cert 보관 시엔 기존 cacert를 free
-    
-    
+    //mbedtls_pk_free(&cacert.pk); //SE에서 CA Cert 보관 시엔 기존 cacert를 free    
     ret = kss_mbedtls_associate_pubkey(&cacert.pk, &pub_obj);
     LOGD(TAG, "=== cacert Context 상태 체크 ===");
     LOGD(TAG, "cacert.pk_info pointer         = %p", cacert.pk.private_pk_info);
@@ -315,8 +311,6 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     LOGD(TAG, "cacert.pk_ctx pointer          = %p", cacert.pk.private_pk_ctx);
     LOGD(TAG, "cacert private_grp.id pointer  = %p", &((mbedtls_ecp_keypair *)cacert.pk.private_pk_ctx)->private_grp.id);
     LOGD(TAG, "cacert pax_ctx.id val          = %d", ((mbedtls_ecp_keypair *)cacert.pk.private_pk_ctx)->private_grp.id);
-
-
 
 /*    
     //mbedtls_pk_free(&cacert.pk);
@@ -326,18 +320,13 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     #endif
 */
 
-
 /*
     if(kss_mbedtls_associate_keypair(&client_key, &keyobject) != 0){
         LOGE(TAG, "kss_mbedtls_associate_keypair failed");
         return;
     }
 */
-
-   
-    
-
-
+#endif
    
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ciphersuites(&conf, sdk_recommended_ciphersuites);
@@ -355,9 +344,6 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     }
 
     mbedtls_net_connect(&net, AWS_IOT_ENDPOINT, AWS_IOT_PORT, MBEDTLS_NET_PROTO_TCP);
-
-
-
     mbedtls_ssl_set_bio(&ssl, &net, mbedtls_net_send, mbedtls_net_recv, NULL);
 /*
     LOGD(TAG, "=== client_key Context 상태 체크 ===");

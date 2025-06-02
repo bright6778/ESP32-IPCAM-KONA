@@ -563,6 +563,7 @@ kss_status_t kss_kose_mac_validate_one_go(
 kss_status_t kss_kose_asymmetric_sign(
     kss_kose_asymmetric_t *context, const uint8_t *srcData, size_t srcLen, uint8_t *signature, size_t *signatureLen);
 
+#if 0
 /** Similar to @ref kss_kose_asymmetric_verify_digest,
  * but hashing/digest done by SE
  *
@@ -574,6 +575,7 @@ kss_status_t kss_kose_asymmetric_verify(kss_kose_asymmetric_t *context,
     size_t signatureLen);
 
 /*! @} */ /* end of : kss_kose_asym */
+#endif
 
 /** @addtogroup kose_attest
  *

@@ -48,10 +48,12 @@
 #define APDU_PUT_KEY                "KOSE_API_PutKey"
 #define APDU_SET_LOCK_STATE         "KOSE_API_SetLockState"
 #define MBEDTLS_ASSOCIATE_PUBKEY    "kss_mbedtls_associate_pubkey"
+#define SE_PROVISIONING             "se_provisioning"
 #define AWS_IOT_DEMO                "aws_iot_demo_main"
 #define RANDOM_GEN                  "kss_kose_rng"
 void aws_iot_mbedtls_mqtt_test(kss_session_t *session);
 int aws_iot_demo_main( int argc, char ** argv );
+void se_provisioning(kss_session_t *session);
 
 static const char *TAG = "example";
 
@@ -149,6 +151,7 @@ void print_manu(){
     printf("CMD : com_put_key or 3.6                - %s\n", APDU_PUT_KEY);
     printf("CMD : generate random 5.1               - %s\n", RANDOM_GEN);
     printf("CMD : mbedtls_pubkey or 9.1             - %s\n", MBEDTLS_ASSOCIATE_PUBKEY);
+    printf("CMD : se_provisioning or 10.1           - %s\n", SE_PROVISIONING);
     printf("CMD : aws_mqtt or 11.1                  - %s\n", AWS_IOT_DEMO);
     printf("//////////////////////////////////////////////////////////////////\n");
 }
@@ -323,6 +326,11 @@ void command_task(void *arg)
                 else if (strcmp((char*)buf, "mbedtls_pubkey") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_associate_pubkey
                     ESP_LOGI(TAG, "Start %s", MBEDTLS_ASSOCIATE_PUBKEY);
                     ESP_LOGI(TAG, "End %s", MBEDTLS_ASSOCIATE_PUBKEY);
+                }
+                else if (strcmp((char*)buf, "se_provisioning") == 0 || strcmp((char*)buf, "10.1") == 0) {    // SE Provisioning
+                    ESP_LOGI(TAG, "Start %s", SE_PROVISIONING);
+                    //se_provisioning(&session);
+                    ESP_LOGI(TAG, "End %s", SE_PROVISIONING);
                 }
                 else if (strcmp((char*)buf, "aws_mqtt") == 0 || strcmp((char*)buf, "11.1") == 0) {    // aws_iot_demo_main
                     ESP_LOGI(TAG, "Start %s", AWS_IOT_DEMO);

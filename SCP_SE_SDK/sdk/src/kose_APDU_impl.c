@@ -25,7 +25,7 @@
  static const char *TAG = "kose_APDU_impl.c";
 
  
-static void uint32_to_buffer(uint32_t val, size_t bufSzie, uint8_t *buffer) {
+static void uint32_to_buffer(const uint32_t val, size_t bufSzie, uint8_t *buffer) {
     size_t offset = 0;
     switch(bufSzie){
         case 4 : buffer[offset] = (val >> 24) & 0xFF;
@@ -57,6 +57,7 @@ smStatus_t Kose_API_Select(pKoseSession_t session_ctx, uint8_t *fci, size_t *pfc
     uint8_t cmdData[] = {0xA0, 0x00, 0x00, 0x01}; 
     lvDataSet_u8buf(&pLc, &cmdbufLen, cmdData, sizeof(cmdData));
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    LOGD(TAG, "sizeof(hdr.hdr) = %d", sizeof(hdr.hdr));
     
     retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
     if (retStatus == SM_OK) {
@@ -306,7 +307,6 @@ smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     size_t *psignatureLen)
 {
     LOGD(TAG, "Kose_API_ECDSASign");
-    objectID = (objectID & 0xFF00) | (objectID & 0x00FF);
     smStatus_t retStatus = SM_NOT_OK;
     tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_SIGN_CDATA, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
@@ -321,9 +321,12 @@ smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     uint8_t *pLc = &pCmdbuf[4]; // lc pointer
     uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
     uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    uint8_t bufObjectID[2] = {0}; 
+    
+    uint32_to_buffer(objectID, 2, bufObjectID);
     
     memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
-    DataSet_u8buf(&pData, (uint8_t*)&objectID, 2);
+    DataSet_u8buf(&pData, bufObjectID, sizeof(bufObjectID));
     DataSet_u8buf(&pData, inputData, inputDataLen);
     lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, inputDataLen + 2);
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
@@ -348,15 +351,10 @@ smStatus_t Kose_API_ECDSAVerify(pKoseSession_t session_ctx,
     size_t signatureLen,
     KOSE_Result_t *presult)
 {
-    uint8_t hdr_p1 = kKOSE_P1_DEFAULT;
-    objectID = (objectID & 0xFFFF);
-    if(objectID >= ECC_KEYPAIR_PRIVATE_START && objectID <= ECC_KEYPAIR_PRIVATE_END)
-    {
-        hdr_p1 = kKOSE_P1_ECC_PRIVATE;
-    }
-    
+    LOGD(TAG, "Kose_API_ECDSAVerify");
+
     smStatus_t retStatus = SM_NOT_OK;
-    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_VERIFY_SIGNATURE, hdr_p1, kKOSE_P2_DEFAULT}};
+    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_VERIFY_SIGNATURE, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
@@ -365,14 +363,35 @@ smStatus_t Kose_API_ECDSAVerify(pKoseSession_t session_ctx,
     uint8_t *pRspbuf                       = &rspbuf[0];
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     size_t rspIndex                        = 0;
-
-    LOGD(TAG, "Kose_API_ECDSAVerify");
+    
+    uint8_t *pLc = &pCmdbuf[4]; // lc pointer
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    uint8_t bufObjectID[2] = {0}; 
+    
+    uint32_to_buffer(objectID, 2, bufObjectID);
+    hdr.hdr[2] = bufObjectID[0];    //P1
+    hdr.hdr[3] = bufObjectID[1];    //P2
     memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
-    uint8_t *pLc = &pCmdbuf[4];
-    lvDataSet_u8buf(&pLc, &cmdbufLen, inputData, inputDataLen);
+    
+    debug_showframe(TAG, inputData, inputDataLen);
+    debug_showframe(TAG, signature, signatureLen);
+    tlvDataSet_u8buf(&pData, &cmdbufLen, kKOSE_TAG_SHA256, inputData, inputDataLen); // Hash Data(SHA256)
+    LOGD(TAG, "cmdbufLen : %d", cmdbufLen);
+    tlvDataSet_u8buf(&pData, &cmdbufLen, kKOSE_TAG_SIGNATURE, signature, signatureLen); // Signature by Server Private Key
+    LOGD(TAG, "cmdbufLen : %d", cmdbufLen);
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    LOGD(TAG, "sizeof(hdr.hdr) : %d", sizeof(hdr.hdr));
 
     retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+    retStatus = SM_OK;
+    if (retStatus == SM_OK) {
+        *presult = kKOSE_Result_SUCCESS;
+    }
+    else{
+        *presult = kKOSE_Result_FAILURE;
+    }
+    
     /*
     smStatus_t retStatus = SM_NOT_OK;
     tlvHeader_t hdr      = {{kKOSE_CLA, kKOSE_INS_CRYPTO, kKOSE_P1_SIGNATURE, kKOSE_P2_VERIFY}};

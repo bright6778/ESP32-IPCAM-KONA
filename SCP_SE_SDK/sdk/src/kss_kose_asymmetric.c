@@ -443,7 +443,7 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
 #endif
     {
         KOSE_ECSignatureAlgo_t ecSignAlgo = kose_get_ec_sign_hash_mode(context->algorithm);
-        status                             = Kose_API_ECDSAVerify(&context->session->s_ctx,
+        status                            = Kose_API_ECDSAVerify(&context->session->s_ctx,
             context->keyObject->keyId,
             ecSignAlgo,
             digest,
@@ -452,14 +452,7 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
             signatureLen,
             &result);
     } break;
-#if KSS_HAVE_KOSE_VER_GTE_07_02 && KSS_HAVE_EC_MONT
-    case kKSS_CipherType_EC_MONTGOMERY: {
-        LOG_W(
-            "Verify operation is not supported for "
-            "kKSS_CipherType_EC_MONTGOMERY curve");
-        return kStatus_KSS_Fail;
-    } break;
-#endif // KSS_HAVE_KOSE_VER_GTE_07_02 && KSS_HAVE_EC_MONT
+
 #endif // KSSFTR_KOSE_ECC
 #if KSSFTR_KOSE_RSA && KSS_HAVE_RSA && !KSS_HAVE_HOSTCRYPTO_NONE
     case kKSS_CipherType_RSA:
@@ -617,6 +610,7 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
     return retval;
 }
 
+#if 0 //kss_kose_asymmetric_verify
 kss_status_t kss_kose_asymmetric_verify(kss_kose_asymmetric_t *context,
     const uint8_t *srcData,
     size_t srcLen,
@@ -752,6 +746,7 @@ kss_status_t kss_kose_asymmetric_verify(kss_kose_asymmetric_t *context,
 
     return retval;
 }
+#endif //kss_kose_asymmetric_verify
 
 #endif
 

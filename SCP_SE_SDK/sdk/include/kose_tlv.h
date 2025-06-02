@@ -589,6 +589,7 @@ int tlvSet_U32(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint32_t value);
 int tlvSet_U64_size(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint64_t value, uint16_t size);
 
 int tlvGet_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint8_t *rsp, size_t *pRspLen);
+int tlvDataSet_u8buf(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
 int lvDataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdLen);
 int DataSet_u8buf(uint8_t **buf, const uint8_t *data, size_t dataLen);
 int get_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, uint8_t *rsp, size_t *pRspLen);

@@ -563,13 +563,13 @@
 
 
 #if KSS_HAVE_ECC
-#   define KSS_HAVE_EC_NIST_192 1
-#   define KSS_HAVE_EC_NIST_224 1
+#   define KSS_HAVE_EC_NIST_192 0
+#   define KSS_HAVE_EC_NIST_224 0
 #   define KSS_HAVE_EC_NIST_256 1
-#   define KSS_HAVE_EC_NIST_384 1
-#   define KSS_HAVE_EC_NIST_521 1
-#   define KSS_HAVE_EC_BP 1
-#   define KSS_HAVE_EC_NIST_K 1
+#   define KSS_HAVE_EC_NIST_384 0
+#   define KSS_HAVE_EC_NIST_521 0
+#   define KSS_HAVE_EC_BP 0
+#   define KSS_HAVE_EC_NIST_K 0
 #   define KSS_HAVE_EDDSA 1
 #   if KSS_HAVE_APPLET_KOSE_A
 #      undef KSS_HAVE_EDDSA

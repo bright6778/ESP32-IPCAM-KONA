@@ -35,6 +35,7 @@ typedef enum
     /** INS Set Lock State */
     kKOSE_SET_LOCK_STATE = 0xF0,
     
+    // 여기 아래는 삭제할지 고민중 - uc.nam
     /** INS Read Binary */
     kKOSE_INS_READ_BINARY = 0xB0,
     /** INS Update Binary */
@@ -44,10 +45,6 @@ typedef enum
     /** INS Manage read counter */
     kKOSE_INS_MANAGE_READ_CTR = 0x42,
 
-
-
-
-    // 여기 아래는 삭제할지 고민중 - uc.nam
     /** 3 MSBit for instruction characteristics. */
     kKOSE_INS_MASK_INS_CHAR = 0xE0,
     /** 5 LSBit for instruction */
@@ -370,6 +367,11 @@ typedef enum
 {
     /** Invalid */
     kKOSE_TAG_NA = 0,
+    kKOSE_TAG_SHA256 = 0x85,
+    kKOSE_TAG_SIGNATURE = 0x86,
+
+
+
     kKOSE_TAG_SESSION_ID = 0x10,
     kKOSE_TAG_POLICY = 0x11,
     kKOSE_TAG_MAX_ATTEMPTS = 0x12,

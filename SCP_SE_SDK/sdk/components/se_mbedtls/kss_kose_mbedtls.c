@@ -117,9 +117,19 @@ static int kss_eckey_verify(void *ctx,
     kss_object_t *kssObject = NULL;
     kss_algorithm_t algorithm;
     mbedtls_ecp_keypair *pax_ctx = (mbedtls_ecp_keypair *)ctx;
+    mbedtls_pk_context *pcheck_ctx = (mbedtls_pk_context *)ctx;
+
+    if (pcheck_ctx->pk_info == &kose_mbedtls_ecpubkey_pk_info &&
+        pcheck_ctx->pk_ctx != NULL &&
+        pcheck_ctx->pk_ctx != ctx)
+    {
+        LOGD(TAG, "[WARN] ctx is pk_context*, fixing...");
+        ctx = pcheck_ctx->pk_ctx;
+        pax_ctx = (mbedtls_ecp_keypair *)ctx;
+    }
 
     kssObject = pax_ctx->grp.pKSSObject;
-
+    
     switch (md_alg) {
     case MBEDTLS_MD_SHA1:
         algorithm = kAlgorithm_KSS_SHA1;
@@ -139,9 +149,8 @@ static int kss_eckey_verify(void *ctx,
     default:
         return 1;
     }
-
     LOGD(TAG, "%s: Verify using key %08" PRIX32"", __FUNCTION__, pax_ctx->grp.pKSSObject->keyId);
-
+    
     status = kss_asymmetric_context_init(
         &asymVerifyCtx, kssObject->keyStore->session, kssObject, algorithm, kMode_KSS_Verify);
     if (status != kStatus_KSS_Success) {
@@ -278,10 +287,8 @@ int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObj
 {
     int ret               = 1;
     void *pax_ctx         = NULL;
-    uint32_t objectId[16] = {
-        0,
-    };
-    uint8_t objectIdLen = sizeof(objectId);
+    //uint32_t objectId[16] = {0,};
+    //uint8_t objectIdLen = sizeof(objectId);
     kss_status_t status = kStatus_KSS_Fail;
 
     if (pkey->pk_ctx == NULL) {
