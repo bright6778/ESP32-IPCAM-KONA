@@ -54,7 +54,8 @@ smStatus_t Kose_API_Select(pKoseSession_t session_ctx, uint8_t *fci, size_t *pfc
 
     memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
     uint8_t *pLc = &pCmdbuf[4];
-    uint8_t cmdData[] = {0xA0, 0x00, 0x00, 0x01}; 
+    //uint8_t cmdData[] = {0x0F, 0x4B, 0x4F, 0x4E, 0x41, 0x01, 0x01}; 
+    const uint8_t cmdData[] = KOSE_APPLET_AID;
     lvDataSet_u8buf(&pLc, &cmdbufLen, cmdData, sizeof(cmdData));
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
     LOGD(TAG, "sizeof(hdr.hdr) = %d", sizeof(hdr.hdr));
@@ -367,73 +368,39 @@ smStatus_t Kose_API_ECDSAVerify(pKoseSession_t session_ctx,
     uint8_t *pLc = &pCmdbuf[4]; // lc pointer
     uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
     uint8_t *pData = &pCmdbuf[5];   // total data pointer
-    uint8_t bufObjectID[2] = {0}; 
+    uint8_t bufObjectID[2] = {0};
+    
+    uint8_t bufDerSignHeader1[4] = {0x30, 0x44, 0x02, 0x20};   // sign der buffer
+    uint8_t bufDerSignHeader2[2] = {0x02, 0x20};   // sign der buffer
+    uint8_t bufDerSign[70] = {0};   // sign der buffer
+
+    size_t totalSize = 0;
     
     uint32_to_buffer(objectID, 2, bufObjectID);
-    hdr.hdr[2] = bufObjectID[0];    //P1
-    hdr.hdr[3] = bufObjectID[1];    //P2
     memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
-    
-    debug_showframe(TAG, inputData, inputDataLen);
-    debug_showframe(TAG, signature, signatureLen);
-    tlvDataSet_u8buf(&pData, &cmdbufLen, kKOSE_TAG_SHA256, inputData, inputDataLen); // Hash Data(SHA256)
-    LOGD(TAG, "cmdbufLen : %d", cmdbufLen);
-    tlvDataSet_u8buf(&pData, &cmdbufLen, kKOSE_TAG_SIGNATURE, signature, signatureLen); // Signature by Server Private Key
-    LOGD(TAG, "cmdbufLen : %d", cmdbufLen);
-    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
-    LOGD(TAG, "sizeof(hdr.hdr) : %d", sizeof(hdr.hdr));
 
+    memcpy(bufDerSign, bufDerSignHeader1, sizeof(bufDerSignHeader1));
+    memcpy(bufDerSign+4, signature, 32);
+    memcpy(bufDerSign+36, bufDerSignHeader2, sizeof(bufDerSignHeader2));
+    memcpy(bufDerSign+38, signature+32, 32);
+    
+    debug_showframe("Hash : ", inputData, inputDataLen);
+    debug_showframe("Sign : ", signature, signatureLen);
+    debug_showframe("bufDerSign : ", bufDerSign, sizeof(bufDerSign));
+    tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_KEYID, bufObjectID, 2); // Key ID
+    tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_SHA256, inputData, inputDataLen); // Hash Data(SHA256)
+    tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_SIGNATURE, bufDerSign, sizeof(bufDerSign)); // Signature by Server Private Key
+    lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalSize);
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    
     retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
-    retStatus = SM_OK;
     if (retStatus == SM_OK) {
         *presult = kKOSE_Result_SUCCESS;
     }
     else{
         *presult = kKOSE_Result_FAILURE;
     }
-    
-    /*
-    smStatus_t retStatus = SM_NOT_OK;
-    tlvHeader_t hdr      = {{kKOSE_CLA, kKOSE_INS_CRYPTO, kKOSE_P1_SIGNATURE, kKOSE_P2_VERIFY}};
-    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
-    size_t cmdbufLen                       = 0;
-    uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
-    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
-    uint8_t *pRspbuf                       = &rspbuf[0];
-    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
-    size_t rspIndex                        = 0;
 
-    tlvRet = TLVSET_U32("objectID", &pCmdbuf, &cmdbufLen, kKOSE_TAG_1, objectID);
-    if (0 != tlvRet) {
-        goto cleanup;
-    }
-    tlvRet = TLVSET_ECSignatureAlgo("ecSignAlgo", &pCmdbuf, &cmdbufLen, kKOSE_TAG_2, ecSignAlgo);
-    if (0 != tlvRet) {
-        goto cleanup;
-    }
-    tlvRet = TLVSET_u8bufOptional("inputData", &pCmdbuf, &cmdbufLen, kKOSE_TAG_3, inputData, inputDataLen);
-    if (0 != tlvRet) {
-        goto cleanup;
-    }
-    tlvRet = TLVSET_u8bufOptional("signature", &pCmdbuf, &cmdbufLen, kKOSE_TAG_5, signature, signatureLen);
-    if (0 != tlvRet) {
-        goto cleanup;
-    }
-    retStatus = DoAPDUTxRx_s_Case4(session_ctx, &hdr, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
-    if (retStatus == SM_OK) {
-        retStatus = SM_NOT_OK;
-        tlvRet    = tlvGet_Result(pRspbuf, &rspIndex, rspbufLen, kKOSE_TAG_1, presult);
-        if (0 != tlvRet) {
-            goto cleanup;
-        }
-        if ((rspIndex + 2) == rspbufLen) {
-            retStatus = (smStatus_t)((pRspbuf[rspIndex] << 8) | (pRspbuf[rspIndex + 1]));
-        }
-    }
-
-cleanup:
-*/
     return retStatus;
 }
 

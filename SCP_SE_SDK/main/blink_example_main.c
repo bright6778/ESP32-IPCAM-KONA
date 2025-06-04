@@ -200,8 +200,6 @@ void command_task(void *arg)
     SE_Connect_Ctx_t se_conn_ctx;
                     
     // session variables
-    //kss_kose_session_t *session = malloc(sizeof(kss_kose_session_t));
-    //kss_session_t *session = malloc(sizeof(kss_session_t));
     kss_session_t session;
     kss_kose_session_t *kose_session;
     memset(&session, 0, sizeof(kss_session_t));
@@ -299,13 +297,13 @@ void command_task(void *arg)
                 else if (strcmp((char*)buf, "com_store_data") == 0 || strcmp((char*)buf, "3.5") == 0) {    // SE Command - STORE DATA
                     ESP_LOGI(TAG, "Start %s", APDU_STORE_DATA);
                     size_t recLen = 0;
-                    Kose_API_StoreData(&kose_session->s_ctx, 0x22337788, 0x010203, 0x01, 0x00, (uint8_t *)"\x01\x02\x03\x04\x05\x06\x07\x08", 8);
+                    Kose_API_StoreData(&kose_session->s_ctx, 0x7788, 0x010203, 0x01, 0x00, (uint8_t *)"\x01\x02\x03\x04\x05\x06\x07\x08", 8);
                     ESP_LOGI(TAG, "End %s", APDU_STORE_DATA);
                 }
                 else if (strcmp((char*)buf, "com_put_key") == 0 || strcmp((char*)buf, "3.6") == 0) {    // SE Command - PUT KEY
                     ESP_LOGI(TAG, "Start %s", APDU_PUT_KEY);
                     size_t recLen = 0;
-                    Kose_API_PutKey(&kose_session->s_ctx, 0x22337788, 0x010203, 0x01, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
+                    Kose_API_PutKey(&kose_session->s_ctx, 0x7788, 0x010203, 0x01, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
                     ESP_LOGI(TAG, "End %s", APDU_PUT_KEY);
                 }
                 else if (strcmp((char*)buf, "generate_random") == 0 || strcmp((char*)buf, "5.1") == 0) {    // kss_kose_rng
@@ -329,7 +327,7 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "se_provisioning") == 0 || strcmp((char*)buf, "10.1") == 0) {    // SE Provisioning
                     ESP_LOGI(TAG, "Start %s", SE_PROVISIONING);
-                    //se_provisioning(&session);
+                    se_provisioning(&session);
                     ESP_LOGI(TAG, "End %s", SE_PROVISIONING);
                 }
                 else if (strcmp((char*)buf, "aws_mqtt") == 0 || strcmp((char*)buf, "11.1") == 0) {    // aws_iot_demo_main

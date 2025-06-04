@@ -21,8 +21,8 @@
 #include "debug.h"
 #endif
 
-#define ONLY_MBEDTLS_TEST_CERTFILE
-//#define ONLY_MBEDTLS_TEST
+#define ONLY_MBEDTLS_TEST_CERTFILE  // device keypair & CA Cert in file
+//#define ONLY_MBEDTLS_TEST         // no use SE keypair
 #define AWS_CA_CERT_ECC
 #define AWS_IOT_PORT     "8883"
 
@@ -42,6 +42,9 @@ static const char *TAG = "aws_iot_mbedtls_mqtt.c";
 
 const int sdk_recommended_ciphersuites[] = {
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+#ifndef AWS_CA_CERT_ECC
+    MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+#endif
     0
 };
 
@@ -199,15 +202,6 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
-    // 오브젝트가 할당되어 있다면 kss_key_object_get_handle 호출
-    /* 
-    kss_status = kss_key_object_allocate_handle(&keyobject, key_id, kKSS_KeyPart_Pair, kKSS_CipherType_EC_NIST_P, 256, kKeyObject_Mode_Persistent);
-    if(kss_status != kStatus_KSS_Success){
-        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kss_status);
-        return;
-    }
-    */
-
     kss_status = kss_key_object_get_handle(&keyobject, 0x0100);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
@@ -228,15 +222,6 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
-    // 오브젝트가 할당되어 있다면 kss_key_object_get_handle 호출
-    /* 
-    kss_status = kss_key_object_allocate_handle(&dev_cert, key_id, kKSS_KeyPart_Pair, kKSS_CipherType_EC_NIST_P, 256, kKeyObject_Mode_Persistent);
-    if(kss_status != kStatus_KSS_Success){
-        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kss_status);
-        return;
-    }
-    */
-
     kss_status = kss_key_object_get_handle(&dev_cert, 0x0700);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
@@ -252,15 +237,6 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         LOGE(TAG, "kss_key_object_init failed res : %d", kss_status);
         return;
     }
-
-    // 오브젝트가 할당되어 있다면 kss_key_object_get_handle 호출
-    /* 
-    kss_status = kss_key_object_allocate_handle(&pub_obj, key_id, kKSS_KeyPart_Pair, kKSS_CipherType_EC_NIST_P, 256, kKeyObject_Mode_Persistent);
-    if(kss_status != kStatus_KSS_Success){
-        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kss_status);
-        return;
-    }
-    */
 
     kss_status = kss_key_object_get_handle(&pub_obj, 0x0800);
     if(kss_status != kStatus_KSS_Success){
@@ -319,16 +295,14 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         LOGI(TAG, "MBEDTLS_ECDSA_VERIFY_ALT define");
     #endif
 */
-
-/*
     if(kss_mbedtls_associate_keypair(&client_key, &keyobject) != 0){
         LOGE(TAG, "kss_mbedtls_associate_keypair failed");
         return;
     }
-*/
+
 #endif
    
-    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_NONE);  //MBEDTLS_SSL_VERIFY_REQUIRED(서명 검증) MBEDTLS_SSL_VERIFY_NONE(검증X)
     mbedtls_ssl_conf_ciphersuites(&conf, sdk_recommended_ciphersuites);
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
     mbedtls_ssl_conf_own_cert(&conf, &client_cert, &client_key);

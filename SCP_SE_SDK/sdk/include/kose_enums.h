@@ -367,6 +367,7 @@ typedef enum
 {
     /** Invalid */
     kKOSE_TAG_NA = 0,
+    kKOSE_TAG_KEYID = 0x84,
     kKOSE_TAG_SHA256 = 0x85,
     kKOSE_TAG_SIGNATURE = 0x86,
 

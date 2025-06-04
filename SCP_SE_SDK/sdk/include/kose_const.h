@@ -183,6 +183,8 @@ example : B1b8 : 0x80000000
 #define POLICY_SESSION_ALLOW_REFRESH    0x2000
 /**/
 
+#define KOSE_APPLET_AID  {0x0F, 0x4B, 0x4F, 0x4E, 0x41, 0x01, 0x01}
+
 #else // !KSS_HAVE_APPLET_KOSE_IOT
 
 #define KOSE_MAX_BUF_SIZE_RSP (892)
