@@ -22,6 +22,7 @@
 
 #include "kona_kss_api.h"
 #include "kose_APDU_impl.h"
+#include "kose_tlv.h"
 #include "kona_kss_kose_types.h"
 #include <mbedtls/pk.h>
 #include "kss_kose_mbedtls.h"
@@ -144,8 +145,8 @@ void print_manu(){
     printf("CMD : session_close or 2.3              - %s\n", SESSION_CLOSE);
     printf("CMD : com_select_aid or 3.1             - %s\n", APDU_SELECT_AID);
     printf("CMD : com_get_random or 3.2             - %s\n", APDU_GET_RANDOM);
-    printf("CMD : com_initialize_update or 3.3      - %s\n", APDU_INITIALIZE_UPDATE);
-    printf("CMD : com_external_authenticate or 3.4  - %s\n", APDU_EXTERNAL_AUTHENTICATE);
+    //printf("CMD : com_initialize_update or 3.3      - %s\n", APDU_INITIALIZE_UPDATE);
+    //printf("CMD : com_external_authenticate or 3.4  - %s\n", APDU_EXTERNAL_AUTHENTICATE);
     printf("CMD : com_store_data or 3.5             - %s\n", APDU_STORE_DATA);
     printf("CMD : com_put_key or 3.6                - %s\n", APDU_PUT_KEY);
     printf("CMD : generate random 5.1               - %s\n", RANDOM_GEN);
@@ -181,13 +182,6 @@ void set_se_uart_init(kss_kose_uart_ctx_t *se_uart_init){
     se_uart_init->ledc_channel.hpoint = 0;
 }
 
-void set_session_variables_dafault(kss_session_t *session,
-    kss_type_t subsystem,
-    uint32_t application_id,
-    kss_connection_type_t connection_type,
-    void *connectionData){
-}
-
 void command_task(void *arg)
 {
     uint8_t byte;
@@ -202,9 +196,6 @@ void command_task(void *arg)
     kss_session_t session;
     kss_kose_session_t *kose_session;
     memset(&session, 0, sizeof(kss_session_t));
-    kss_type_t subsystem = kType_KSS_SecureElement;
-    uint32_t application_id = 0;
-    kss_connection_type_t connection_type = kKSS_ConnectionType_Plain;
     void *connectionData = NULL;
     
     while (1) {
@@ -288,20 +279,17 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "com_external_autnenticate") == 0 || strcmp((char*)buf, "3.4") == 0) {    // SE Command - EXTERNAL AUTHENTICATE
                     ESP_LOGI(TAG, "Start %s", APDU_EXTERNAL_AUTHENTICATE);
-                    size_t recLen = 0;
                     kss_object_t *keyObj = NULL;   //지금은 미사용
                     Kose_API_External_Authenticate(&kose_session->s_ctx, keyObj, 0x00, (uint8_t *)"\x01\x02\x03\x04\x05\x06\x07\x08", (uint8_t *)"\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8");
                     ESP_LOGI(TAG, "End %s", APDU_EXTERNAL_AUTHENTICATE);
                 }
                 else if (strcmp((char*)buf, "com_store_data") == 0 || strcmp((char*)buf, "3.5") == 0) {    // SE Command - STORE DATA
                     ESP_LOGI(TAG, "Start %s", APDU_STORE_DATA);
-                    size_t recLen = 0;
                     Kose_API_StoreData(&kose_session->s_ctx, 0x7788, 0x010203, 0x01, 0x00, (uint8_t *)"\x01\x02\x03\x04\x05\x06\x07\x08", 8);
                     ESP_LOGI(TAG, "End %s", APDU_STORE_DATA);
                 }
                 else if (strcmp((char*)buf, "com_put_key") == 0 || strcmp((char*)buf, "3.6") == 0) {    // SE Command - PUT KEY
                     ESP_LOGI(TAG, "Start %s", APDU_PUT_KEY);
-                    size_t recLen = 0;
                     Kose_API_PutKey(&kose_session->s_ctx, 0x7788, 0x010203, 0x01, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
                     ESP_LOGI(TAG, "End %s", APDU_PUT_KEY);
                 }

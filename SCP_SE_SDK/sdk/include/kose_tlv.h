@@ -108,36 +108,7 @@ typedef struct KoseSession
         uint8_t *pInRxBuf,
         //size_t *pInRxBufLen,
         uint8_t hasle);
-#if KSS_HAVE_APPLET_KOSE_IOT
-    /** It's either a minimal/single implemntation that calls smCom_TransceiveRaw()
-     *
-     * if pTunnelCtx is Null, directly call smCom_TransceiveRaw()
-     *
-     * Or an API part of tunnel ctx that can do PlatformSCP */
-    smStatus_t (*fp_RawTXn)(void *conn_ctx,
-        struct _kss_kose_tunnel_context *pChannelCtx,
-        SE_AuthType_t currAuth,
-        const tlvHeader_t *hdr,
-        uint8_t *cmdBuf,
-        size_t cmdBufLen,
-        uint8_t *rsp,
-        size_t *rspLen,
-        uint8_t hasle);
-    /** pChannelCtx holds the context information for Kose tunnel communication.
-    *
-    */
-    struct _kss_kose_tunnel_context * pChannelCtx;
-#endif
-#if KSS_HAVE_APPLET
-    smStatus_t(*fp_Transmit)(
-        SE_AuthType_t currAuth,
-        const tlvHeader_t *hdr,
-        uint8_t *cmdBuf,
-        size_t cmdBufLen,
-        uint8_t *rsp,
-        size_t *rspLen,
-        uint8_t hasle);
-#endif
+
     /** pdynScp03Ctx holds the dynamic context information for SCP03 channel */
     //NXSCP03_DynCtx_t *pdynScp03Ctx;
 
@@ -148,186 +119,8 @@ typedef struct KoseSession
     void *conn_ctx;
     /** applet version*/
     uint32_t applet_version;
-
-/*
-#if KSS_HAVE_SCP_SCP03_KSS
-#if (defined(USE_RTOS) && (USE_RTOS == 1))
-    SemaphoreHandle_t scp03_lock;
-    uint8_t scp03_lock_init;
-#elif (__GNUC__ && !AX_EMBEDDED)
-    pthread_mutex_t scp03_lock;
-    uint8_t scp03_lock_init;
-#endif
-#endif // KSS_HAVE_SCP_SCP03_KSS
-*/
 } KoseSession_t;
 
-#if 0
-
-/** @addtogroup kose_types
- *
- * @{ */
-
-/** KoseApdu_t struct representing an APDU for
-* Kose communication.
-*/
-
-typedef struct
-{
-    /** transmit buffer */
-    uint8_t *koseTxBuf;
-    /** Length of transmit buffer */
-    size_t koseTxBufLen;
-    /** With Session LC */
-    size_t ws_LC;
-    /** With Session LC Width 1 or 3 bytes */
-    size_t ws_LCW;
-    /** WithSession KOSE  command */
-    uint8_t *wsKose_cmd;
-    /** WithSession KOSE  command Length */
-    size_t wsKose_cmdLen;
-    /** WithSession KOSE  Tag1 len */
-    size_t wsKose_tag1Len;
-    /** WithSession KOSE  Tag1 Width */
-    size_t wsKose_tag1W;
-    /** WithSession KOSE  Tag1 Command Data */
-    uint8_t *wsKose_tag1Cmd;
-    /** WithSession KOSE  Tag1 Command Data Len */
-    size_t wsKose_tag1CmdLen;
-     /** Kose Command Header */
-    const tlvHeader_t *koseCmd_hdr;
-    /** Kose Command LC */
-    size_t koseCmdLC;
-    /** Kose Command LC width */
-    size_t koseCmdLCW;
-    /** Kose Command */
-    uint8_t *koseCmd;
-    /** Kose Command Length */
-    size_t koseCmdLen;
-    /** Pointer to data for MAC Calculation*/
-    uint8_t *dataToMac;
-     /** Length of data for MAC Calculation */
-    size_t dataToMacLen;
-} KoseApdu_t;
-/**
- *
- * @} */
-
-struct KoseSession;
-struct _kss_kose_tunnel_context;
-
-/** struct KoseSession represnting a session in Kose
-*
-*/
-typedef struct KoseSession
-{
-    /** Array of 8 bytes represnting session value.*/
-    uint8_t value[8];
-    /** Indicating session is active*/
-    uint8_t hasSession : 1;
-    /** Type of authentication for the session*/
-    SE_AuthType_t authType;
-    /** auth ID associated with session*/
-    uint32_t auth_id;
-    /** Meta Funciton
-     *
-     * Internall first calls fp_Transform
-     * Then calls fp_RawTXn
-     * Then calls fp_DeCrypt
-     */
-    smStatus_t(*fp_TXn)(struct KoseSession * pSession,
-        const tlvHeader_t *hdr, uint8_t *cmdBuf, size_t cmdBufLen, uint8_t *rsp, size_t *rspLen, uint8_t hasle);
-
-    /** API called by fp_TXn. Helps handle UserID/Applet/ECKey to transform buffer.
-     *
-     * But this API never sends any data out over any communication link. */
-    smStatus_t(*fp_Transform)(struct KoseSession * pSession,
-        /** IN */
-        const tlvHeader_t *inHdr,
-        /** IN */
-        uint8_t *inCmdBuf,
-        /** IN */
-        size_t inCmdBufLen,
-        /** OUT:
-         *  For Session less,
-         *      For Platform SCP this will be copy of,  inHDR, with outHdr[0] = outHdr[0] | 0x04
-         *      For Plain Session: Same as inHDR
-         *
-         *  For With Session:
-         *      This will be with TLV Header for Wrapped Session Command
-         */
-        tlvHeader_t *outHdr,
-        /** OUT: For Session less, this will be copy of inCmdBuf
-         *
-         * For session based impelementation, this will have
-         * TAG=Session, L=8,V=Session,TAG=TAG1,L=inCmdBufLen,inCmdBuf */
-        uint8_t * pTxBuf,
-        /** IN,OUT: */
-        size_t * pTxBufLen,
-        /** IN */
-        uint8_t hasle);
-
-    /** API called by fp_TXn. Helps handle Applet/Fast SCP to decrypt buffer.
-    *
-    * But this API never reads any data */
-    smStatus_t(*fp_DeCrypt)(struct KoseSession * pSession,
-        size_t prevCmdBufLen,
-        uint8_t *pInRxBuf,
-        size_t *pInRxBufLen,
-        uint8_t hasle);
-#if KSS_HAVE_APPLET_KOSE _IOT
-    /** It's either a minimal/single implemntation that calls smCom_TransceiveRaw()
-     *
-     * if pTunnelCtx is Null, directly call smCom_TransceiveRaw()
-     *
-     * Or an API part of tunnel ctx that can do PlatformSCP */
-    smStatus_t (*fp_RawTXn)(void *conn_ctx,
-        struct _kss_kose_tunnel_context *pChannelCtx,
-        SE_AuthType_t currAuth,
-        const tlvHeader_t *hdr,
-        uint8_t *cmdBuf,
-        size_t cmdBufLen,
-        uint8_t *rsp,
-        size_t *rspLen,
-        uint8_t hasle);
-    /** pChannelCtx holds the context information for Kose tunnel communication.
-    *
-    */
-    struct _kss_kose_tunnel_context * pChannelCtx;
-#endif
-#if KSS_HAVE_APPLET
-    smStatus_t(*fp_Transmit)(
-        SE_AuthType_t currAuth,
-        const tlvHeader_t *hdr,
-        uint8_t *cmdBuf,
-        size_t cmdBufLen,
-        uint8_t *rsp,
-        size_t *rspLen,
-        uint8_t hasle);
-#endif
-    /** pdynScp03Ctx holds the dynamic context information for SCP03 channel */
-    SCP03_DynCtx_t *pdynScp03Ctx;
-
-    /**Connection data context */
-    void *conn_ctx;
-    /** applet version*/
-    uint32_t applet_version;
-
-/*
-#if KSS_HAVE_SCP_SCP03_KSS
-#if (defined(USE_RTOS) && (USE_RTOS == 1))
-    SemaphoreHandle_t scp03_lock;
-    uint8_t scp03_lock_init;
-#elif (__GNUC__ && !AX_EMBEDDED)
-    pthread_mutex_t scp03_lock;
-    uint8_t scp03_lock_init;
-#endif
-#endif // KSS_HAVE_SCP_SCP03_KSS
-*/
-} KoseSession_t;
-#endif
-
-#if 1
 /** KosePolicy_t representing policy in Kose
 * KosePolicy_t structure defines a policy in Kose with a policy value
 * and its length
@@ -347,9 +140,6 @@ typedef struct
     /** TimeStamp Array */
     uint8_t ts[12];
 } Kose_TimeStamp_t;
-#endif
-
-
 
 /**Kose_ExtendedFeatures_t Representing Extended feature in Kose
 */
@@ -520,70 +310,6 @@ int tlvGet_TimeStamp(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_
 int tlvGet_SecureObjectType(uint8_t *buf, size_t *pBufIndex, size_t bufLen, KOSE_TAG_t tag, KOSE_SecObjTyp_t *pType);
 
 int tlvGet_Result(uint8_t *buf, size_t *pBufIndex, size_t bufLen, KOSE_TAG_t tag, KOSE_Result_t *presult);
-
-
-#if 0
-smStatus_t kose_Transform(struct KoseSession *pSession,
-    const tlvHeader_t *hdr,
-    uint8_t *cmdApduBuf,
-    const size_t cmdApduBufLen,
-    tlvHeader_t *out_hdr,
-    uint8_t *txBuf,
-    size_t *ptxBufLen,
-    uint8_t hasle);
-
-smStatus_t kose_Transform_scp(struct KoseSession *pSession,
-    const tlvHeader_t *hdr,
-    uint8_t *cmdApduBuf,
-    const size_t cmdApduBufLen,
-    tlvHeader_t *outhdr,
-    uint8_t *txBuf,
-    size_t *ptxBufLen,
-    uint8_t hasle);
-
-smStatus_t kose_DeCrypt(struct KoseSession *pSessionCtx,
-    size_t cmd_cmacLen,
-    uint8_t *rsp,
-    size_t *rspLength,
-    uint8_t hasle);
-
-smStatus_t DoAPDUTxRx_s_Case2(KoseSession_t *pSessionCtx,
-    const tlvHeader_t *hdr,
-    uint8_t *cmdBuf,
-    size_t cmdBufLen,
-    uint8_t *rspBuf,
-    size_t *pRspBufLen);
-
-smStatus_t DoAPDUTx_s_Case3(KoseSession_t *pSessionCtx,
-    const tlvHeader_t *hdr,
-    uint8_t *cmdBuf,
-    size_t cmdBufLen);
-
-smStatus_t DoAPDUTxRx_s_Case4(KoseSession_t *pSessionCtx,
-    const tlvHeader_t *hdr,
-    uint8_t *cmdBuf,
-    size_t cmdBufLen,
-    uint8_t *rspBuf,
-    size_t *pRspBufLen);
-
-smStatus_t DoAPDUTxRx_s_Case4_ext(KoseSession_t *pSessionCtx,
-    const tlvHeader_t *hdr,
-    uint8_t *cmdBuf,
-    size_t cmdBufLen,
-    uint8_t *rspBuf,
-    size_t *pRspBufLen);
-
-smStatus_t DoAPDUTxRx(KoseSession_t *pSessionCtx,
-    uint8_t *cmdBuf,
-    size_t cmdBufLen,
-    uint8_t *rspBuf,
-    size_t *pRspBufLen);
-
-#if KSS_HAVE_APPLET_KOSE_IOT
-smStatus_t Kose_API_I2CM_Send(
-    pKoseSession_t sessionId, const uint8_t *buffer, size_t bufferLen, uint8_t *result, size_t *presultLen);
-#endif
-#endif //별도 구현
 
 typedef KoseSession_t *pKoseSession_t;
 

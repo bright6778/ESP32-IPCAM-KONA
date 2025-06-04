@@ -321,7 +321,6 @@ int get_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, uint8_t *rsp
 {
     int retVal      = 1;
     uint8_t *pBuf   = buf + (*pBufIndex);
-    size_t extendedLen;
     size_t rspLen = bufLen;
 
     if(rspLen > KOSE_TLV_BUF_SIZE_RSP - 2){

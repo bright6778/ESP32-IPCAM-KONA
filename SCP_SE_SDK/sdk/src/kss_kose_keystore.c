@@ -280,7 +280,6 @@ kss_status_t kss_kose_key_store_get_key(
     kss_status_t retval           = kStatus_KSS_Fail;
     kss_cipher_type_t cipher_type = kKSS_CipherType_NONE;
     smStatus_t status             = SM_NOT_OK;
-    uint16_t size                 = 0;
     ENSURE_OR_GO_EXIT(keyObject);
     ENSURE_OR_GO_EXIT(key);
     ENSURE_OR_GO_EXIT(keylen);
@@ -368,10 +367,11 @@ static kss_status_t kss_kose_key_store_set_ecc_public_key(kss_kose_key_store_t *
         0,
     };
 #endif
+#if 0
     const uint8_t *pPublicKey = NULL;
     size_t publicKeyLen       = 0;
     uint16_t publicKeyIndex   = 0;
-#if 0
+
     /* Assign proper instruction type based on keyObject->isPersistant  */
     (keyObject->isPersistant) ? (transient_type = kKOSE_INS_NA) : (transient_type = kKOSE_INS_TRANSIENT);
 
@@ -882,16 +882,7 @@ static kss_status_t kss_kose_key_store_set_ecc_key(kss_kose_key_store_t *keyStor
     kss_status_t retval    = kStatus_KSS_Fail;
     kss_status_t kssStatus = kStatus_KSS_Fail;
 
-    if (keyObject->objectType == kKSS_KeyPart_Pair) {
-        kssStatus = kss_kose_key_store_set_ecc_keypair(
-            keyStore, keyObject, key, keyLen, keyBitLen, policy_buff, policy_buff_len);
-        if (kssStatus != kStatus_KSS_Success) {
-            LOGE(TAG, "Error in kss_kose_key_store_set_ecc_keypair");
-            retval = kssStatus;
-            goto exit;
-        }
-    }
-    else if (keyObject->objectType == kKSS_KeyPart_Public) {
+    if (keyObject->objectType == kKSS_KeyPart_Public) {
         kssStatus = kss_kose_key_store_set_ecc_public_key(
             keyStore, keyObject, key, keyLen, keyBitLen, policy_buff, policy_buff_len);
         if (kssStatus != kStatus_KSS_Success) {
@@ -948,18 +939,6 @@ kss_status_t kss_kose_key_store_set_key(kss_kose_key_store_t *keyStore,
         ENSURE_OR_GO_EXIT(key);
     }
     cipher_type = (kss_cipher_type_t)keyObject->cipherType;
-/*
-    if (policies) {
-        if (kStatus_KSS_Success !=
-            kss_kose_create_object_policy_buffer(policies, &policies_buff[0], &valid_policy_buff_len)) {
-            goto exit;
-        }
-        ppolicySet = policies_buff;
-    }
-    else {
-        ppolicySet = NULL;
-    }
-*/
     ppolicySet = NULL;
 
     switch (cipher_type) {

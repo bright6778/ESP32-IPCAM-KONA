@@ -170,10 +170,8 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
     uint8_t signature_rs[64] ;
     
 
-#if KSSFTR_KOSE_ECC || KSSFTR_KOSE_RSA
+#if KSSFTR_KOSE_ECC
     parse_ecdsa_der_signature_to_rs64(signature, signatureLen, signature_rs);
-    debug_showframe(TAG, signature, signatureLen);
-    debug_showframe(TAG, signature_rs, 64);
     switch (context->keyObject->cipherType) {
 #if KSSFTR_KOSE_ECC
     case kKSS_CipherType_EC_NIST_P:

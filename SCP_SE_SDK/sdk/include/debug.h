@@ -33,4 +33,4 @@
 #endif
 
 void debug_printf(const char *format, ...);
-void debug_showframe(char *title, uint8_t *buf, int len);
+void debug_showframe(const char *title, const uint8_t *buf, int len);

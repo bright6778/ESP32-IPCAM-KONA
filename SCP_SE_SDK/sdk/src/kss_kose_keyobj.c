@@ -44,8 +44,6 @@ kss_status_t kss_kose_key_object_allocate_handle(kss_kose_object_t *keyObject,
 {
     LOGD(TAG, "kss_kose_key_object_allocate_handle");
     kss_status_t retval = kStatus_KSS_Success;
-    smStatus_t status;
-    KOSE_Result_t exists = kKOSE_Result_NA;
     keyObject->objectType = keyPart;
     keyObject->cipherType = cipherType;
     keyObject->keyId      = keyId;
@@ -61,13 +59,6 @@ kss_status_t kss_kose_key_object_get_handle(kss_kose_object_t *keyObject, uint32
 {
     kss_status_t retval = kStatus_KSS_Fail;
 #if KSSFTR_KOSE_KEY_GET
-    KOSE_SecObjTyp_t retObjectType;
-    uint8_t retTransientType;
-    KOSE_ECCurve_t retCurveId;
-    const KOSE_AttestationType_t attestationType = kKOSE_AttestationType_None;
-    smStatus_t apiRetval                          = SM_NOT_OK;
-    smStatus_t apduRetValue                       = SM_NOT_OK;
-
     keyObject->keyId = objectId;
     keyObject->cipherType = kKSS_CipherType_EC_NIST_P;
     keyObject->curve_id = kKOSE_ECCurve_NIST_P256;

@@ -96,17 +96,14 @@ typedef struct mbedtls_pk_info_t{
 //extern const mbedtls_pk_info_t kose_pk_info;
 extern const mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info;
 extern const mbedtls_pk_info_t kose_mbedtls_ecpubkey_pk_info;
-extern const mbedtls_pk_info_t kose_mbedtls_rsakeypair_info;
-extern const mbedtls_pk_info_t kose_mbedtls_rsapubkey_info;
-
-void setup_se_default_pk_info();
+/*
 static int kss_eckey_check_pair(const void *pub, const void *prv);
 static int kss_eckeypair_can_do(mbedtls_pk_type_t type);
 static int kss_ecpubkey_can_do(mbedtls_pk_type_t type);
 static void kss_eckeypair_free_func(void *ctx);
 static void kss_ecpubkey_free_func(void *ctx);
 static void *kss_eckey_alloc(void);
-
+*/
 /**
  * @brief      Associate a keypair provisioned in the secure element for
  *             subsequent operations.
@@ -143,7 +140,7 @@ static void *kss_eckey_alloc(void);
  */
 
 //int mbedtls_associate_ecdhctx(SST_Index_t key_index, mbedtls_ssl_handshake_params * handshake);
-
+/*
 static int kss_eckey_verify(void *ctx,
     mbedtls_md_type_t md_alg,
     const unsigned char *hash,
@@ -160,7 +157,7 @@ static int kss_eckey_sign(void *ctx,
     size_t *sig_len,
     int (*f_rng)(void *, unsigned char *, size_t),
     void *p_rng);
-
+*/
 int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObject);
 int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyObject);
 

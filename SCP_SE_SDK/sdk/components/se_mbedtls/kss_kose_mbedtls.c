@@ -31,7 +31,6 @@ static const char *TAG = "kss_kose_mbedtls.c";
 #define END_PUBLIC "\n-----END PUBLIC KEY-----"
 
 #define CIPHER_BLOCK_SIZE 16
-#define DES_BLOCK_SIZE (MBEDTLS_KEY_LENGTH_DES / 8)
 
 static size_t kss_eckey_get_bitlen(const void *ctx)
 {
@@ -45,11 +44,6 @@ static int kss_eckeypair_can_do(mbedtls_pk_type_t type)
         ret = 1;
     }
     return ret;
-}
-
-static int kss_ecpubkey_can_do(mbedtls_pk_type_t type)
-{
-    return (type == MBEDTLS_PK_ECKEY || type == MBEDTLS_PK_ECKEY_DH || type == MBEDTLS_PK_ECDSA);
 }
 
 static int kss_eckey_check_pair(const void *pub, const void *prv)
@@ -73,15 +67,6 @@ static void kss_ecpubkey_free_func(void *ctx)
         mbedtls_free(ctx);
     }
     return;
-}
-
-static void *kss_eckey_alloc(void)
-{
-    LOGD(TAG, "kss_eckey_alloc");
-    mbedtls_ecp_keypair *ctx = calloc(1, sizeof(mbedtls_ecp_keypair));
-    if (!ctx)
-        return NULL;
-    return ctx;
 }
 
 static int kss_eckey_verify(void *ctx,
@@ -255,20 +240,12 @@ const mbedtls_pk_info_t kose_mbedtls_ecpubkey_pk_info = {
     NULL,
 };
 
-void setup_se_default_pk_info()
-{
-    // 기본 구조 가져오기
-    const mbedtls_pk_info_t *default_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY);
-    memcpy(&kose_mbedtls_eckeypair_pk_info, default_info, sizeof(mbedtls_pk_info_t));
-    memcpy(&kose_mbedtls_ecpubkey_pk_info, default_info, sizeof(mbedtls_pk_info_t));
-}
 
 int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
 {
     int ret               = 1;
     void *pax_ctx         = NULL;
-    kss_status_t status = kStatus_KSS_Fail;
-
+    
     if (pkey->pk_ctx == NULL) {
         memset(pkey, 0, sizeof(*pkey));
     }
@@ -337,12 +314,7 @@ int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyOb
 {
     int ret               = 1;
     void *pax_ctx         = NULL;
-    uint32_t objectId[16] = {
-        0,
-    };
-    uint8_t objectIdLen = sizeof(objectId);
-    kss_status_t status = kStatus_KSS_Fail;
-
+    
     if (pkey->pk_ctx == NULL) {
         memset(pkey, 0, sizeof(*pkey));
     }

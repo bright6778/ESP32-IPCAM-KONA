@@ -181,7 +181,7 @@ void smartcard_io_init(kss_kose_uart_ctx_t kose_uart_init_config)
 #endif
 
 	//ESP_ERROR_CHECK(uart_driver_install(SCR_UART_PORT_NUM, SCR_UART_BUFF_SIZE * 2, 0, 0, NULL, intr_alloc_flags));
-	esp_err_t ret = uart_driver_install(kose_uart_init_config.se_uart_pin.se_uart_port_num, kose_uart_init_config.se_uart_pin.se_uart_buff_size * 2, 0, 0, NULL, intr_alloc_flags);
+	uart_driver_install(kose_uart_init_config.se_uart_pin.se_uart_port_num, kose_uart_init_config.se_uart_pin.se_uart_buff_size * 2, 0, 0, NULL, intr_alloc_flags);
 	ESP_ERROR_CHECK(uart_param_config(kose_uart_init_config.se_uart_pin.se_uart_port_num, &uart_config));
 	ESP_ERROR_CHECK(uart_set_pin(kose_uart_init_config.se_uart_pin.se_uart_port_num, kose_uart_init_config.se_uart_pin.se_uart_txd, 
 		kose_uart_init_config.se_uart_pin.se_uart_rxd, kose_uart_init_config.se_uart_pin.se_uart_rts, kose_uart_init_config.se_uart_pin.se_uart_cts));

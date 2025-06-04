@@ -105,9 +105,11 @@ smStatus_t kss_kose_uart_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf
     bool bReturn = false;
     smStatus_t status = SM_NOT_OK;
     bReturn = smartcard_apdu(sndbuf, sndlen, rcvbuf, rcvlen);
-    uint8_t sw1 = rcvbuf[*rcvlen - 2];
-    uint8_t sw2 = rcvbuf[*rcvlen - 1];
-    status = (sw1 << 8) | sw2;
+    if(bReturn == true){
+        uint8_t sw1 = rcvbuf[*rcvlen - 2];
+        uint8_t sw2 = rcvbuf[*rcvlen - 1];
+        status = (sw1 << 8) | sw2;
+    }
     return status;
 }
 

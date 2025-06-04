@@ -140,7 +140,6 @@ int mqtt_read_response(mbedtls_ssl_context *ssl)
 void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 {
     char err_buf[256];
-    uint8_t aclient_cer[SIZE_CLIENT_CERTIFICATE] = {0}; 
     
     mbedtls_net_context net;
     mbedtls_ssl_context ssl;
@@ -181,8 +180,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     
     kss_key_store_t keystore;
     kss_status_t kss_status;
-    uint32_t key_id = 0x9f7f;
-
+    
     memset(&keystore, 0, sizeof(kss_key_store_t));
     
     kss_status = kss_key_store_context_init(&keystore, session);

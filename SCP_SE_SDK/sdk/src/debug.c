@@ -36,7 +36,7 @@ void debug_printf(const char *format, ...)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-void debug_showframe(char *title, uint8_t *buf, int len)
+void debug_showframe(const char *title, const uint8_t *buf, int len)
 {
     #ifdef DEBUG 
         #define MAX_BUF_SIZE (128)

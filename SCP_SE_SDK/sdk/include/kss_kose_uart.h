@@ -19,9 +19,9 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include "kose_tlv.h"
 #include "kona_kss_kose_config.h"
 #include "smartcard.h"
-#include "kose_tlv.h"
 
 void set_se_uart_init_default(kss_kose_uart_ctx_t *se_uart_init);
 bool kss_kose_uart_init(kss_kose_uart_ctx_t *kose_uart_init_config);
