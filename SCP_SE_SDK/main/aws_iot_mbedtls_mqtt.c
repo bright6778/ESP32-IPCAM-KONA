@@ -17,7 +17,6 @@
 //#include "ecdsa_verify_alt.h"
 
 #ifdef DEBUG_PRINT
-#include "esp_log.h"
 #include "debug.h"
 #endif
 

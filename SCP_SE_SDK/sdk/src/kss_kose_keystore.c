@@ -1,3 +1,10 @@
+/*
+ *
+ * Copyright 2018-2020 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
+ */
+
 /** @file */
 #ifdef __cplusplus
 extern "C" {
@@ -239,103 +246,6 @@ exit:
     return;
 }
 
-#if KSSFTR_KOSE_ECC && KSSFTR_KOSE_KEY_SET
-static smStatus_t kss_kose_LL_set_ec_key(pKoseSession_t session_ctx,
-    pKosePolicy_t policy,
-    KOSE_MaxAttemps_t maxAttempt,
-    uint32_t objectID,
-    KOSE_ECCurve_t curveID,
-    const uint8_t *privKey,
-    size_t privKeyLen,
-    const uint8_t *pubKey,
-    size_t pubKeyLen,
-    const KOSE_INS_t ins_type,
-    const KOSE_KeyPart_t key_part,
-    KOSE_Result_t obj_exists)
-{
-    smStatus_t status = SM_NOT_OK;
-#if KSS_HAVE_KOSE_VER_GTE_07_02
-    fp_Ec_KeyWrite_t fpEcKey_Ver = NULL;
-    /* Call APIs For SE051 */
-    if (obj_exists == kKOSE_Result_FAILURE) {
-        fpEcKey_Ver = &Kose_API_WriteECKey_Ver;
-    }
-    else if (obj_exists == kKOSE_Result_SUCCESS) {
-        fpEcKey_Ver = &Kose_API_UpdateECKey_Ver;
-    }
-
-    if (fpEcKey_Ver != NULL) {
-        status = fpEcKey_Ver(session_ctx,
-            policy,
-            maxAttempt,
-            objectID,
-            curveID,
-            privKey,
-            privKeyLen,
-            pubKey,
-            pubKeyLen,
-            ins_type,
-            key_part,
-            0);
-    }
-    else {
-        LOG_E("Invalid Object exist status!!!");
-    }
-
-#else
-    /* Call APIs For KOSE */
-    #if 0 //구현예정
-    AX_UNUSED_ARG(obj_exists);
-    status = Kose_API_WriteECKey(
-        session_ctx, policy, maxAttempt, objectID, curveID, privKey, privKeyLen, pubKey, pubKeyLen, ins_type, key_part);
-    #endif
-#endif
-    return status;
-}
-#endif //KSSFTR_KOSE_ECC
-
-#if KSSFTR_KOSE_KEY_SET
-static smStatus_t kss_kose_LL_set_symm_key(pKoseSession_t session_ctx,
-    pKosePolicy_t policy,
-    KOSE_MaxAttemps_t maxAttempt,
-    uint32_t objectID,
-    KOSE_KeyID_t kekID,
-    const uint8_t *keyValue,
-    size_t keyValueLen,
-    const KOSE_INS_t ins_type,
-    const KOSE_SymmKeyType_t type,
-    KOSE_Result_t obj_exists)
-{
-    smStatus_t status = SM_NOT_OK;
-#if KSS_HAVE_KOSE_VER_GTE_07_02
-    fp_Symm_KeyWrite_t fpSymmKey_Ver = NULL;
-    /* Call APIs For SE051 */
-    if (obj_exists == kKOSE_Result_FAILURE) {
-        fpSymmKey_Ver = &Kose_API_WriteSymmKey_Ver;
-    }
-    else if (obj_exists == kKOSE_Result_SUCCESS) {
-        fpSymmKey_Ver = &Kose_API_UpdateSymmKey_Ver;
-    }
-
-    if (fpSymmKey_Ver != NULL) {
-        status = (*fpSymmKey_Ver)(
-            session_ctx, policy, maxAttempt, objectID, kekID, keyValue, keyValueLen, ins_type, type, 0);
-    }
-    else {
-        LOG_E("Invalid Object exist status!!!");
-    }
-#else
-    /* Call APIs For KOSE */
-    #if 0 //구현예정
-    AX_UNUSED_ARG(obj_exists);
-    status =
-        Kose_API_WriteSymmKey(session_ctx, policy, maxAttempt, objectID, kekID, keyValue, keyValueLen, ins_type, type);
-    #endif
-#endif
-    return status;
-}
-#endif //KSSFTR_KOSE_AES && KSSFTR_KOSE_KEY_SET
-
 /* ************************************************************************** */
 /* Functions : kss_kose_keystore                                             */
 /* ************************************************************************** */
@@ -401,7 +311,6 @@ kss_status_t kss_kose_key_store_get_key(
         ENSURE_OR_GO_EXIT(*keylen > key_buflen);
         (*keylen) = (*keylen) - key_buflen;
 
-        //status = Kose_API_ReadObject(&keyStore->session->s_ctx, keyObject->keyId, 0, 0, key_buf, keylen);
         status = Kose_API_GetData(&keyStore->session->s_ctx, keyObject->keyId, key_buf, keylen);
         if (status == SM_ERR_APDU_THROUGHPUT) {
             retval = kStatus_KSS_ApduThroughputError;
@@ -421,123 +330,11 @@ kss_status_t kss_kose_key_store_get_key(
             }
         }
 #endif
-
         /* Return the Key length with header length */
         *keylen += key_buflen;
 
         break;
     }
-#if KSSFTR_KOSE_RSA && KSS_HAVE_RSA
-    case kKSS_CipherType_RSA:
-    case kKSS_CipherType_RSA_CRT: {
-        uint8_t modulus[1024] = {0};
-        uint8_t exponent[4]   = {0};
-        size_t modLen         = sizeof(modulus);
-        size_t expLen         = sizeof(exponent);
-
-        status = Kose_API_ReadRSA(
-            &keyStore->session->s_ctx, keyObject->keyId, 0, 0, kKOSE_RSAPubKeyComp_MOD, modulus, &modLen);
-        if (status == SM_ERR_APDU_THROUGHPUT) {
-            retval = kStatus_KSS_ApduThroughputError;
-            goto exit;
-        }
-        ENSURE_OR_GO_EXIT(status == SM_OK);
-
-        status = Kose_API_ReadRSA(
-            &keyStore->session->s_ctx, keyObject->keyId, 0, 0, kKOSE_RSAPubKeyComp_PUB_EXP, exponent, &expLen);
-        if (status == SM_ERR_APDU_THROUGHPUT) {
-            retval = kStatus_KSS_ApduThroughputError;
-            goto exit;
-        }
-        ENSURE_OR_GO_EXIT(status == SM_OK);
-
-        if (kss_util_asn1_rsa_get_public(key, keylen, modulus, modLen, exponent, expLen) != kStatus_KSS_Success) {
-            goto exit;
-        }
-    } break;
-#endif // KSSFTR_KOSE_RSA && && KSS_HAVE_RSA
-#if 0 //tag 1
-    case kKSS_CipherType_AES:
-        //status = Kose_API_ReadObject(&keyStore->session->s_ctx, keyObject->keyId, 0, 0, key, keylen);
-        status = Kose_API_GetData(&keyStore->session->s_ctx, keyObject->keyId);
-        if (status == SM_ERR_APDU_THROUGHPUT) {
-            retval = kStatus_KSS_ApduThroughputError;
-            goto exit;
-        }
-        ENSURE_OR_GO_EXIT(status == SM_OK);
-        break;
-    case kKSS_CipherType_Binary:
-    case kKSS_CipherType_Certificate: {
-        uint16_t rem_data = 0;
-        uint16_t offset   = 0;
-        size_t max_buffer = 0;
-        status            = Kose_API_ReadSize(&keyStore->session->s_ctx, keyObject->keyId, &size);
-        if (status == SM_ERR_APDU_THROUGHPUT) {
-            retval = kStatus_KSS_ApduThroughputError;
-            goto exit;
-        }
-        ENSURE_OR_GO_EXIT(status == SM_OK);
-        if (*keylen < size) {
-            LOGE(TAG, "Insufficient buffer ");
-            goto exit;
-        }
-
-        rem_data = size;
-        *keylen  = size;
-        while (rem_data > 0) {
-            uint16_t chunk = (rem_data > BINARY_WRITE_MAX_LEN) ? BINARY_WRITE_MAX_LEN : rem_data;
-            rem_data       = rem_data - chunk;
-            max_buffer     = chunk;
-            status         = Kose_API_ReadObject(
-                &keyStore->session->s_ctx, keyObject->keyId, offset, chunk, (key + offset), &max_buffer);
-            if (status == SM_ERR_APDU_THROUGHPUT) {
-                retval = kStatus_KSS_ApduThroughputError;
-                goto exit;
-            }
-            ENSURE_OR_GO_EXIT(status == SM_OK);
-            offset = offset + chunk;
-        }
-        if (cipher_type == kKSS_CipherType_Certificate) { /*ASN1 Parse step to remove extra padded 0*/
-            int ret         = 0;
-            size_t taglen   = 0;
-            size_t bufIndex = 0;
-            ret             = asn_1_parse_tlv(key, &taglen, &bufIndex);
-            if (ret != 0) {
-                goto exit;
-            }
-            taglen += bufIndex;
-
-            ENSURE_OR_GO_EXIT(taglen <= (*keylen));
-            if ((taglen == ((*keylen) - 1)) && (key[taglen] == 0)) {
-                (*keylen)--;
-            }
-        }
-    } break;
-    case kKSS_CipherType_DES:
-        status = Kose_API_ReadObject(&keyStore->session->s_ctx, keyObject->keyId, 0, 0, key, keylen);
-        if (status == SM_ERR_APDU_THROUGHPUT) {
-            retval = kStatus_KSS_ApduThroughputError;
-            goto exit;
-        }
-        ENSURE_OR_GO_EXIT(status == SM_OK);
-        break;
-    case kKSS_CipherType_PCR:
-        status = Kose_API_ReadObject(&keyStore->session->s_ctx, keyObject->keyId, 0, 0, key, keylen);
-        if (status == SM_ERR_APDU_THROUGHPUT) {
-            retval = kStatus_KSS_ApduThroughputError;
-            goto exit;
-        }
-        ENSURE_OR_GO_EXIT(status == SM_OK);
-        break;
-    case kKSS_CipherType_Count:
-        status = Kose_API_ReadObject(&keyStore->session->s_ctx, keyObject->keyId, 0, 0, key, keylen);
-        if (status == SM_ERR_APDU_THROUGHPUT) {
-            retval = kStatus_KSS_ApduThroughputError;
-            goto exit;
-        }
-        ENSURE_OR_GO_EXIT(status == SM_OK);
-        break;
-#endif //tag 1
     default:
         goto exit;
     }
@@ -546,7 +343,6 @@ kss_status_t kss_kose_key_store_get_key(
 exit:
     return retval;
 }
-
 
 static kss_status_t kss_kose_key_store_set_ecc_public_key(kss_kose_key_store_t *keyStore,
     kss_kose_object_t *keyObject,
@@ -1167,17 +963,6 @@ kss_status_t kss_kose_key_store_set_key(kss_kose_key_store_t *keyStore,
     ppolicySet = NULL;
 
     switch (cipher_type) {
-#if KSSFTR_KOSE_RSA && KSS_HAVE_RSA
-    case kKSS_CipherType_RSA:
-    case kKSS_CipherType_RSA_CRT:
-        kssStatus = kss_kose_key_store_set_rsa_key(
-            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
-        if (kssStatus != kStatus_KSS_Success) {
-            retval = kssStatus;
-            goto exit;
-        }
-        break;
-#endif
 #if KSSFTR_KOSE_ECC
     case kKSS_CipherType_EC_NIST_P:
 #if KSS_HAVE_EC_NIST_K
@@ -1269,7 +1054,6 @@ kss_status_t kss_kose_key_store_erase_key(kss_kose_key_store_t *keyStore, kss_ko
 exit:
     return retval;
 }
-
 
 #ifdef __cplusplus
 }

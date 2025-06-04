@@ -1,4 +1,9 @@
-#pragma once
+/*
+ *
+ * Copyright 2018-2020 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
+ */
 
 #ifndef __KSS_KOSE_MBEDTLS_H
 #define __KSS_KOSE_MBEDTLS_H
@@ -7,9 +12,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-//#include "kona_kss_kose_config.h"
-//#include "kose_tlv.h"
-//#include "kss_kose_uart.h"
 #include "mbedtls/pk.h"
 #include "mbedtls/md.h"
 #include "mbedtls/ssl.h"
@@ -19,7 +21,6 @@ extern "C" {
 #include "kona_kss_mbedtls_types.h"
 
 #ifdef DEBUG_PRINT
-#include "esp_log.h"
 #include "debug.h"
 #endif
 

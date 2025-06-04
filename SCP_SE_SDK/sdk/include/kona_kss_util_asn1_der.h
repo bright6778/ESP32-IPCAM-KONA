@@ -2,6 +2,7 @@
 *
 * Copyright 2018-2020 NXP
 * SPDX-License-Identifier: Apache-2.0
+* Modifications Copyright 2025 KONA I
 */
 
 #ifndef KONA_KSS_UTIL_ASN1_DER_H

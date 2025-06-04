@@ -2,6 +2,7 @@
  *
  * Copyright 2018-2020 NXP
  * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
  */
 
 /* Common Key store implementation between keystore_a7x and keystore_pc */
@@ -15,7 +16,6 @@ static const char *TAG = "keystore_cmn.c";
 #include "kona_kss_ftr_default.h"
 #include "kona_kss_keyid_map.h"
 #include <inttypes.h>
-//#include <nxLog_App.h>
 #include <stdio.h>
 #include <string.h>
 #include "sm_types.h"

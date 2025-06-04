@@ -1,16 +1,9 @@
-/////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2025 Kona I Co., Ltd.
-// 
-// All rights are reserved.
-// Proprietary and confidential.
-// Unauthorized copying of this file, via any medium is strictly prohibited.
-// Any use is subject to an appropriate license granted by Kona I Co., Ltd..
-/////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////////////////////////
-//! @file    kose_rng.h
-//! @brief   SE Session module
-/////////////////////////////////////////////////////////////////////////////
+/*
+ *
+ * Copyright 2018-2020 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
+ */
 
 #define __KOSE_RNG_H
 
@@ -25,7 +18,6 @@ extern "C" {
 #include "kss_kose_session.h"
 
 #ifdef DEBUG_PRINT
-#include "esp_log.h"
 #include "debug.h"
 #endif
 

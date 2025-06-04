@@ -2,6 +2,7 @@
  *
  * Copyright 2018-2022 NXP
  * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
  */
 
 #ifndef KSS_APIS_INC_FSL_KSS_FTR_H_
@@ -392,14 +393,14 @@
 #define KSSFTR_KOSE_KEY_GET 1
 
 /** KOSE Secure Element : Authenticate via ECKey */
-#define KSSFTR_KOSE_AuthECKey 1
+#define KSSFTR_KOSE_AuthECKey 0
 
 /** KOSE Secure Element : Allow creation of user/authenticated session.
  *
  * If the intended deployment only uses Platform SCP
  * Or it is a pure session less integration, this can
  * save some code size. */
-#define KSSFTR_KOSE_AuthSession 1
+#define KSSFTR_KOSE_AuthSession 0
 
 /** KOSE Secure Element : Allow creation/deletion of Crypto Objects
  *

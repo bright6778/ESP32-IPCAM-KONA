@@ -1,16 +1,9 @@
-/////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2025 Kona I Co., Ltd.
-// 
-// All rights are reserved.
-// Proprietary and confidential.
-// Unauthorized copying of this file, via any medium is strictly prohibited.
-// Any use is subject to an appropriate license granted by Kona I Co., Ltd..
-/////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////////////////////////
-//! @file    kona_kss_kose_config.h
-//! @brief   KSS SDK config module
-/////////////////////////////////////////////////////////////////////////////
+/*
+ *
+ * Copyright 2018-2020 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
+ */
 
 #ifndef __KSS_KOSE_CONFIG_H
 #define __KSS_KOSE_CONFIG_H

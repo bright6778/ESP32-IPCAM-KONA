@@ -1,3 +1,14 @@
+/*
+ *
+ * Copyright 2025 KONA I
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+  /** @file */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "kss_kose_uart.h"
 #include "smartcard.h"
 
@@ -99,3 +110,7 @@ smStatus_t kss_kose_uart_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf
     status = (sw1 << 8) | sw2;
     return status;
 }
+
+#ifdef __cplusplus
+}
+#endif

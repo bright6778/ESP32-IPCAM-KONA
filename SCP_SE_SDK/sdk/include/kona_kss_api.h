@@ -2,6 +2,7 @@
  *
  * Copyright 2018-2020 NXP
  * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
  */
 /** @file */
 #ifndef _KONA_KSS_API_H_
@@ -14,19 +15,6 @@
 #endif
 
 #include <stdio.h>
-
-/*
-#include "kose_tlv.h"
-#include "kona_kss_kose_types.h"
-#include "kss_kose_uart.h"
-#include "smartcard.h"
-#include "kss_kose_session.h"
-*/
-
-//#include <fsl_kss_policy.h>
-//#include <sm_types.h>
-
-//#include "fsl_kss_types.h"
 
 /** Version of the SSS API */
 #define KSS_API_VERSION (0x00000001u)
@@ -1936,86 +1924,3 @@ kss_status_t kss_rng_get_random(kss_rng_context_t *context, uint8_t *random_data
  */
 kss_status_t kss_rng_context_free(kss_rng_context_t *context);
 #endif
-#if 0
-/**
- *@}
- */ /* end of kss_rng */
-
-/**
- * @addtogroup kss_crypto_tunnel
- * @{
- */
-
-/** @brief Constructor for the tunnelling service context.
- *
- *      Earlier:
- *          kss_status_t kss_tunnel_context_init(
- *              kss_session_t *session, kss_tunnel_t *context);
- *
- *      Now: Parameters are swapped
- *          kss_status_t kss_tunnel_context_init(
- *              kss_tunnel_t *context, kss_session_t *session);
- *
- * @param[out] context Pointer to tunnel context. Tunnel context is updated on function return.
- * @param session Pointer to session this tunnelling service belongs to.
- */
-kss_status_t kss_tunnel_context_init(kss_tunnel_t *context, kss_session_t *session);
-
-/** @brief Tunnelling service.
- *
- * @param[in,out] context Pointer to tunnel context.
- * @param data Pointer to data to be send to subsystem.
- * @param dataLen Length of the data in bytes.
- * @param keyObjects Objects references used by the service.
- * @param keyObjectCount Number of key references at ``keyObjects``.
- * @param tunnelType Implementation specific id of the service.
- */
-kss_status_t kss_tunnel(kss_tunnel_t *context,
-    uint8_t *data,
-    size_t dataLen,
-    kss_object_t *keyObjects,
-    uint32_t keyObjectCount,
-    uint32_t tunnelType);
-
-/** @brief Destructor for the tunnelling service context.
- *
- * @param[out] context Pointer to tunnel context. */
-void kss_tunnel_context_free(kss_tunnel_t *context);
-
-/**
- *@}
- */ /* end of kss_crypto_channel */
-
-/**
- * @addtogroup kss_str_log
- * @{
- */
-
-/**
- * @brief      Returns string error code for @ref kss_status_t
- *
- * @param[in]  status  See @ref kss_status_t
- *
- * @return     String conversion of ``status`` to String.
- */
-
-const char *kss_status_sz(kss_status_t status);
-
-/**
-* @brief      Returns string error code for @ref kss_cipher_type_t
-*
-* @param[in]  cipher_type  See @ref kss_cipher_type_t
-*
-* @return     String conversion of ``cipher_type`` to String.
-*/
-
-const char *kss_cipher_type_sz(kss_cipher_type_t cipher_type);
-
-/**
- *@}
- */ /* end of kss_str_log */
-
-#if defined(__cplusplus)
-}
-#endif
-#endif /* _KONA_KSS_API_H_ */

@@ -22,6 +22,7 @@
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
+ * Modifications Copyright 2025 KONA I
  */
 
 /*
@@ -52,9 +53,6 @@
 #include "mbedtls/error.h"
 
 #include <string.h>
-
-//#include "kona_debug_console.h"
-//#include "kss_crypto.h"
 
 /* Parameter validation macros based on platform_util.h */
 #define ECDH_VALIDATE_RET(cond)    \

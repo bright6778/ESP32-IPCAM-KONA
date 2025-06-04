@@ -2,6 +2,7 @@
  * Copyright 2018-2020 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
  */
 
 #include "kona_kss_api.h"

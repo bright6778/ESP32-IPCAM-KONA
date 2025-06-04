@@ -2,23 +2,17 @@
 *
 * Copyright 2019,2020 NXP
 * SPDX-License-Identifier: Apache-2.0
+* Modifications Copyright 2025 KONA I
 */
 
 #ifndef FSL_KSS_KOSE_CONST_H
 #define FSL_KSS_KOSE_CONST_H
-/*
-#if defined(KSS_USE_FTR_FILE)
-#include "fsl_sss_ftr.h"
-#else
-#include "fsl_sss_ftr_default.h"
-#endif
-*/
 
 #define KOSE_SESSIONID_LEN (8)
 
 /* See MAX_APDU_PAYLOAD_LENGTH in SE05x APDU Specifications.
  *
- * Using 892 so that buffer boundaries are potentially word aligned for Se050.
+ * Using 892 so that buffer boundaries are potentially word aligned for Kose.
  * Using 1024 for Se051.
  * And expecting a failure from OnCard in case host sends a
  * larger than expected buffer.
@@ -26,7 +20,7 @@
  * {No Auth | UserID Auth | Applet SCP | Fast SCP }
  * and combination of either of above along with Platform SCP,
  * there is no easy way how many Exact bytes the host can
- * send to SE05x.
+ * send to KOSE.
  */
 #if KSS_HAVE_KOSE_VER_GTE_07_02
 /* SE051 MAX_APDU_PAYLOAD_LENGTH 1024 */

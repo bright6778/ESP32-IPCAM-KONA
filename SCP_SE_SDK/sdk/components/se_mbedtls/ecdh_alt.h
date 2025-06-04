@@ -34,6 +34,7 @@
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
+ * Modifications Copyright 2025 KONA I
  */
 
 #ifndef MBEDTLS_ECDH_ALT_H
@@ -46,8 +47,6 @@
 #endif
 
 #include "mbedtls/ecp.h"
-//#include "kssapi_mbedtls.h"
-//#include "kss_crypto.h"
 #if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
 #undef MBEDTLS_ECDH_LEGACY_CONTEXT
 #include "everest/everest.h"

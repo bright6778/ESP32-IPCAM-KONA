@@ -1,3 +1,15 @@
+/*
+ *
+ * Copyright 2018-2020 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
+ */
+
+ /** @file */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "kona_kss_kose_types.h"
 #include "kona_kss_api.h"
 #include "kss_kose_rng.h"
@@ -6,7 +18,6 @@
 #include "kss_kose_keyobj.h"
 #include "kss_kose_keystore.h"
 #include "kona_kss_ftr_default.h"
-//#include "kss_kose_mbedtls.h"
 #include "kss_kose_rng.h"
 #include "debug.h"
 
@@ -284,3 +295,7 @@ kss_status_t kss_rng_context_free(kss_rng_context_t *context)
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
     return kStatus_KSS_InvalidArgument;
 }
+
+#ifdef __cplusplus
+}
+#endif

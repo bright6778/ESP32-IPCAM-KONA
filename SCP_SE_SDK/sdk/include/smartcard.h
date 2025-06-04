@@ -24,9 +24,6 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "driver/ledc.h"
-#include "esp_err.h"
-#include "esp_log.h"
-
 #include "debug.h"
 
 #define UART_DRIVER_ERROR "uart driver error"

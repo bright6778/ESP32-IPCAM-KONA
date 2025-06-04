@@ -2,20 +2,12 @@
  *
  * Copyright 2019,2020 NXP
  * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
  */
 /** @file */
 
 #ifndef _KONA_KSS_POLICY_H_
 #define _KONA_KSS_POLICY_H_
-/*
-#if !defined(KSS_CONFIG_FILE)
-#include "kona_kss_config.h"
-#else
-#include KSS_CONFIG_FILE
-#endif
-*/
-//#include "kona_kss_types.h"
-//#include <Applet_KOSE_Ver.h>
 
 /** @addtogroup kss_policy
  * @{ */

@@ -613,8 +613,9 @@ void smartcard_test(void)
 void smartcard_task(void *arg)
 {
 	vTaskDelay(pdMS_TO_TICKS(500));
-    ESP_LOGD(TAG, "");
-    ESP_LOGD(TAG, "smartcard_task() =====");
+    //ESP_LOGD(TAG, "");
+    //ESP_LOGD(TAG, "smartcard_task() =====");
+	LOGI(TAG, "smartcard_task() =====");
 	smartcard_test();
 	while (1) {
 		vTaskDelay(pdMS_TO_TICKS(50));

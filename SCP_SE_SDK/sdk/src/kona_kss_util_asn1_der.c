@@ -2,32 +2,21 @@
 *
 * Copyright 2018-2020 NXP
 * SPDX-License-Identifier: Apache-2.0
+* Modifications Copyright 2025 KONA I
 */
+
+ /** @file */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "kona_kss_util_asn1_der.h"
 #include "ensure.h"
 #include "kona_kss_kose_types.h"
 #include "debug.h"
-//#include <nxLog_kss.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-/*
-#if KSS_HAVE_APPLET_KOSE_IOT
-#include <kona_kss_kose_apis.h>
-#endif
-
-#if KSS_HAVE_HOSTCRYPTO_MBEDTLS
-#include <kona_kss_mbedtls_apis.h>
-#endif
-*/
-#if KSS_HAVE_HOSTCRYPTO_OPENSSL
-#include <kona_kss_openssl_apis.h>
-#include <openssl/pem.h>
-#include <openssl/pkcs12.h>
-#include <openssl/x509.h>
-#include <openssl/x509v3.h>
-#endif
 
 static const char *TAG = "kona_kss_util_asn1_der.c";
 
@@ -1284,23 +1273,6 @@ exit:
     return status;
 }
 
-#if 0
-static  uint8_t *asn_1_parse_header(uint8_t *key, size_t keylen)
-{
-    uint8_t *pBuf = key;
-    uint16_t taglen = 0;
-    kss_status_t status = kStatus_KSS_Fail;
-    int tag = (key[1] == 0x82) ? 4 : 3;
-    /* Parse Header Information*/
-    pBuf = asn_1_parse_tlv(pBuf, &taglen);
-    if (taglen != (keylen - tag))
-    {
-        LOGE(TAG, "Invlaid Key");
-        return status;
-    }
-}
-#endif
-
 int asn_1_parse_tlv(uint8_t *pbuf, size_t *taglen, size_t *bufindex)
 {
     size_t Len;
@@ -1792,3 +1764,7 @@ kss_status_t kss_util_openssl_write_pkcs12(const char *pkcs12_cert,
 exit:
     return retval;
 }
+
+#ifdef __cplusplus
+}
+#endif

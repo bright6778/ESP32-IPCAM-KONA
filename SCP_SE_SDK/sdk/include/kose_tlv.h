@@ -1,4 +1,9 @@
-// origin : kose_tlv.h
+/*
+ *
+ * Copyright 2018-2020 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
+ */
 
 #ifndef KOSE_TLV_H_INC
 #define KOSE_TLV_H_INC

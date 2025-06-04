@@ -17,7 +17,6 @@
 #include "protocol_examples_common.h"
 #include "demo_config.h"
 
-#include "esp_log.h"
 #include "led_strip.h"
 #include "sdkconfig.h"
 
