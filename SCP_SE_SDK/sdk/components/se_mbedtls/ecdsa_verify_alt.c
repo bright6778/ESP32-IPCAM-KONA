@@ -578,7 +578,7 @@ int mbedtls_ecdsa_verify(mbedtls_ecp_group *grp,
         }
 
         status = kss_key_object_allocate_handle(
-            &kssKeyObject, (__LINE__), kKSS_KeyPart_Public, cipherType, publickeylen, kKeyObject_Mode_Transient);
+            &kssKeyObject, (__LINE__), kKSS_KeyPart_Public, cipherType, publickeylen, kssKeyObject.acl, kKeyObject_Mode_Transient);
         if (status != kStatus_KSS_Success) {
             return 1;
         }
@@ -620,12 +620,12 @@ int mbedtls_ecdsa_verify(mbedtls_ecp_group *grp,
         if (status != kStatus_KSS_Success) {
             return 1;
         }
-
+/*
         status = kss_key_store_erase_key(ecdsa_verify_ksskeystore, &kssKeyObject);
         if (status != kStatus_KSS_Success) {
             return 1;
         }
-
+*/
         return 0;
     }
     else {

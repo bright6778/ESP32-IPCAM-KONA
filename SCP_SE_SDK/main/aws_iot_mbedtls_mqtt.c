@@ -14,7 +14,6 @@
 #include "kona_kss_api.h"
 #include "kss_kose_mbedtls.h"
 #include "kss_kose_keystore.h"
-//#include "ecdsa_verify_alt.h"
 
 #ifdef DEBUG_PRINT
 #include "debug.h"
@@ -26,13 +25,6 @@
 #define MBEDTLS_RANDOM_USE_SE       // SE에서 Random을 생성.
 
 #define AWS_IOT_PORT     "8883"
-
-/*
-#define AWS_IOT_ENDPOINT "a1e21k3qqtkhuy-ats.iot.ap-northeast-2.amazonaws.com"
-#define MQTT_CLIENT_ID   "testClient"
-#define MQTT_TOPIC       "kona/topic"
-#define MQTT_PAYLOAD     "hello aws iot"
-*/
 
 #define AWS_IOT_ENDPOINT "a34vuzhubahjfj-ats.iot.ap-northeast-2.amazonaws.com"
 #define MQTT_CLIENT_ID   "ee2e9203f0a0971c599888fb8b67e3a1882626cd-ucnam"

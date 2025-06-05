@@ -44,8 +44,3 @@ kss_status_t kss_kose_key_store_set_key(kss_kose_key_store_t *keyStore,
     size_t keyBitLen,
     void *options,
     size_t optionsLen);
-
-/** @copydoc kss_key_store_erase_key
- *
- */
-kss_status_t kss_kose_key_store_erase_key(kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject);

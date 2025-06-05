@@ -538,6 +538,9 @@ typedef struct
      * along with the key data and other properties. */
     uint32_t keyId;
 
+    // Kona Access Contol List 
+    uint32_t acl;
+
     /** Reserved memory for implementation specific extension */
     struct
     {
@@ -1008,16 +1011,6 @@ kss_status_t kss_key_store_open_key(kss_key_store_t *keyStore, kss_object_t *key
  */
 kss_status_t kss_key_store_freeze_key(kss_key_store_t *keyStore, kss_object_t *keyObject);
 
-/**
- * @brief      Delete / destroy allocated keyObect .
- *
- * @param      keyStore   The key store
- * @param      keyObject  The key object to be deleted
- *
- * @return     The kss status.
- */
-kss_status_t kss_key_store_erase_key(kss_key_store_t *keyStore, kss_object_t *keyObject);
-
 // kss_status_t kss_key_store_clear_all(kss_key_store_t *keyStore);
 
 /** @brief Destructor for the key store context. */
@@ -1061,6 +1054,7 @@ kss_status_t kss_key_object_init(kss_object_t *keyObject, kss_key_store_t *keySt
  * @param         keyByteLenMax  Maximum storage this type of key may need. For
  *                               systems that have their own internal allocation
  *                               table this would help
+ * @param         acl            Access Control List(3byte) = Read(1byte) || Write(1byte) || Delete(1byte)
  * @param         options        0 = Persistant Key (Default) or Transient Key.
  *                               See kss_key_object_mode_t
  *
@@ -1071,6 +1065,7 @@ kss_status_t kss_key_object_allocate_handle(kss_object_t *keyObject,
     kss_key_part_t keyPart,
     kss_cipher_type_t cipherType,
     size_t keyByteLenMax,
+    uint32_t acl,
     uint32_t options); /* Check if this can be made kss_key_object_mode_t */
 
  /**

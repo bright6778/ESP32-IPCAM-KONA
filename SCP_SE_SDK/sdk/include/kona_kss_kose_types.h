@@ -157,6 +157,9 @@ typedef struct _kss_kose_object
      * along with the key data and other properties. */
     uint32_t keyId;
 
+    // Kona Access Contol List 
+    uint32_t acl;
+
     /** If this is an ECC Key, the Curve ID of the key */
     KOSE_ECCurve_t curve_id;
 

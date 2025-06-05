@@ -40,6 +40,7 @@ kss_status_t kss_kose_key_object_allocate_handle(kss_kose_object_t *keyObject,
     kss_key_part_t keyPart,
     kss_cipher_type_t cipherType,
     size_t keyByteLenMax,
+    uint32_t acl,
     uint32_t options)
 {
     LOGD(TAG, "kss_kose_key_object_allocate_handle");
@@ -47,6 +48,7 @@ kss_status_t kss_kose_key_object_allocate_handle(kss_kose_object_t *keyObject,
     keyObject->objectType = keyPart;
     keyObject->cipherType = cipherType;
     keyObject->keyId      = keyId;
+    keyObject->acl        = acl;
     if (options == kKeyObject_Mode_Persistent) {
         keyObject->isPersistant = 1;
     }

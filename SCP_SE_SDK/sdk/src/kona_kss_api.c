@@ -159,13 +159,14 @@ kss_status_t kss_key_object_allocate_handle(kss_object_t *keyObject,
     kss_key_part_t keyPart,
     kss_cipher_type_t cipherType,
     size_t keyByteLenMax,
+    uint32_t acl,
     uint32_t options)
 {
 #if KSS_HAVE_APPLET_KOSE_IOT && KSSFTR_KOSE_KEY_SET
     if (KSS_OBJECT_TYPE_IS_KOSE(keyObject)) {
         kss_kose_object_t *kose_keyObject = (kss_kose_object_t *)keyObject;
         return kss_kose_key_object_allocate_handle(
-            kose_keyObject, keyId, keyPart, cipherType, keyByteLenMax, options);
+            kose_keyObject, keyId, keyPart, cipherType, keyByteLenMax, acl, options);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
     return kStatus_KSS_InvalidArgument;
@@ -244,18 +245,24 @@ kss_status_t kss_key_store_set_key(kss_key_store_t *keyStore,
     return kStatus_KSS_InvalidArgument;
 }
 
-kss_status_t kss_key_store_erase_key(kss_key_store_t *keyStore, kss_object_t *keyObject)
+kss_status_t kss_key_store_set_keyfile(kss_key_store_t *keyStore,
+    kss_object_t *keyObject,
+    const uint8_t *data,
+    size_t dataLen,
+    size_t keyBitLen,
+    void *options,
+    size_t optionsLen)
 {
-#if KSS_HAVE_APPLET_KOSE_IOT
+#if KSS_HAVE_APPLET_KOSE_IOT && KSSFTR_KOSE_KEY_SET
     if (KSS_KEY_STORE_TYPE_IS_KOSE(keyStore)) {
         kss_kose_key_store_t *kose_keyStore = (kss_kose_key_store_t *)keyStore;
         kss_kose_object_t *kose_keyObject   = (kss_kose_object_t *)keyObject;
-        return kss_kose_key_store_erase_key(kose_keyStore, kose_keyObject);
+        return kss_kose_key_store_set_key(
+            kose_keyStore, kose_keyObject, data, dataLen, keyBitLen, options, optionsLen);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
     return kStatus_KSS_InvalidArgument;
 }
-
 /**************************************************************************************
  * random
  **************************************************************************************/

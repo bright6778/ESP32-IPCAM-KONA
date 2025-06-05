@@ -365,3 +365,45 @@ int kss_mbedtls_se_random(void *p_rng, unsigned char *output, size_t output_len)
     }  
     return 0;
 }
+
+int kss_mbedtls_parse_keyfile(const uint8_t *pem, size_t pem_len, uint8_t *d_buf, size_t *d_bufLen){
+    mbedtls_pk_context pk;
+    mbedtls_pk_init(&pk);
+    size_t keylen = 0;
+
+    int ret = mbedtls_pk_parse_key(&pk, pem, pem_len, NULL, 0, NULL, NULL);
+    if (ret != 0) {
+        char err[128];
+        mbedtls_strerror(ret, err, sizeof(err));
+        LOGE(TAG, "parse failed: %s\n", err);
+        mbedtls_pk_free(&pk);
+        return ret;
+    }
+
+    if (mbedtls_pk_get_type(&pk) == MBEDTLS_PK_ECKEY) {
+        mbedtls_ecp_keypair *ec = mbedtls_pk_ec(pk);
+        size_t xlen = mbedtls_mpi_size(&ec->Q.X);
+        unsigned char x_buf[66] = {0};
+
+        keylen  = mbedtls_mpi_size(&ec->d);
+        mbedtls_mpi_write_binary(&ec->d, d_buf, keylen);
+        mbedtls_mpi_write_binary(&ec->Q.X, x_buf, xlen);
+        
+        printf("d: ");
+        for (size_t i = 0; i < mbedtls_mpi_size(&ec->d); i++)
+            printf("%02x", d_buf[i]);
+        printf("\n");
+        
+        printf("Q.X: ");
+        for (size_t i = 0; i < xlen; i++) printf("%02x", x_buf[i]);
+        printf("\n");
+    } else {
+        LOGE(TAG,"Not an EC private key\n");
+    }
+
+    *d_bufLen = keylen;
+
+    mbedtls_pk_free(&pk);
+
+    return ret;
+}
