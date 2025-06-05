@@ -23,6 +23,8 @@
 #define ONLY_MBEDTLS_TEST_CERTFILE  // device keypair & CA Cert in file
 //#define ONLY_MBEDTLS_TEST         // no use SE keypair
 #define AWS_CA_CERT_ECC
+#define MBEDTLS_RANDOM_USE_SE       // SE에서 Random을 생성.
+
 #define AWS_IOT_PORT     "8883"
 
 /*
@@ -140,6 +142,7 @@ int mqtt_read_response(mbedtls_ssl_context *ssl)
 void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 {
     char err_buf[256];
+    int ret = 0;
     
     mbedtls_net_context net;
     mbedtls_ssl_context ssl;
@@ -158,6 +161,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
     mbedtls_debug_set_threshold(4);
 
+#ifndef MBEDTLS_RANDOM_USE_SE
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
 
@@ -165,12 +169,14 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     mbedtls_ctr_drbg_init(&ctr_drbg);
     const char *personalization = "my_tls_rng";  // optional
 
-    int ret = mbedtls_ctr_drbg_seed(&ctr_drbg,
+    ret = mbedtls_ctr_drbg_seed(&ctr_drbg,
                                  mbedtls_entropy_func,
                                  &entropy,
                                  (const unsigned char *)personalization,
                                  strlen(personalization));
-
+#else
+    kss_rng_context_t rng_ctx;
+#endif  // MBEDTLS_RANDOM_USE_SE
     // TLS config
     mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
     
@@ -204,11 +210,12 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
         return;
     }
-
+#ifdef ONLY_MBEDTLS_TEST
 #ifdef ONLY_MBEDTLS_TEST_CERTFILE
     //only test
     ret = mbedtls_pk_parse_key(&client_key, (const unsigned char *)client_key_start, client_key_end - client_key_start, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
-#endif
+#endif // ONLY_MBEDTLS_TEST_CERTFILE
+#endif // ONLY_MBEDTLS_TEST
     ////////////////////////////////////////////////////////////////////////
     //////////////////////// device cert handle ////////////////////////////
     ////////////////////////////////////////////////////////////////////////
@@ -267,7 +274,6 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     ////////////////////////////////////////////////////////////////////////
     //////////////////////// Load the trusted CA////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    //펌웨어에서 CA cert 보관 시
 #ifdef AWS_CA_CERT_ECC
     ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_ecc_start, (root_cert_auth_ecc_end - root_cert_auth_ecc_start)); 
 #else
@@ -303,8 +309,12 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     mbedtls_ssl_conf_ciphersuites(&conf, sdk_recommended_ciphersuites);
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
     mbedtls_ssl_conf_own_cert(&conf, &client_cert, &client_key);
+#ifndef MBEDTLS_RANDOM_USE_SE
     mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
-    
+#else
+    kss_rng_context_init(&rng_ctx, session);
+    mbedtls_ssl_conf_rng(&conf, kss_mbedtls_se_random, &rng_ctx);
+#endif
     if(mbedtls_ssl_setup(&ssl, &conf) != 0){
         LOGE(TAG, "mbedtls_ssl_setup failed");
         return;

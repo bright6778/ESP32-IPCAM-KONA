@@ -964,43 +964,6 @@ kss_status_t kss_kose_key_store_set_key(kss_kose_key_store_t *keyStore,
         }
         break;
 #endif // KSSFTR_KOSE_ECC
-#if 0 // 미구현
-    case kKSS_CipherType_AES:
-        if ((keyLen != 16 && keyLen != 24 && keyLen != 32 && keyLen != 40)) {
-            goto exit;
-        }
-        /* fall through */
-    case kKSS_CipherType_CMAC:
-    case kKSS_CipherType_HMAC:
-#if KSSFTR_KOSE_AES && KSSFTR_KOSE_KEY_SET
-        kssStatus = kss_kose_key_store_set_aes_key(
-            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
-        if (kssStatus != kStatus_KSS_Success) {
-            retval = kssStatus;
-            goto exit;
-        }
-#else
-        goto exit;
-#endif
-        break;
-    case kKSS_CipherType_DES:
-        kssStatus = kss_kose_key_store_set_des_key(
-            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
-        if (kssStatus != kStatus_KSS_Success) {
-            retval = kssStatus;
-            goto exit;
-        }
-        break;
-    case kKSS_CipherType_Binary:
-    case kKSS_CipherType_Certificate: {
-        kssStatus = kss_kose_key_store_set_cert(
-            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
-        if (kssStatus != kStatus_KSS_Success) {
-            retval = kssStatus;
-            goto exit;
-        }
-    } break;
-#endif // 미구현
     default:
         goto exit;
     }

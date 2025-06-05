@@ -11,6 +11,7 @@
 #include "kona_kss_kose_types.h"
 #include "ensure.h"
 #include "mbedtls/base64.h"
+#include "mbedtls/error.h"
 #include "kss_kose_mbedtls.h"
 #include "kona_kss_util_asn1_der.h"
 
@@ -352,4 +353,15 @@ cleanup:
     }
 
     return ret;
+}
+
+int kss_mbedtls_se_random(void *p_rng, unsigned char *output, size_t output_len){
+    kss_status_t kStatus = kStatus_KSS_Fail;
+    kss_rng_context_t *ctx = (kss_rng_context_t *) p_rng;
+
+    kStatus = kss_rng_get_random(ctx, output, output_len);
+    if (kStatus_KSS_Success != kStatus) {
+        return -1;
+    }  
+    return 0;
 }

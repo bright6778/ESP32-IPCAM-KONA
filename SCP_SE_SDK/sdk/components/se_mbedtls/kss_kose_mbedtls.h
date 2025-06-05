@@ -160,6 +160,7 @@ static int kss_eckey_sign(void *ctx,
 */
 int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObject);
 int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyObject);
+int kss_mbedtls_se_random(void *p_rng, unsigned char *output, size_t output_len);
 
 #ifdef __cplusplus
 }
