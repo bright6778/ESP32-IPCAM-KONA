@@ -50,22 +50,3 @@ kss_status_t kss_kose_rng_context_free(kss_kose_rng_context_t *context);
 /**
  *@}
  */ /* end of sss_rng */
-
-/**
- * @addtogroup sss_crypto_tunnel
- * @{
- */
-
-/** @brief Constructor for the tunnelling service context.
- *
- *      Earlier:
- *          sss_status_t sss_tunnel_context_init(
- *              sss_session_t *session, sss_tunnel_t *context);
- *
- *      Now: Parameters are swapped
- *          sss_status_t sss_tunnel_context_init(
- *              sss_tunnel_t *context, sss_session_t *session);
- *
- * @param[out] context Pointer to tunnel context. Tunnel context is updated on function return.
- * @param session Pointer to session this tunnelling service belongs to.
- */

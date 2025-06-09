@@ -382,21 +382,8 @@ int kss_mbedtls_parse_keyfile(const uint8_t *pem, size_t pem_len, uint8_t *d_buf
 
     if (mbedtls_pk_get_type(&pk) == MBEDTLS_PK_ECKEY) {
         mbedtls_ecp_keypair *ec = mbedtls_pk_ec(pk);
-        size_t xlen = mbedtls_mpi_size(&ec->Q.X);
-        unsigned char x_buf[66] = {0};
-
         keylen  = mbedtls_mpi_size(&ec->d);
         mbedtls_mpi_write_binary(&ec->d, d_buf, keylen);
-        mbedtls_mpi_write_binary(&ec->Q.X, x_buf, xlen);
-        
-        printf("d: ");
-        for (size_t i = 0; i < mbedtls_mpi_size(&ec->d); i++)
-            printf("%02x", d_buf[i]);
-        printf("\n");
-        
-        printf("Q.X: ");
-        for (size_t i = 0; i < xlen; i++) printf("%02x", x_buf[i]);
-        printf("\n");
     } else {
         LOGE(TAG,"Not an EC private key\n");
     }
@@ -406,4 +393,45 @@ int kss_mbedtls_parse_keyfile(const uint8_t *pem, size_t pem_len, uint8_t *d_buf
     mbedtls_pk_free(&pk);
 
     return ret;
+}
+
+int kss_mbedtls_parse_crt_getpublickey(const uint8_t *cert, size_t cert_len, uint8_t *pub_buf, size_t *pub_len){
+    mbedtls_x509_crt crt;
+    mbedtls_x509_crt_init(&crt);
+
+    int ret = mbedtls_x509_crt_parse(&crt, cert, cert_len);
+    if (ret != 0) {
+        mbedtls_x509_crt_free(&crt);
+        return ret;
+    }
+
+    mbedtls_pk_context *pk = &crt.pk;
+    if (mbedtls_pk_get_type(pk) != MBEDTLS_PK_ECKEY) {
+        mbedtls_x509_crt_free(&crt);
+        return -1; // not EC key
+    }
+
+    mbedtls_ecp_keypair *ec = mbedtls_pk_ec(*pk);
+
+    size_t x_len = mbedtls_mpi_size(&ec->Q.X);
+    size_t y_len = mbedtls_mpi_size(&ec->Q.Y);
+    size_t total = x_len + y_len;
+
+    if (*pub_len < total) {
+        mbedtls_x509_crt_free(&crt);
+        return -2; // buffer too small
+    }
+
+    mbedtls_mpi_write_binary(&ec->Q.X, pub_buf, x_len);
+    mbedtls_mpi_write_binary(&ec->Q.Y, pub_buf + x_len, y_len);
+
+    debug_showframe("Q.X", pub_buf, x_len);
+    debug_showframe("Q.Y", pub_buf, x_len+y_len);
+    LOGD(TAG, "x_len : %d", x_len);
+    LOGD(TAG, "y_len : %d", y_len);
+
+    *pub_len = total;
+
+    mbedtls_x509_crt_free(&crt);
+    return 0;
 }

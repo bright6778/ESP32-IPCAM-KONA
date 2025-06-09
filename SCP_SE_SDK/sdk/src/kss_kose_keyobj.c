@@ -78,6 +78,11 @@ kss_status_t kss_kose_key_object_get_handle(kss_kose_object_t *keyObject, uint32
     return retval;
 }
 
+void kss_kose_key_object_free(kss_kose_object_t *keyObject)
+{
+    memset(keyObject, 0, sizeof(*keyObject));
+}
+
 #ifdef __cplusplus
 }
 #endif

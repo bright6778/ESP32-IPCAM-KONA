@@ -238,22 +238,27 @@ smStatus_t Kose_API_PutKey(
     uint8_t *pRspbuf                       = &rspbuf[0];
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     size_t rspIndex                        = 0;
-    uint8_t bufObjectID[2] = {0}; 
+    uint8_t bufObjectID[2] = {0};
+    uint8_t bufAclKeyLen[2] = {0};
     uint8_t bufAcl[3] = {0};
-
+    uint32_t aclKeyLen =  objectDataLen + sizeof(bufAcl);
+    
     uint32_to_buffer(objectID, 2, bufObjectID);
+    uint32_to_buffer(aclKeyLen, 2, bufAclKeyLen);
     uint32_to_buffer(acl, 3, bufAcl);
     memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
-    
+
     uint8_t *pLc = &pCmdbuf[4];
     uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
     uint8_t *pData = &pCmdbuf[5];   // total data pointer
     size_t totalSize = 0;
     
     DataSet_u8buf(&pData, bufObjectID, sizeof(bufObjectID));  //Object ID
+    DataSet_u8buf(&pData, bufAclKeyLen, sizeof(bufAclKeyLen));  //ACL + key length
     DataSet_u8buf(&pData, bufAcl, sizeof(bufAcl));  //ACL
-    totalSize += (sizeof(bufObjectID) + sizeof(bufAcl));
-    lvDataSet_u8buf(&pData, &totalSize, objectData, objectDataLen);
+    DataSet_u8buf(&pData, objectData, objectDataLen);  //object data
+    totalSize += (sizeof(bufObjectID) + sizeof(bufAclKeyLen) + sizeof(bufAcl) + objectDataLen);
+    //lvDataSet_u8buf(&pData, &totalSize, objectData, objectDataLen);
     lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalSize);
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
     

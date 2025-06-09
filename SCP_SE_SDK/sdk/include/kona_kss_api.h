@@ -985,8 +985,7 @@ kss_status_t kss_key_store_set_key(kss_key_store_t *keyStore,
 kss_status_t kss_key_store_generate_key(
     kss_key_store_t *keyStore, kss_object_t *keyObject, size_t keyBitLen, void *options);
 
-/** @brief This function exports plain key[] from key store (if constraints and user id allows reading) */
-kss_status_t kss_key_store_get_key(
+kss_status_t kss_key_store_get_data(
     kss_key_store_t *keyStore, kss_object_t *keyObject, uint8_t *data, size_t *dataLen, size_t *pKeyBitLen);
 
 /**

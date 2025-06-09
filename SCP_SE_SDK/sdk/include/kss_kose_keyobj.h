@@ -33,3 +33,9 @@ kss_status_t kss_kose_key_object_allocate_handle(kss_kose_object_t *keyObject,
     uint32_t options);
 
 kss_status_t kss_kose_key_object_get_handle(kss_kose_object_t *keyObject, uint32_t objectId);
+
+/** @copydoc kss_key_object_free
+ *
+ * On KOSE, this has no impact on physical Key Object.
+ */
+void kss_kose_key_object_free(kss_kose_object_t *keyObject);

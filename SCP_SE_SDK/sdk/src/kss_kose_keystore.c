@@ -274,7 +274,7 @@ void kss_kose_set_kss_keystore(kss_key_store_t *ksskeystore)
     kss_mbedtls_set_kss_keystore(ksskeystore);
 }
 
-kss_status_t kss_kose_key_store_get_key(
+kss_status_t kss_kose_key_store_get_data(
     kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, uint8_t *key, size_t *keylen, size_t *pKeyBitLen)
 {
     kss_status_t retval           = kStatus_KSS_Fail;

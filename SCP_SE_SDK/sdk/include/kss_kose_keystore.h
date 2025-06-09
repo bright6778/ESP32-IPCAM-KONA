@@ -24,10 +24,10 @@ kss_status_t kss_kose_key_store_allocate(kss_kose_key_store_t *keyStore, uint32_
 
 void kss_kose_set_kss_keystore(kss_key_store_t *ksskeystore);
 
-/** @copydoc kss_key_store_get_key
+/** @copydoc kss_key_store_get_data
  *
  */
-kss_status_t kss_kose_key_store_get_key(
+kss_status_t kss_kose_key_store_get_data(
     kss_kose_key_store_t *keyStore, 
     kss_kose_object_t *keyObject, 
     uint8_t *key, 
