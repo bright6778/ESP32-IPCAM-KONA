@@ -350,7 +350,7 @@ smStatus_t Kose_API_ECDSAVerify(pKoseSession_t session_ctx,
     LOGD(TAG, "Kose_API_ECDSAVerify");
 
     smStatus_t retStatus = SM_NOT_OK;
-    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_VERIFY_SIGNATURE, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
+    tlvHeader_t hdr      = {{kKOSE_CLA, kKOSE_INS_VERIFY_SIGNATURE, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];

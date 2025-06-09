@@ -218,33 +218,19 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
-    kss_status = kss_key_object_get_handle(&dev_cert, 0x0700);
+    kss_status = kss_key_object_get_handle(&dev_cert, 0x0200);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
         return;
     }
 
-    ////////////////////////////////////////////////////////////////////////
-    //////////////////////////// CA cert handle ////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    // CA object init
-    kss_status = kss_key_object_init(&pub_obj, &keystore);
-    if(kss_status != kStatus_KSS_Success){
-        LOGE(TAG, "kss_key_object_init failed res : %d", kss_status);
-        return;
-    }
-
-    kss_status = kss_key_object_get_handle(&pub_obj, 0x0800);
-    if(kss_status != kStatus_KSS_Success){
-        LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
-        return;
-    }
-
+    
 #ifdef ONLY_MBEDTLS_TEST_CERTFILE
     /* doc+:load-certificate-from-se */
     ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));    //저장된 cert 사용 시
 #else
-    // SE에 저장된 public key를 가져오는 부분
+    /*
+    // SE에 저장된 public key를 가져오는 부분, 현재 미구현
     size_t KeyBitLen = SIZE_CLIENT_CERTIFICATE * 8;
     size_t KeyByteLen = SIZE_CLIENT_CERTIFICATE;
 
@@ -259,9 +245,24 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         LOGE(TAG, " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", (unsigned int) -ret);
         return;
     }
+    */
 #endif
 
-    
+    ////////////////////////////////////////////////////////////////////////
+    //////////////////////////// CA cert handle ////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    // CA object init
+    kss_status = kss_key_object_init(&pub_obj, &keystore);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_init failed res : %d", kss_status);
+        return;
+    }
+
+    kss_status = kss_key_object_get_handle(&pub_obj, 0x0900);   //SE에서 0x0900 objectID로 CA public key를 처리 중
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
+        return;
+    } 
 
     ////////////////////////////////////////////////////////////////////////
     //////////////////////// Load the trusted CA////////////////////////////
@@ -297,7 +298,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 
 #endif
    
-    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_NONE);  //MBEDTLS_SSL_VERIFY_REQUIRED(서명 검증) MBEDTLS_SSL_VERIFY_NONE(검증X)
+    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);  //MBEDTLS_SSL_VERIFY_REQUIRED(서명 검증) MBEDTLS_SSL_VERIFY_NONE(검증X)
     mbedtls_ssl_conf_ciphersuites(&conf, sdk_recommended_ciphersuites);
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
     mbedtls_ssl_conf_own_cert(&conf, &client_cert, &client_key);
@@ -318,14 +319,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 
     mbedtls_net_connect(&net, AWS_IOT_ENDPOINT, AWS_IOT_PORT, MBEDTLS_NET_PROTO_TCP);
     mbedtls_ssl_set_bio(&ssl, &net, mbedtls_net_send, mbedtls_net_recv, NULL);
-/*
-    LOGD(TAG, "=== client_key Context 상태 체크 ===");
-    LOGD(TAG, "client_key.pk_info pointer         = %p", client_key.private_pk_info);
-    LOGD(TAG, "client_key.pk_info->sign pointer   = %p", client_key.private_pk_info ? client_key.private_pk_info->sign_func : NULL);
-    LOGD(TAG, "client_key.pk_ctx pointer          = %p", client_key.private_pk_ctx);
-    LOGD(TAG, "client_key private_grp.id pointer  = %p", &((mbedtls_ecp_keypair *)client_key.private_pk_ctx)->private_grp.id);
-    LOGD(TAG, "client_key pax_ctx.id val          = %d", ((mbedtls_ecp_keypair *)client_key.private_pk_ctx)->private_grp.id);
-*/    
+ 
     // TLS handshake
     ret = mbedtls_ssl_handshake(&ssl);
     if (ret != 0) {
