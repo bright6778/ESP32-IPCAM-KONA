@@ -28,6 +28,7 @@ kss_kose_uart_ctx_t se_uart_init = {
     .ledc_timer.duty_resolution = SCR_PWM_DUTY_RES,
     .ledc_timer.freq_hz = SCR_PWM_FREQUENCY,
     .ledc_timer.clk_cfg = LEDC_AUTO_CLK,
+    .ledc_timer.deconfigure = 0,
 
     .ledc_channel.speed_mode = LEDC_LOW_SPEED_MODE,
     .ledc_channel.channel = SCR_PWM_CHANNEL,
@@ -59,6 +60,7 @@ void set_se_uart_init_default(kss_kose_uart_ctx_t *se_uart_init){
     se_uart_init->ledc_timer.duty_resolution = SCR_PWM_DUTY_RES;
     se_uart_init->ledc_timer.freq_hz = SCR_PWM_FREQUENCY;
     se_uart_init->ledc_timer.clk_cfg = LEDC_AUTO_CLK;
+    se_uart_init->ledc_timer.deconfigure = 0;
     
     // LEDC 채널 설정
     se_uart_init->ledc_channel.speed_mode = LEDC_LOW_SPEED_MODE;
