@@ -214,6 +214,8 @@ bool startWifi(bool firstcall) {
     if (!strcmp(WiFi.SSID(i).c_str(), ST_SSID))
       LOG_INF("Wifi stats for %s - signal strength: %d dBm; Encryption: %s; channel: %u",  ST_SSID, WiFi.RSSI(i), getEncType(i), WiFi.channel(i));
   }
+  LOG_INF("kona pingHandle : %u",  pingHandle);
+  LOG_INF("kona wlStat : %d",  wlStat);
   if (pingHandle == NULL) startPing();
   return wlStat == WL_CONNECTED ? true : false;
 }
@@ -409,6 +411,28 @@ void remoteServerReset() {
   // reset fail counts
   for (uint8_t i = 0; i < REMFAILCNT; i++) failCounts[i] = 0;
 }
+
+// add kona
+int parse_http_status_code(const char *response) {
+  int status_code = 0;
+  if (sscanf(response, "HTTP/%*d.%*d %d", &status_code) == 1) {
+      return status_code;
+  }
+  return -1;  // 파싱 실패
+}
+
+String readFile(const char *path) {
+  SPIFFS.begin(formatIfMountFailed);
+  File file = SPIFFS.open(path, "r");
+  if (!file) {
+    LOG_WRN("Failed to open %s\n", path);
+    return "";
+  }
+  String content = file.readString();
+  file.close();
+  return content;
+}
+
 
 /************************** NTP  **************************/
 

@@ -8,6 +8,7 @@
 #include "appGlobals.h"
 
 void setup() {
+  delay(2000);
   logSetup();
   LOG_INF("Selected board %s", CAM_BOARD);
 #ifdef SIM_CAM_V1_3
@@ -80,6 +81,9 @@ void setup() {
     prepRTSP();
  #endif
 #endif
+#if INCLUDE_KONA
+  //startAWSTLSSet();
+#endif
     checkMemory();
   } 
 }
@@ -88,6 +92,7 @@ void loop() {
   // confirm not blocked in setup
   LOG_INF("=============== Total tasks: %u ===============\n", uxTaskGetNumberOfTasks() - 1);
   delay(1000);
-  //aesTest();
+  aesTest();
+  //startAWSTLSSet();
   vTaskDelete(NULL); // free 8k ram
 }

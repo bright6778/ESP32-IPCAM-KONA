@@ -3,6 +3,9 @@
 // s60sc 2021, 2022, 2024
 
 #pragma once
+
+#define TINY_GSM_MODEM_SIM7600
+
 #include "globals.h"
 
 #if !CONFIG_IDF_TARGET_ESP32S3 && !CONFIG_IDF_TARGET_ESP32
@@ -31,7 +34,7 @@
 
 // User's ESP32S3 cam board
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
-#define CAMERA_MODEL_FREENOVE_ESP32S3_CAM
+//#define CAMERA_MODEL_FREENOVE_ESP32S3_CAM
 //#define CAMERA_MODEL_XIAO_ESP32S3 
 //#define CAMERA_MODEL_NEW_ESPS3_RE1_0
 //#define CAMERA_MODEL_M5STACK_CAMS3_UNIT
@@ -41,7 +44,7 @@
 //#define CAMERA_MODEL_DFRobot_Romeo_ESP32S3
 //#define CAMERA_MODEL_XENOIONEX
 //#define AUXILIARY
-//#define SIM_CAM_V1_3
+#define SIM_CAM_V1_3
 #endif
 
 /***************************************************************
@@ -56,16 +59,17 @@
 #define INCLUDE_MQTT false    // mqtt.cpp (MQTT)
 #define INCLUDE_HASIO false   // mqtt.cpp (Send home assistant discovery messages). Needs INCLUDE_MQTT true
 
-#define INCLUDE_CERTS false   // certificates.cpp (https and server certificate checking)
+#define INCLUDE_CERTS true   // certificates.cpp (https and server certificate checking)
 #define INCLUDE_UART false    // uart.cpp (use another esp32 as Auxiliary connected via UART)
 #define INCLUDE_TELEM false   // telemetry.cpp (real time data collection). Needs INCLUDE_I2C true
 #define INCLUDE_WEBDAV false  // webDav.cpp (WebDAV protocol)
 #define INCLUDE_EXTHB false   // externalHeartbeat.cpp (heartbeat to remote server)
 #define INCLUDE_PGRAM false   // photogram.cpp (photogrammetry feature). Needs INCLUDE_PERIPH true
 #define INCLUDE_MCPWM false   // mcpwm.cpp (BDC motor control). Needs INCLUDE_PERIPH true
-#define INCLUDE_RTSP false    // rtsp.cpp (RTSP Streaming). Requires additional library: ESP32-RTSPServer
+#define INCLUDE_RTSP true    // rtsp.cpp (RTSP Streaming). Requires additional library: ESP32-RTSPServer
 #define INCLUDE_DS18B20 false // if true, requires INCLUDE_PERIPH and additional libraries: OneWire and DallasTemperature
 #define INCLUDE_I2C false     // periphsI2C.cpp (support for I2C peripherals)
+#define INCLUDE_KONA false     // konaCrypto.cpp (Kona IoT Platform)
 
 // if INCLUDE_I2C true, set each I2C device used to true 
 #define USE_SSD1306 false
@@ -216,6 +220,53 @@
 #define DS18B20_PRI 1
 #define BATT_PRI 1
 
+// TINY_GSM
+#if 0
+#if defined(SIM_CAM_V1_3)
+  #include <TinyGsmClient.h>
+  #include <Ticker.h>
+
+  // #define TINY_GSM_MODEM_SIM7000
+  #define TINY_GSM_MODEM_SIM7600
+
+  // Set serial for debug console (to the Serial Monitor, default speed 115200)
+  #define SerialMon Serial
+
+  // Set serial for AT commands (to the module)
+  // Use Hardware Serial on Mega, Leonardo, Micro
+  #define SerialAT Serial1
+
+  // See all AT commands, if wanted
+  // #define DUMP_AT_COMMANDS
+
+  // Define the serial console for debug prints, if needed
+  #define TINY_GSM_DEBUG SerialMon
+
+  /*
+  * Tests enabled
+  */
+  #define TINY_GSM_TEST_GPRS true
+  #define TINY_GSM_TEST_WIFI false
+  #define TINY_GSM_TEST_CALL false
+  #define TINY_GSM_TEST_SMS false
+  #define TINY_GSM_TEST_USSD false
+  #define TINY_GSM_TEST_BATTERY false
+  #define TINY_GSM_TEST_GPS true
+  // powerdown modem after tests
+  #define TINY_GSM_POWERDOWN true
+
+  // set GSM PIN, if any
+  #define GSM_PIN ""
+
+#ifdef DUMP_AT_COMMANDS
+  #include <StreamDebugger.h>
+  StreamDebugger debugger(SerialAT, SerialMon);
+  TinyGsm modem(debugger);
+  #else
+  TinyGsm modem(SerialAT);
+#endif
+#endif
+#endif
 /******************** Function declarations *******************/
 
 struct mjpegStruct {
@@ -560,3 +611,7 @@ const frameStruct frameData[] = {
   {"QSXGA", 2560, 1920, 4, 4, 1},
   {"5MP", 2592, 1944, 4, 4, 1}
 };
+
+/************************** AWS ********************************/
+#define PUT_PATH "/videos/"
+#define HOST "my-bucket.s3.ap-northeast-2.amazonaws.com"

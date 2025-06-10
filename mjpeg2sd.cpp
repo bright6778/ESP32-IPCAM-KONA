@@ -52,6 +52,8 @@ static uint32_t frameInterval; // units of us between frames
 
 // SD card storage
 uint8_t iSDbuffer[(RAMSIZE + CHUNK_HDR) * 2];
+uint8_t iSDbufferEnc[(RAMSIZE + CHUNK_HDR) * 2];
+uint8_t iSDbufferDec[(RAMSIZE + CHUNK_HDR) * 2];
 static size_t highPoint;
 static File aviFile;
 static char aviFileName[FILE_NAME_LEN];
@@ -242,35 +244,108 @@ static void saveFrame(camera_fb_t* fb) {
   uint16_t filler = (4 - (fb->len & 0x00000003)) & 0x00000003; 
   size_t jpegSize = fb->len + filler;
   // add avi frame header
-  memcpy(iSDbuffer+highPoint, dcBuf, 4); 
-  memcpy(iSDbuffer+highPoint+4, &jpegSize, 4);
+  memcpy(iSDbuffer+highPoint, dcBuf, 4);
+  
+  // kona
+  size_t encJpegSize = add_pkcs7_padding(iSDbuffer+highPoint+4, jpegSize, jpegSize + AES_BLOCK_SIZE);
+  memcpy(iSDbuffer+highPoint+4, &encJpegSize, 4);
+  
+  //memcpy(iSDbuffer+highPoint+4, &jpegSize, 4);
+  size_t jpegSizeIndex = highPoint+4;
   highPoint += CHUNK_HDR;
+  //LOG_INF("first jpegSize : %d", jpegSize);
+  //LOG_INF("first encJpegSize : %d", encJpegSize);
+  //LOG_INF("first highPoint : %d", highPoint);
   if (highPoint >= RAMSIZE) {
     // marker overflows buffer
     highPoint -= RAMSIZE;
     aviFile.write(iSDbuffer, RAMSIZE);
     // push overflow to buffer start
     memcpy(iSDbuffer, iSDbuffer+RAMSIZE, highPoint);
+
+    LOG_INF("push overflow to buffer start");
+    convertHexStringAndPrint(iSDbuffer, highPoint);
   }
   // add frame content
   size_t jpegRemain = jpegSize;
   uint32_t wTime = millis();
   while (jpegRemain >= RAMSIZE - highPoint) {
     // write to SD when RAMSIZE is filled in buffer
+/*
     memcpy(iSDbuffer+highPoint, fb->buf + jpegSize - jpegRemain, RAMSIZE - highPoint);
     aviFile.write(iSDbuffer, RAMSIZE);
+  
+    //LOG_INF("jpegSize : %d", jpegSize);
+    //LOG_INF("jpegRemain : %d", jpegRemain);
+    //LOG_INF("highPoint : %d", highPoint);
+    //LOG_INF("Plain Data 1: ");
+    //convertHexStringAndPrint(fb->buf, RAMSIZE - highPoint + jpegSize - jpegRemain);
+    //LOG_INF("Plain Data 2: ");
+    //convertHexStringAndPrint(fb->buf + jpegSize - jpegRemain, RAMSIZE - highPoint);
+    //LOG_INF("iSDbuffer Offset Data : ");
+    //convertHexStringAndPrint(iSDbuffer+highPoint, RAMSIZE - highPoint);
+    //LOG_INF("iSDbuffer Data : ");
+    //convertHexStringAndPrint(iSDbuffer, RAMSIZE);
+
     jpegRemain -= RAMSIZE - highPoint;
     highPoint = 0;
-  } 
+*/
+    // kona frame write??
+    int64_t start_time = esp_timer_get_time();
+    size_t encLen = aes_cryptoData(fb->buf + jpegSize - jpegRemain, RAMSIZE - highPoint, iSDbufferEnc, MBEDTLS_AES_ENCRYPT, AES_KEY_SIZE_128);
+    int64_t end_time = esp_timer_get_time();
+    LOG_INF("aes_cryptoData data size : %d bytes", RAMSIZE - highPoint);  
+    //LOG_INF("aes_cryptoData time %u ms", (uint32_t)((end_time - start_time) / 1000));  
+    LOG_INF("aes_cryptoData time %u us", (uint32_t)((end_time - start_time)));  
+    //LOG_INF("jpegSize : %d", jpegSize);
+    //LOG_INF("jpegRemain : %d", jpegRemain);
+    //LOG_INF("highPoint : %d", highPoint);
+    //LOG_INF("Plain Data 1: ");
+    //convertHexStringAndPrint(fb->buf, RAMSIZE - highPoint + jpegSize - jpegRemain);
+    //LOG_INF("Plain Data 2: ");
+    //convertHexStringAndPrint(fb->buf + jpegSize - jpegRemain, RAMSIZE - highPoint);
+    //LOG_INF("Enc Data : ");
+    //convertHexStringAndPrint(iSDbuffer+highPoint, encLen);
+    //LOG_INF("iSDbuffer Data : ");
+    //convertHexStringAndPrint(iSDbuffer, encLen);
+    size_t decLen = aes_cryptoData(iSDbufferEnc, encLen, iSDbuffer+highPoint, MBEDTLS_AES_DECRYPT, AES_KEY_SIZE_128);
+    //memcpy(iSDbuffer+highPoint, fb->buf + jpegSize - jpegRemain, RAMSIZE - highPoint);
+    //memcpy(iSDbuffer+highPoint, iSDbufferDec, decLen);
+    //LOG_INF("Dec Data : ");
+    //convertHexStringAndPrint(iSDbuffer+highPoint, decLen);
+    aviFile.write(iSDbuffer+highPoint, decLen);
+    //aviFile.write(iSDbuffer, RAMSIZE);
+    
+    jpegRemain -= RAMSIZE - highPoint;
+    highPoint = 0;
+
+  }
   wTime = millis() - wTime;
   wTimeTot += wTime;
   LOG_VRB("SD storage time %u ms", wTime); 
   // whats left or small frame
   memcpy(iSDbuffer+highPoint, fb->buf + jpegSize - jpegRemain, jpegRemain);
   highPoint += jpegRemain;
+
+  // kona
+  size_t encLen = aes_cryptoData(fb->buf + jpegSize - jpegRemain, jpegRemain, iSDbufferEnc, MBEDTLS_AES_ENCRYPT, AES_KEY_SIZE_256);
+  size_t decLen = aes_cryptoData(iSDbufferEnc, encLen, iSDbuffer+highPoint, MBEDTLS_AES_DECRYPT, AES_KEY_SIZE_256);
+  //LOG_INF("Plain Data : ");
+  //convertHexStringAndPrint(fb->buf + jpegSize - jpegRemain, jpegRemain);
+  //LOG_INF("Enc Data : ");
+  //convertHexStringAndPrint(iSDbuffer, encLen);
+  highPoint += jpegRemain;
+  //LOG_INF("whats left or small frame");
+  //LOG_INF("jpegRemain : %d", jpegRemain);
+  //convertHexStringAndPrint(iSDbuffer+highPoint, jpegRemain);
   
   buildAviIdx(jpegSize); // save avi index for frame
   vidSize += jpegSize + CHUNK_HDR;
+
+  //kona
+  //buildAviIdx(encJpegSize); // save avi index for frame
+  //vidSize += encJpegSize + CHUNK_HDR;
+
   frameCnt++; 
   fTime = millis() - fTime - wTime;
   fTimeTot += fTime;
@@ -288,6 +363,7 @@ static bool closeAvi() {
   cTime = millis();
   // write remaining frame content to SD
   aviFile.write(iSDbuffer, highPoint); 
+  //aviFile.write(iSDbufferEnc, highPoint); 
   size_t readLen = 0;
   bool haveWav = false;
 #if INCLUDE_AUDIO
@@ -305,6 +381,7 @@ static bool closeAvi() {
   finalizeAviIndex(frameCnt);
   do {
     readLen = writeAviIndex(iSDbuffer, RAMSIZE);
+    //convertHexStringAndPrint(iSDbuffer, readLen, "writeAviIndex");
     if (readLen) aviFile.write(iSDbuffer, readLen);
   } while (readLen > 0);
   // save avi header at start of file
@@ -370,6 +447,47 @@ static bool closeAvi() {
 #endif
     if (!checkFreeStorage()) doRecording = false; 
     return true; 
+#if INCLUDE_KONA
+    unsigned char buf[1024];
+    size_t len;
+    
+    FILE *fp = fopen(aviFileName, "rb");
+    if (!fp) {
+      LOG_INF("[Error] 파일 열기 실패\n"); 
+      return false;
+    }
+    fseek(fp, 0, SEEK_END);
+    size_t file_size = ftell(fp);
+    rewind(fp);
+
+    char header[512];
+    snprintf(header, sizeof(header),
+            "PUT %s%s HTTP/1.1\r\n"
+            "Host: %s\r\n"
+            "Content-Length: %d\r\n"
+            "Content-Type: video/avi\r\n\r\n",
+            PUT_PATH, aviFileName, HOST, (int)file_size);
+    mbedtls_ssl_write(&conn.ssl, (const unsigned char *)header, strlen(header));
+
+    while ((len = fread(buf, 1, sizeof(buf), fp)) > 0) {
+        mbedtls_ssl_write(&conn.ssl, buf, len);
+    }
+    fclose(fp);
+
+    unsigned char response[512];
+    int resp_len = mbedtls_ssl_read(&conn.ssl, response, sizeof(response) - 1);
+    if (resp_len > 0) {
+        response[resp_len] = 0;
+        LOG_INF("[Response] %s\n", response);
+    }
+
+    int status = parse_http_status_code((const char *)response);
+    if (status == 200 || status == 204) {
+      LOG_INF("S3 업로드 성공: %d\n", status);
+    } else {
+        LOG_ERR("S3 업로드 실패: HTTP %d\n", status);
+    }
+#endif
   } else {
     // delete too small files if exist
     STORAGE.remove(AVITEMP);
@@ -537,6 +655,7 @@ static void readSD() {
   readLen = 0;
   if (!stopPlayback) {
     readLen = playbackFile.read(iSDbuffer+RAMSIZE+CHUNK_HDR, RAMSIZE);
+    LOG_INF("SD readLen : %d", readLen);
     LOG_VRB("SD read time %lu ms", millis() - rTime);
   }
   wTimeTot += millis() - rTime;
@@ -622,11 +741,18 @@ mjpegStruct getNextFrame(bool firstCall) {
         memcpy(&jpegSize, iSDbuffer + buffOffset + 4, 4);
         remainingFrame = jpegSize;
         vidSize += jpegSize;
+
+        // kona add
+        //uint32_t cryptoSize;
+        //memcpy(&cryptoSize, iSDbuffer + buffOffset + 8, 4);
+        LOG_INF("jpegSize : %d", jpegSize);
+
         buffOffset += CHUNK_HDR; // skip over marker 
         mjpegData.jpegSize = jpegSize; // signal start of jpeg to webServer
         mTime = millis();
         // wait on playbackSemaphore for rate control
         xSemaphoreTake(playbackSemaphore, portMAX_DELAY);
+        LOG_INF("xSemaphoreTake jpegSize : %d", jpegSize);//kona
         LOG_VRB("frame timer wait %lu ms", millis()-mTime);
         tTimeTot += millis()-mTime;
         frameCnt++;
@@ -1008,3 +1134,5 @@ bool prepCam() {
   debugMemory("prepCam");
   return res;
 }
+
+

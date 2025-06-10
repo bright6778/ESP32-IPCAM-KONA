@@ -5,7 +5,7 @@
 #include "esp_arduino_version.h"
 
 #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 1, 1)
-//#error Must be compiled with arduino-esp32 core v3.1.1 or higher
+#error Must be compiled with arduino-esp32 core v3.1.1 or higher
 #endif
 
 #pragma once
@@ -32,6 +32,8 @@
 //#if (!CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32S2)
 #if (!defined(CONFIG_IDF_TARGET_ESP32C3) && !defined(CONFIG_IDF_TARGET_ESP32S2))
 #include <SD_MMC.h>
+#include <TinyGsmClient.h>
+#include <Ticker.h>
 #endif
 #include <LittleFS.h>
 #include <sstream>
@@ -42,6 +44,10 @@
 #include <NetworkClientSecure.h> 
 #include <esp_http_server.h>
 #include <esp_https_server.h>
+#include <WiFiClientSecure.h>
+
+#include "SPIFFS.h"
+#include "konaCrypto.h"
 
 // ADC
 #define ADC_ATTEN ADC_11db
@@ -152,6 +158,7 @@ void logPrint(const char *fmtStr, ...);
 void logSetup();
 void OTAprereq();
 bool parseJson(int rxSize);
+int parse_http_status_code(const char *response);
 bool prepFreq(int maxFreq, int sampleInterval);
 bool prepI2C();
 void prepPeripherals();
@@ -160,6 +167,7 @@ bool prepTelegram();
 void prepTemperature();
 void prepUpload();
 void reloadConfigs();
+String readFile(const char *path);
 float readInternalTemp();
 float readTemperature(bool isCelsius, bool onlyDS18 = false);
 float readVoltage();
@@ -297,6 +305,9 @@ extern const char* telegram_rootCACertificate;
 extern const char* hfs_rootCACertificate;
 extern const char* prvtkey_pem; // app https server private key
 extern const char* cacert_pem; // app https server public certificate
+extern const char* aws_rootCACertificate; // AWS https server public certificate
+extern const char* deviceCACertificate; // device public certificate
+extern const char* se_prvtkey_pem; // se private key
 
 // app status
 extern char timezone[];

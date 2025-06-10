@@ -560,6 +560,19 @@
 #if defined(SIM_CAM_V1_3)
 #define CAM_IR_PIN       18
 #define RESET_GPIO_NUM    -1
+
+// TINYGSM
+#define uS_TO_S_FACTOR          1000000ULL  /* Conversion factor for micro seconds to seconds */
+#define TIME_TO_SLEEP           60          /* Time ESP32 will go to sleep (in seconds) */
+
+#define PIN_TX                  27
+#define PIN_RX                  26
+#define UART_BAUD               115200
+//#define PWR_PIN                 4
+#define LED_PIN                 12
+#define POWER_PIN               25
+#define IND_PIN                 36
+
 #else
 #define RESET_GPIO_NUM    18
 #endif

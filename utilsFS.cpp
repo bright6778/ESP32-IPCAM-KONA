@@ -19,7 +19,7 @@
 // Storage settings
 int sdMinCardFreeSpace = 100; // Minimum amount of card free Megabytes before sdFreeSpaceMode action is enabled
 int sdFreeSpaceMode = 1; // 0 - No Check, 1 - Delete oldest dir, 2 - Upload oldest dir to FTP/HFS and then delete on SD 
-bool formatIfMountFailed = true; // Auto format the file system if mount failed. Set to false to not auto format.
+bool formatIfMountFailed = false; // Auto format the file system if mount failed. Set to false to not auto format.
 static int sdmmcFreq = BOARD_MAX_SDMMC_FREQ; // board specific default SD_MMC speed
 static bool use1bitMode = true;
 static fs::FS fp = STORAGE;
@@ -107,12 +107,21 @@ bool startStorage() {
     if (res) listFolder(DATA_DIR);
     else snprintf(startupFailure, SF_LEN, STARTUP_FAIL "Check SD card inserted");
     debugMemory("startStorage");
+
+// add SPIFFS
+#ifdef _SPIFFS_H_
+    if ((fs::SPIFFSFS*)&STORAGE == &SPIFFS) {
+      strcpy(fsType, "SPIFFS");
+      res = SPIFFS.begin(formatIfMountFailed);
+    }
+#endif
     return res; 
   }
 #endif
   // One of SPIFFS or LittleFS
   if (!strlen(fsType)) {
 #ifdef _SPIFFS_H_
+    LOG_INF("SPIFFS Include");//kona
     if ((fs::SPIFFSFS*)&STORAGE == &SPIFFS) {
       strcpy(fsType, "SPIFFS");
       res = SPIFFS.begin(formatIfMountFailed);

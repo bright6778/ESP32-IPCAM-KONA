@@ -85,10 +85,11 @@ static void showPlayback(httpd_req_t* req) {
             snprintf(hdrBuf, HDR_BUF_LEN-1, JPEG_TYPE, mjpegData.jpegSize);
             if (res == ESP_OK) res = httpd_resp_sendstr_chunk(req, hdrBuf);   
           } 
-          // send buffer 
+          // send buffer
+          LOG_INF("jpgLen : %d", jpgLen);//kona 
           if (res == ESP_OK) res = httpd_resp_send_chunk(req, (const char*)iSDbuffer+buffOffset, jpgLen);
         }
-        if (res == ESP_OK) mjpegData = getNextFrame(); 
+        if (res == ESP_OK) mjpegData = getNextFrame(); // kona 이게 반복으로 돌면서 read하는거 같은데?
         else {
           // when browser closes playback get send error
           LOG_VRB("Playback aborted due to error: %s", espErrMsg(res));
