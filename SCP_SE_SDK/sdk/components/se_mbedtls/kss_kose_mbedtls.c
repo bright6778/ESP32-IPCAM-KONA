@@ -85,11 +85,12 @@ static int kss_eckey_verify(void *ctx,
     mbedtls_ecp_keypair *pax_ctx = (mbedtls_ecp_keypair *)ctx;
     mbedtls_pk_context *pcheck_ctx = (mbedtls_pk_context *)ctx;
 
-    if (pcheck_ctx->pk_info == &kose_mbedtls_ecpubkey_pk_info &&
+    if (pcheck_ctx->pk_info->name == kose_mbedtls_ecpubkey_pk_info.name &&
         pcheck_ctx->pk_ctx != NULL &&
         pcheck_ctx->pk_ctx != ctx)
     {
         LOGD(TAG, "[WARN] ctx is pk_context*, fixing...");
+        LOGD(TAG, "[WARN] pk_info->name of ctx : %s", pcheck_ctx->pk_info->name);
         ctx = pcheck_ctx->pk_ctx;
         pax_ctx = (mbedtls_ecp_keypair *)ctx;
     }
@@ -174,11 +175,12 @@ static int kss_eckey_sign(void *ctx,
         return 1;
     }
 
-    if (pcheck_ctx->pk_info == &kose_mbedtls_eckeypair_pk_info &&
+    if (pcheck_ctx->pk_info->name == kose_mbedtls_eckeypair_pk_info.name &&
         pcheck_ctx->pk_ctx != NULL &&
         pcheck_ctx->pk_ctx != ctx)
     {
         LOGD(TAG, "[WARN] ctx is pk_context*, fixing...");
+        LOGD(TAG, "[WARN] pk_info->name of ctx : %s", pcheck_ctx->pk_info->name);
         ctx = pcheck_ctx->pk_ctx;
         pax_ctx = (mbedtls_ecp_keypair *)ctx;
     }
