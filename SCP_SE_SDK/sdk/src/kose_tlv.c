@@ -18,7 +18,7 @@ extern "C" {
 #include "debug.h"
 
 #define KOSE_TLV_BUF_SIZE_CMD 255
-#define KOSE_TLV_BUF_SIZE_RSP 255
+#define KOSE_TLV_BUF_SIZE_RSP 2048
 
 static const char *TAG = "kose_tlv.c";
 
@@ -331,6 +331,7 @@ int get_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, uint8_t *rsp
     while (rspLen-- > 0) {
         *rsp++ = *pBuf++;
     }
+    *pBufIndex += *pRspLen;
     retVal = 0;
     return retVal;
 }

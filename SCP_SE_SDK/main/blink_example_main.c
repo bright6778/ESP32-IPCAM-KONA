@@ -30,6 +30,7 @@
 #include <scp03_Types.h>
 
 #include "kss_kose_uart.h"
+#include "debug.h"
 
 ///////////////////////////////////////////////////////////////
 // Define
@@ -47,6 +48,7 @@
 #define APDU_STORE_DATA             "KOSE_API_StoreData"
 #define APDU_PUT_KEY                "KOSE_API_PutKey"
 #define APDU_SET_LOCK_STATE         "KOSE_API_SetLockState"
+#define KEY_STORE_GET_DATA          "kss_key_store_get_data"
 #define MBEDTLS_ASSOCIATE_PUBKEY    "kss_mbedtls_associate_pubkey"
 #define SE_PROVISIONING             "se_provisioning"
 #define AWS_IOT_DEMO                "aws_iot_demo_main"
@@ -84,7 +86,7 @@ static void blink_led(void)
 
 static void configure_led(void)
 {
-    ESP_LOGI(TAG, "Example configured to blink addressable LED!");
+    LOGI(TAG, "Example configured to blink addressable LED!");
     /* LED strip initialization with the GPIO and pixels number*/
     led_strip_config_t strip_config = {
         .strip_gpio_num = BLINK_GPIO,
@@ -119,7 +121,7 @@ static void blink_led(void)
 
 static void configure_led(void)
 {
-    ESP_LOGI(TAG, "Example configured to blink GPIO LED!");
+    LOGI(TAG, "Example configured to blink GPIO LED!");
     gpio_reset_pin(BLINK_GPIO);
     /* Set the GPIO as a push/pull output */
     gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
@@ -130,8 +132,10 @@ static void configure_led(void)
 #endif
 
 #define BUF_SIZE 256
+#define DATA_BUF_SIZE 2048
 uint8_t buf[BUF_SIZE];
 uint8_t resbuf[BUF_SIZE];
+uint8_t bufData[DATA_BUF_SIZE];
 int buf_index = 0;
 
 void print_manu(){
@@ -149,9 +153,10 @@ void print_manu(){
     //printf("CMD : com_external_authenticate or 3.4  - %s\n", APDU_EXTERNAL_AUTHENTICATE);
     printf("CMD : com_store_data or 3.5             - %s\n", APDU_STORE_DATA);
     printf("CMD : com_put_key or 3.6                - %s\n", APDU_PUT_KEY);
+    printf("CMD : kss_key_store_get_data or 4.1     - %s\n", KEY_STORE_GET_DATA);
     printf("CMD : generate random 5.1               - %s\n", RANDOM_GEN);
     printf("CMD : mbedtls_pubkey or 9.1             - %s\n", MBEDTLS_ASSOCIATE_PUBKEY);
-    printf("CMD : se_provisioning or 10.1           - %s\n", SE_PROVISIONING);
+    //printf("CMD : se_provisioning or 10.1           - %s\n", SE_PROVISIONING);
     printf("CMD : aws_mqtt or 11.1                  - %s\n", AWS_IOT_DEMO);
     printf("//////////////////////////////////////////////////////////////////\n");
 }
@@ -182,6 +187,26 @@ void set_se_uart_init(kss_kose_uart_ctx_t *se_uart_init){
     se_uart_init->ledc_channel.hpoint = 0;
 }
 
+static void showbuf(const char *title, const uint8_t *buf, int len)
+{
+    char tmpbuf[DATA_BUF_SIZE + 8];
+    int count = 0;
+    count = sprintf(&tmpbuf[count], "%s = [", title);
+    for (int i = 0; i < len; i++) {
+        count += sprintf(&tmpbuf[count], i ? " %02x" : "%02x", buf[i]);
+        if (count >= DATA_BUF_SIZE) {
+            LOGI(TAG, "%s", tmpbuf);
+            count = 0;
+        }
+    }
+    if (count > 0) {
+        LOGI(TAG, "%s](%d)", tmpbuf, len);
+    }
+    else {
+        LOGI(TAG, "](%d)", len);
+    }
+}
+
 void command_task(void *arg)
 {
     uint8_t byte;
@@ -197,6 +222,8 @@ void command_task(void *arg)
     kss_kose_session_t *kose_session;
     memset(&session, 0, sizeof(kss_session_t));
     void *connectionData = NULL;
+    kss_key_store_t keystore;
+    kss_object_t keyobject; 
     
     while (1) {
         int len = uart_read_bytes(UART_NUM_0, &byte, 1, 100 / portTICK_PERIOD_MS);
@@ -207,41 +234,41 @@ void command_task(void *arg)
                 printf("\n>> 명령 수신: %s\n", buf);
 
                 if (strcmp((char*)buf, "REBOOT") == 0) {
-                    ESP_LOGI(TAG, "ESP32 재부팅!");
+                    LOGI(TAG, "ESP32 재부팅!");
                     esp_restart();
                 }
                 else if (strcmp((char*)buf, "uart_init") == 0 || strcmp((char*)buf, "1.1") == 0) {    // kss_kose_uart_init
-                    ESP_LOGI(TAG, "Start %s", UART_INIT);
+                    LOGI(TAG, "Start %s", UART_INIT);
                     set_se_uart_init_default(&se_uart_init);
                     ret = kss_kose_uart_init(&se_uart_init);
-                    ESP_LOGI(TAG, "%s return : %d", UART_INIT, ret);
-                    ESP_LOGI(TAG, "End %s", UART_INIT);
+                    LOGI(TAG, "%s return : %d", UART_INIT, ret);
+                    LOGI(TAG, "End %s", UART_INIT);
                 }
                 else if (strcmp((char*)buf, "uart_transceive") == 0 || strcmp((char*)buf, "1.2") == 0) {    // kss_kose_uart_transceive
-                    ESP_LOGI(TAG, "Start %s", UART_TRANSCEIVE);
+                    LOGI(TAG, "Start %s", UART_TRANSCEIVE);
                     uint8_t *rcvbuf = (uint8_t *)malloc(512); // Loopback + ProcedureBytes + TPDU;
                     int rcvlen;
                     ret = kss_kose_uart_transceive((uint8_t *)"\x00\xa4\x04\x00\x01\xa0", 6, rcvbuf, &rcvlen);
-                    ESP_LOGI(TAG, "%s return : %d", UART_TRANSCEIVE, ret);
-                    ESP_LOGI(TAG, "End %s", UART_TRANSCEIVE);
+                    LOGI(TAG, "%s return : %d", UART_TRANSCEIVE, ret);
+                    LOGI(TAG, "End %s", UART_TRANSCEIVE);
                     free(rcvbuf);
                 }
                 else if (strcmp((char*)buf, "uart_close") == 0 || strcmp((char*)buf, "1.3") == 0) {    // kss_kose_uart_close
-                    ESP_LOGI(TAG, "Start %s", UART_CLOSE);
+                    LOGI(TAG, "Start %s", UART_CLOSE);
                     kss_kose_uart_close();
-                    ESP_LOGI(TAG, "Start %s", UART_CLOSE);
+                    LOGI(TAG, "Start %s", UART_CLOSE);
                 }
                 else if (strcmp((char*)buf, "session_create") == 0 || strcmp((char*)buf, "2.1") == 0) {    // kss_kose_session_create
-                    ESP_LOGI(TAG, "Start %s", SESSION_CREATE);
+                    LOGI(TAG, "Start %s", SESSION_CREATE);
                     kStatus = kss_session_create(&session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
                     if (kStatus_KSS_Success != kStatus) {
                         LOGE(TAG, "kss_kose_session_create failed");
                     }
-                    ESP_LOGI(TAG, "%s return : %d", SESSION_CREATE, kStatus);
-                    ESP_LOGI(TAG, "End %s", SESSION_CREATE);
+                    LOGI(TAG, "%s return : %d", SESSION_CREATE, kStatus);
+                    LOGI(TAG, "End %s", SESSION_CREATE);
                 }
                 else if (strcmp((char*)buf, "session_open") == 0 || strcmp((char*)buf, "2.2") == 0) {    // kss_kose_session_open
-                    ESP_LOGI(TAG, "Start %s", SESSION_OPEN);
+                    LOGI(TAG, "Start %s", SESSION_OPEN);
                     set_se_uart_init_default(&se_uart_init);
                     se_conn_ctx.connType = kType_SE_Conn_Type_UART;
                     se_conn_ctx.conn_ctx = &se_uart_init;
@@ -251,50 +278,81 @@ void command_task(void *arg)
                         LOGE(TAG, "kss_kose_session_open failed res : %d", kStatus);
                     }
                     kose_session = (kss_kose_session_t*)&session;
-                    ESP_LOGI(TAG, "%s return : %d", SESSION_OPEN, kStatus);
-                    ESP_LOGI(TAG, "End %s", SESSION_OPEN);
+                    LOGI(TAG, "%s return : %d", SESSION_OPEN, kStatus);
+                    LOGI(TAG, "End %s", SESSION_OPEN);
                 }
                 else if (strcmp((char*)buf, "session_close") == 0 || strcmp((char*)buf, "2.3") == 0) {    // kss_kose_session_close
-                    ESP_LOGI(TAG, "Start %s", SESSION_CLOSE);
+                    LOGI(TAG, "Start %s", SESSION_CLOSE);
                     kss_session_close(&session);
-                    ESP_LOGI(TAG, "End %s", SESSION_CLOSE);
+                    LOGI(TAG, "End %s", SESSION_CLOSE);
                 }
                 else if (strcmp((char*)buf, "com_select_aid") == 0 || strcmp((char*)buf, "3.1") == 0) {    // SE Command - SELECT AID 
-                    ESP_LOGI(TAG, "Start %s", APDU_SELECT_AID);
+                    LOGI(TAG, "Start %s", APDU_SELECT_AID);
                     size_t recLen = 0;
                     Kose_API_Select(&kose_session->s_ctx, resbuf, &recLen);
-                    ESP_LOGI(TAG, "End %s", APDU_SELECT_AID);
+                    LOGI(TAG, "End %s", APDU_SELECT_AID);
                 }
                 else if (strcmp((char*)buf, "com_get_random") == 0 || strcmp((char*)buf, "3.2") == 0) {    // SE Command - GET RANDOM
-                    ESP_LOGI(TAG, "Start %s", APDU_GET_RANDOM);
+                    LOGI(TAG, "Start %s", APDU_GET_RANDOM);
                     size_t recLen = 0;
                     Kose_API_GetRandom(&kose_session->s_ctx, 16, resbuf, &recLen);
-                    ESP_LOGI(TAG, "End %s", APDU_GET_RANDOM);
+                    LOGI(TAG, "End %s", APDU_GET_RANDOM);
                 }
                 else if (strcmp((char*)buf, "com_initialize_update") == 0 || strcmp((char*)buf, "3.3") == 0) {    // SE Command - INITIALIZE UPDATE
-                    ESP_LOGI(TAG, "Start %s", APDU_INITIALIZE_UPDATE);
+                    LOGI(TAG, "Start %s", APDU_INITIALIZE_UPDATE);
                     size_t recLen = 0;
                     Kose_API_Initialize_Update(&kose_session->s_ctx, resbuf, &recLen, 0x0100, (uint8_t *)"\x01\x02\x03\x04\x05\x06\x07\x08");
-                    ESP_LOGI(TAG, "End %s", APDU_INITIALIZE_UPDATE);
+                    LOGI(TAG, "End %s", APDU_INITIALIZE_UPDATE);
                 }
                 else if (strcmp((char*)buf, "com_external_autnenticate") == 0 || strcmp((char*)buf, "3.4") == 0) {    // SE Command - EXTERNAL AUTHENTICATE
-                    ESP_LOGI(TAG, "Start %s", APDU_EXTERNAL_AUTHENTICATE);
+                    LOGI(TAG, "Start %s", APDU_EXTERNAL_AUTHENTICATE);
                     kss_object_t *keyObj = NULL;   //지금은 미사용
                     Kose_API_External_Authenticate(&kose_session->s_ctx, keyObj, 0x00, (uint8_t *)"\x01\x02\x03\x04\x05\x06\x07\x08", (uint8_t *)"\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8");
-                    ESP_LOGI(TAG, "End %s", APDU_EXTERNAL_AUTHENTICATE);
+                    LOGI(TAG, "End %s", APDU_EXTERNAL_AUTHENTICATE);
                 }
                 else if (strcmp((char*)buf, "com_store_data") == 0 || strcmp((char*)buf, "3.5") == 0) {    // SE Command - STORE DATA
-                    ESP_LOGI(TAG, "Start %s", APDU_STORE_DATA);
+                    LOGI(TAG, "Start %s", APDU_STORE_DATA);
                     Kose_API_StoreData(&kose_session->s_ctx, 0x7788, 0x010203, 0x01, 0x00, (uint8_t *)"\x01\x02\x03\x04\x05\x06\x07\x08", 8);
-                    ESP_LOGI(TAG, "End %s", APDU_STORE_DATA);
+                    LOGI(TAG, "End %s", APDU_STORE_DATA);
                 }
                 else if (strcmp((char*)buf, "com_put_key") == 0 || strcmp((char*)buf, "3.6") == 0) {    // SE Command - PUT KEY
-                    ESP_LOGI(TAG, "Start %s", APDU_PUT_KEY);
+                    LOGI(TAG, "Start %s", APDU_PUT_KEY);
                     Kose_API_PutKey(&kose_session->s_ctx, 0x7788, 0x010203, 0x01, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
-                    ESP_LOGI(TAG, "End %s", APDU_PUT_KEY);
+                    LOGI(TAG, "End %s", APDU_PUT_KEY);
+                }
+                else if (strcmp((char*)buf, "kss_key_store_get_data") == 0 || strcmp((char*)buf, "4.1") == 0) {    // kss_key_store_get_data
+                    LOGI(TAG, "Start %s", KEY_STORE_GET_DATA);
+                    size_t dataSize = 713;
+                    memset(&keystore, 0, sizeof(kss_key_store_t));
+
+                    LOGI(TAG, "Start kss_key_store_context_init");
+                    kStatus = kss_key_store_context_init(&keystore, &session);
+                    if(kStatus != kStatus_KSS_Success){
+                        LOGE(TAG, "kss_key_store_context_init failed res : %d", kStatus);
+                    }
+
+                    LOGI(TAG, "Start kss_key_object_init");
+                    kStatus = kss_key_object_init(&keyobject, &keystore);
+                    if (kStatus != kStatus_KSS_Success) {
+                        LOGE(TAG, "kss_key_object_init res : %d", kStatus);
+                    }
+
+                    LOGI(TAG, "Start kss_key_object_allocate_handle");
+                    kStatus = kss_key_object_allocate_handle(&keyobject, 0x0700, kKSS_KeyPart_Default, kKSS_CipherType_EC_NIST_P, dataSize, 0x001032, kKeyObject_Mode_Persistent);
+                    if (kStatus != kStatus_KSS_Success) {
+                        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kStatus);
+                    }
+
+                    LOGI(TAG, "Start kss_key_store_get_data");
+                    kStatus = kss_key_store_get_data(&keystore, &keyobject, bufData, &dataSize);
+                    if (kStatus != kStatus_KSS_Success) {
+                        LOGE(TAG, "kss_key_store_get_data res : %d", kStatus);
+                    }
+                    showbuf("kss_key_store_get_data", bufData, dataSize);
+                    LOGI(TAG, "End %s", KEY_STORE_GET_DATA);
                 }
                 else if (strcmp((char*)buf, "generate_random") == 0 || strcmp((char*)buf, "5.1") == 0) {    // kss_kose_rng
-                    ESP_LOGI(TAG, "Start %s", RANDOM_GEN);
+                    LOGI(TAG, "Start %s", RANDOM_GEN);
                     uint8_t random_data[32] = {0}; 
                     int dataLen = 32;
                     kss_rng_context_t rng_ctx;
@@ -305,23 +363,23 @@ void command_task(void *arg)
                     if (kStatus_KSS_Success != kStatus) {
                         LOGE(TAG, "kss_kose_rng failed");
                     }
-                    ESP_LOGI(TAG, "%s return : %d", RANDOM_GEN, kStatus);
-                    ESP_LOGI(TAG, "End %s", RANDOM_GEN);
+                    LOGI(TAG, "%s return : %d", RANDOM_GEN, kStatus);
+                    LOGI(TAG, "End %s", RANDOM_GEN);
                 }
                 else if (strcmp((char*)buf, "mbedtls_pubkey") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_associate_pubkey
-                    ESP_LOGI(TAG, "Start %s", MBEDTLS_ASSOCIATE_PUBKEY);
-                    ESP_LOGI(TAG, "End %s", MBEDTLS_ASSOCIATE_PUBKEY);
+                    LOGI(TAG, "Start %s", MBEDTLS_ASSOCIATE_PUBKEY);
+                    LOGI(TAG, "End %s", MBEDTLS_ASSOCIATE_PUBKEY);
                 }
                 else if (strcmp((char*)buf, "se_provisioning") == 0 || strcmp((char*)buf, "10.1") == 0) {    // SE Provisioning
-                    ESP_LOGI(TAG, "Start %s", SE_PROVISIONING);
+                    LOGI(TAG, "Start %s", SE_PROVISIONING);
                     se_provisioning(&session);
-                    ESP_LOGI(TAG, "End %s", SE_PROVISIONING);
+                    LOGI(TAG, "End %s", SE_PROVISIONING);
                 }
                 else if (strcmp((char*)buf, "aws_mqtt") == 0 || strcmp((char*)buf, "11.1") == 0) {    // aws_iot_demo_main
-                    ESP_LOGI(TAG, "Start %s", AWS_IOT_DEMO);
+                    LOGI(TAG, "Start %s", AWS_IOT_DEMO);
                     //aws_iot_demo_main(0,NULL);    // AWS IoT Device Embedded C SDK
                     aws_iot_mbedtls_mqtt_test(&session);    // mbedTLS MQTT
-                    ESP_LOGI(TAG, "End %s", AWS_IOT_DEMO);
+                    LOGI(TAG, "End %s", AWS_IOT_DEMO);
                 }
                 print_manu();
 
@@ -387,7 +445,7 @@ void app_main(void)
     print_manu();
 
     while (1) {
-        //ESP_LOGI(TAG, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");
+        //LOGI(TAG, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");
         blink_led();
         /* Toggle the LED state */
         s_led_state = !s_led_state;

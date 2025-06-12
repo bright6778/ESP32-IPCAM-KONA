@@ -16,7 +16,6 @@ if(COMMAND idf_component_register) # ESP-IDF 환경이면
     INCLUDE_DIRS 
         "include" 
         "components/se_mbedtls"
-        #${mbedtls_include}
     REQUIRES 
         driver
         se_mbedtls

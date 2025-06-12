@@ -11,6 +11,7 @@
 
 #define KOSE_MAX_BUF_SIZE_CMD (255)
 #define KOSE_MAX_BUF_SIZE_RSP (255)
+#define DATA_BUF_SIZE 2048
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(array) (sizeof(array) / (sizeof(array[0])))
@@ -24,7 +25,7 @@ smStatus_t Kose_API_Initialize_Update(pKoseSession_t session_ctx, uint8_t *resDa
 
 smStatus_t Kose_API_External_Authenticate(pKoseSession_t session_ctx, kss_object_t *keyObj, uint8_t security_level, const uint8_t *hostCrypto, const uint8_t *cmac);
 
-smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint8_t objectID, uint8_t *data, size_t *pdataLen);
+smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint32_t objectID, uint8_t *data, size_t *pdataLen);
 
 smStatus_t Kose_API_StoreData(
     pKoseSession_t session_ctx, uint32_t objectID, uint32_t acl, uint8_t p1, uint8_t p2, const uint8_t *objectData, const size_t objectDataLen);

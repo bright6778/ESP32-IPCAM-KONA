@@ -1425,7 +1425,7 @@ kss_status_t kss_util_asn1_get_oid_from_kssObj(kss_object_t *pkeyObject, uint32_
     ENSURE_OR_GO_EXIT(output != NULL);
     ENSURE_OR_GO_EXIT(outLen != NULL);
 
-    status = kss_key_store_get_data(pkeyObject->keyStore, pkeyObject, pbKey, &pbKeyBytetLen, &pbKeyBitLen);
+    status = kss_key_store_get_data(pkeyObject->keyStore, pkeyObject, pbKey, &pbKeyBytetLen);
 
     if (status != kStatus_KSS_Success) {
         goto exit;

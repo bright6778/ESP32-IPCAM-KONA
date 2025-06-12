@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../../02. Project/05. IoT/01. 범용 IoT SDK/03. 참고코드/01. NXP/se05x_mw_v04.05.01"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"cstdint": "c",
+			"kona_kss_ftr_default.h": "c",
+			"kss_kose_uart.h": "c",
+			"kose_tlv.h": "c",
+			"kona_kss_kose_types.h": "c",
+			"kose_apdu_impl.h": "c",
+			"ctr_drbg_alt.h": "c",
+			"string": "c",
+			"format": "c",
+			"uart.h": "c",
+			"array": "c"
+		}
+	}
+}

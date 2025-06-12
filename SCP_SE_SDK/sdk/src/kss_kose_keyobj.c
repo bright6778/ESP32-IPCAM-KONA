@@ -43,7 +43,6 @@ kss_status_t kss_kose_key_object_allocate_handle(kss_kose_object_t *keyObject,
     uint32_t acl,
     uint32_t options)
 {
-    LOGD(TAG, "kss_kose_key_object_allocate_handle");
     kss_status_t retval = kStatus_KSS_Success;
     keyObject->objectType = keyPart;
     keyObject->cipherType = cipherType;

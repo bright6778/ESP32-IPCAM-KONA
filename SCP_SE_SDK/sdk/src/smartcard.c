@@ -338,6 +338,7 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 		}
 		// (4) receive response data + SW
 		if (sndlen > 5) {
+			debug_printf("sndlen > 5");
 			int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 2, 1000 / portTICK_PERIOD_MS);
 			debug_showframe("rcvbuf", rcvbuf, len);
 			if (len >= 2) {
@@ -352,7 +353,14 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 			}
 		}
 		else {
-			int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndbuf[4] + 2, 1000 / portTICK_PERIOD_MS);
+			int len = 0;
+			if(sndbuf[4] == 0x00){
+				sndbuf[4] = 0xFF;
+				len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndbuf[4] + 3, 1000 / portTICK_PERIOD_MS);
+			}
+			else{
+				len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndbuf[4] + 2, 1000 / portTICK_PERIOD_MS);
+			}
 			debug_showframe("rcvbuf", rcvbuf, len);
 			if (len >= 2) {
 				*rcvlen = len;

@@ -205,7 +205,6 @@ kss_status_t kss_key_store_context_init(kss_key_store_t *keyStore, kss_session_t
 {
 #if KSS_HAVE_APPLET_KOSE_IOT
     if (KSS_SESSION_TYPE_IS_KOSE(session)) {
-        LOGD(TAG, "kss_key_store_context_init start");
         kss_kose_key_store_t *kose_keyStore = (kss_kose_key_store_t *)keyStore;
         kss_kose_session_t *kose_session    = (kss_kose_session_t *)session;
         KSS_ASSERT(sizeof(*kose_keyStore) <= sizeof(*keyStore));
@@ -228,13 +227,13 @@ kss_status_t kss_key_store_allocate(kss_key_store_t *keyStore, uint32_t keyStore
 }
 
 kss_status_t kss_key_store_get_data(
-    kss_key_store_t *keyStore, kss_object_t *keyObject, uint8_t *data, size_t *dataLen, size_t *pKeyBitLen)
+    kss_key_store_t *keyStore, kss_object_t *keyObject, uint8_t *data, size_t *dataLen)
 {
 #if KSS_HAVE_APPLET_KOSE_IOT && KSSFTR_KOSE_KEY_GET
     if (KSS_KEY_STORE_TYPE_IS_KOSE(keyStore)) {
         kss_kose_key_store_t *kose_keyStore = (kss_kose_key_store_t *)keyStore;
         kss_kose_object_t *kose_keyObject   = (kss_kose_object_t *)keyObject;
-        return kss_kose_key_store_get_data(kose_keyStore, kose_keyObject, data, dataLen, pKeyBitLen);
+        return kss_kose_key_store_get_data(kose_keyStore, kose_keyObject, data, dataLen);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
     return kStatus_KSS_InvalidArgument;

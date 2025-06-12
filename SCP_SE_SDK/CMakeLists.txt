@@ -11,7 +11,6 @@ set(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/sdk"
 
 add_compile_options(-I${CMAKE_SOURCE_DIR}/sdk/components/se_mbedtls)
 
-#set(EXTRA_COMPONENT_DIRS ${CMAKE_SOURCE_DIR}/sdk/components/se_mbedtls)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 project(SCP_SE_SDK)

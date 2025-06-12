@@ -252,7 +252,6 @@ exit:
 
 kss_status_t kss_kose_key_store_context_init(kss_kose_key_store_t *keyStore, kss_kose_session_t *session)
 {
-    LOGD(TAG, "kss_kose_key_store_context_init start");
     kss_status_t retval = kStatus_KSS_Success;
     if (keyStore == NULL) {
         return kStatus_KSS_Fail;
@@ -275,16 +274,14 @@ void kss_kose_set_kss_keystore(kss_key_store_t *ksskeystore)
 }
 
 kss_status_t kss_kose_key_store_get_data(
-    kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, uint8_t *key, size_t *keylen, size_t *pKeyBitLen)
+    kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, uint8_t *data, size_t *dataLen)
 {
     kss_status_t retval           = kStatus_KSS_Fail;
     kss_cipher_type_t cipher_type = kKSS_CipherType_NONE;
     smStatus_t status             = SM_NOT_OK;
     ENSURE_OR_GO_EXIT(keyObject);
-    ENSURE_OR_GO_EXIT(key);
-    ENSURE_OR_GO_EXIT(keylen);
-    ENSURE_OR_GO_EXIT(pKeyBitLen);
-
+    ENSURE_OR_GO_EXIT(data);
+    ENSURE_OR_GO_EXIT(dataLen);
     cipher_type = (kss_cipher_type_t)keyObject->cipherType;
 
     switch (cipher_type) {
@@ -302,15 +299,14 @@ kss_status_t kss_kose_key_store_get_data(
     case kKSS_CipherType_EC_TWISTED_ED:
 #endif
     {
-        uint8_t *key_buf  = NULL;
-        size_t key_buflen = 0;
-
         /* Return the Key length including the ECC DER Header */
+        /*
         add_ecc_header(key, keylen, &key_buf, &key_buflen, keyObject->curve_id);
         ENSURE_OR_GO_EXIT(*keylen > key_buflen);
         (*keylen) = (*keylen) - key_buflen;
+        */
 
-        status = Kose_API_GetData(&keyStore->session->s_ctx, keyObject->keyId, key_buf, keylen);
+        status = Kose_API_GetData(&keyStore->session->s_ctx, keyObject->keyId, data, dataLen);
         if (status == SM_ERR_APDU_THROUGHPUT) {
             retval = kStatus_KSS_ApduThroughputError;
             goto exit;
@@ -318,19 +314,21 @@ kss_status_t kss_kose_key_store_get_data(
         ENSURE_OR_GO_EXIT(status == SM_OK);
 
         /* Change Endiannes. */
+        /*
 #if KSS_HAVE_EC_MONT || KSS_HAVE_EC_ED
         if ((keyObject->curve_id == kKOSE_ECCurve_ECC_MONT_DH_25519) ||
             (keyObject->curve_id == kKOSE_ECCurve_ECC_MONT_DH_448) ||
             (keyObject->curve_id == kKOSE_ECCurve_ECC_ED_25519)) {
-            for (size_t keyValueIdx = 0; keyValueIdx < (*keylen >> 1); keyValueIdx++) {
+            for (size_t keyValueIdx = 0; keyValueIdx < (*dataLen >> 1); keyValueIdx++) {
                 uint8_t swapByte                   = key_buf[keyValueIdx];
-                key_buf[keyValueIdx]               = key_buf[*keylen - 1 - keyValueIdx];
-                key_buf[*keylen - 1 - keyValueIdx] = swapByte;
+                key_buf[keyValueIdx]               = key_buf[*dataLen - 1 - keyValueIdx];
+                key_buf[*dataLen - 1 - keyValueIdx] = swapByte;
             }
         }
 #endif
+        */
         /* Return the Key length with header length */
-        *keylen += key_buflen;
+        //*dataLen += key_buflen;
 
         break;
     }
@@ -343,6 +341,7 @@ exit:
     return retval;
 }
 
+#if 0 
 static kss_status_t kss_kose_key_store_set_ecc_public_key(kss_kose_key_store_t *keyStore,
     kss_kose_object_t *keyObject,
     const uint8_t *key,
@@ -352,6 +351,7 @@ static kss_status_t kss_kose_key_store_set_ecc_public_key(kss_kose_key_store_t *
     size_t policy_buff_len)
 {
     kss_status_t retval     = kStatus_KSS_Fail;
+
     kss_status_t asn_retval = kStatus_KSS_Fail;
     smStatus_t status       = SM_NOT_OK;
     KosePolicy_t kose_policy;
@@ -367,7 +367,6 @@ static kss_status_t kss_kose_key_store_set_ecc_public_key(kss_kose_key_store_t *
         0,
     };
 #endif
-#if 0
     const uint8_t *pPublicKey = NULL;
     size_t publicKeyLen       = 0;
     uint16_t publicKeyIndex   = 0;
@@ -522,10 +521,10 @@ static kss_status_t kss_kose_key_store_set_ecc_public_key(kss_kose_key_store_t *
 
     retval = kStatus_KSS_Success;
 exit:
-#endif  //0
     return retval;
 }
-
+#endif //kss_kose_key_store_set_ecc_public_key
+/*
 static kss_status_t kss_kose_key_store_set_ecc_private_key(kss_kose_key_store_t *keyStore,
     kss_kose_object_t *keyObject,
     const uint8_t *key,
@@ -562,7 +561,7 @@ static kss_status_t kss_kose_key_store_set_ecc_private_key(kss_kose_key_store_t 
 exit:
     return retval;
 }
-
+*/
 static kss_status_t kss_kose_key_store_set_ecc_key(kss_kose_key_store_t *keyStore,
     kss_kose_object_t *keyObject,
     const uint8_t *key,

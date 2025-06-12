@@ -32,15 +32,10 @@ static const char *TAG = "kose_APDU_impl.c";
  
 static void uint32_to_buffer(const uint32_t val, size_t bufSzie, uint8_t *buffer) {
     size_t offset = 0;
-    switch(bufSzie){
-        case 4 : buffer[offset] = (val >> 24) & 0xFF;
-        offset++;
-        case 3 : buffer[offset] = (val >> 16) & 0xFF;
-        offset++;
-        case 2 : buffer[offset] = (val >> 8) & 0xFF;
-        offset++;
-        case 1 : buffer[offset] = val & 0xFF;
-    }
+    if (bufSzie >= 4) buffer[offset++] = (val >> 24) & 0xFF;
+    if (bufSzie >= 3) buffer[offset++] = (val >> 16) & 0xFF;
+    if (bufSzie >= 2) buffer[offset++] = (val >> 8) & 0xFF;
+    if (bufSzie >= 1) buffer[offset++] = val & 0xFF;
 }
 
 // SE Select
@@ -53,9 +48,7 @@ smStatus_t Kose_API_Select(pKoseSession_t session_ctx, uint8_t *fci, size_t *pfc
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
     uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
-    uint8_t *pRspbuf                       = &rspbuf[0];
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     size_t rspIndex                        = 0;
 
@@ -85,9 +78,7 @@ smStatus_t Kose_API_GetRandom(pKoseSession_t session_ctx, uint16_t size, uint8_t
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
     uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
-    uint8_t *pRspbuf                       = &rspbuf[0];
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     size_t rspIndex                        = 0;
 
@@ -115,9 +106,7 @@ smStatus_t Kose_API_Initialize_Update(pKoseSession_t session_ctx, uint8_t *resDa
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
     uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
-    uint8_t *pRspbuf                       = &rspbuf[0];
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     size_t rspIndex                        = 0;
 
@@ -153,12 +142,7 @@ smStatus_t Kose_API_External_Authenticate(pKoseSession_t session_ctx, kss_object
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD] = {0};
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
-    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
-    uint8_t *pRspbuf                       = &rspbuf[0];
-    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
-    size_t rspIndex                        = 0;
-
+    
     memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
     
     uint8_t *pLc = &pCmdbuf[4];
@@ -187,11 +171,6 @@ smStatus_t Kose_API_StoreData(
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD] = {0};
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
-    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
-    uint8_t *pRspbuf                       = &rspbuf[0];
-    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
-    size_t rspIndex                        = 0;
     uint8_t bufObjectID[2] = {0}; 
     uint8_t bufAcl[3] = {0};
 
@@ -233,11 +212,6 @@ smStatus_t Kose_API_PutKey(
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD] = {0};
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
-    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
-    uint8_t *pRspbuf                       = &rspbuf[0];
-    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
-    size_t rspIndex                        = 0;
     uint8_t bufObjectID[2] = {0};
     uint8_t bufAclKeyLen[2] = {0};
     uint8_t bufAcl[3] = {0};
@@ -277,12 +251,7 @@ smStatus_t Kose_API_SetLockState(pKoseSession_t session_ctx)
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD] = {0};
     size_t cmdbufLen                       = 5;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
-    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
-    uint8_t *pRspbuf                       = &rspbuf[0];
-    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
-    size_t rspIndex                        = 0;
-
+    
     memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
     pCmdbuf[5] = 0x00;
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
@@ -308,9 +277,7 @@ smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
     uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
-    uint8_t *pRspbuf                       = &rspbuf[0];
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     size_t rspIndex                        = 0;
 
@@ -354,11 +321,8 @@ smStatus_t Kose_API_ECDSAVerify(pKoseSession_t session_ctx,
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
     uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
-    uint8_t *pRspbuf                       = &rspbuf[0];
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
-    size_t rspIndex                        = 0;
     
     uint8_t *pLc = &pCmdbuf[4]; // lc pointer
     uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
@@ -396,32 +360,55 @@ smStatus_t Kose_API_ECDSAVerify(pKoseSession_t session_ctx,
     return retStatus;
 }
 
-smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint8_t objectID, uint8_t *data, size_t *pdataLen)
+smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint32_t objectID, uint8_t *data, size_t *pdataLen)
 {
     LOGD(TAG, "Kose_API_GetData");
 
-    objectID = (objectID & 0xFFFF);
     smStatus_t retStatus = SM_NOT_OK;
-    tlvHeader_t hdr = {{kKOSE_CLA, kKOSE_GET_DATA, (uint8_t)((objectID >> 8) & 0xFF), (uint8_t)(objectID & 0xFF)}};
+    tlvHeader_t hdr = {{kKOSE_CLA, kKOSE_GET_DATA, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
-    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    uint8_t rspbuf[DATA_BUF_SIZE] = {0};
     uint8_t *pRspbuf                       = &rspbuf[0];
-    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
+    size_t rspbufTotalLen                  = 0;
     size_t rspIndex                        = 0;
+    size_t rspDataIndex                    = 0;
 
+    uint8_t bufObjectID[2] = {0};
+
+    uint32_to_buffer(objectID, 2, bufObjectID);
+    hdr.hdr[2] = bufObjectID[0];
+    hdr.hdr[3] = bufObjectID[1];
+    
     memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
     pCmdbuf[4] = 0x00;
     cmdbufLen = sizeof(hdr.hdr) + 1;
-    
-    retStatus = DoAPDUTxRx_s_Case2(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+
+GetRes:
+    retStatus = DoAPDUTxRx_s_Case2(session_ctx, cmdbuf, cmdbufLen, rspbuf, pdataLen);
+    rspIndex = 0;     
     if (retStatus == SM_OK) {
-        if(get_u8buf(rspbuf, &rspIndex, rspbufLen - 2, data, pdataLen) != 0)
+        if(get_u8buf(pRspbuf, &rspIndex, *pdataLen - 2, data + (rspDataIndex), pdataLen) != 0)
         {
             *pdataLen = 0;
         }
+        rspbufTotalLen += *pdataLen;
+        *pdataLen = rspbufTotalLen;
+    }
+    else if((retStatus & 0xFF00) == SM_WRN_RESPONSE_DATA_INCOMPLETE) {
+        if(get_u8buf(pRspbuf, &rspIndex, *pdataLen - 2, data + (rspDataIndex), pdataLen) != 0)
+        {
+            *pdataLen = 0;
+        }
+        rspbufTotalLen += *pdataLen;
+        *pdataLen = rspbufTotalLen;
+
+        rspDataIndex += rspIndex;
+        memcpy(cmdbuf, (uint8_t*)"\x00\xC0\x00\x00\x00", 5);
+        cmdbuf[4] = (uint8_t)(retStatus & 0x00FF);
+
+        goto GetRes;
     }
 
     return retStatus;

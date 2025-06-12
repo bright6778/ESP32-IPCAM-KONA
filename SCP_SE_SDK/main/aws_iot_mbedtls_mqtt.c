@@ -27,7 +27,7 @@
 #define AWS_IOT_PORT     "8883"
 
 #define AWS_IOT_ENDPOINT "a34vuzhubahjfj-ats.iot.ap-northeast-2.amazonaws.com"
-#define MQTT_CLIENT_ID   "ee2e9203f0a0971c599888fb8b67e3a1882626cd-ucnam"
+#define MQTT_CLIENT_ID   "ee2e9203f0a0971c599888fb8b67e3a1882626cd-kona"
 #define MQTT_TOPIC       "client/test/ee2e9203f0a0971c599888fb8b67e3a1882626cd/la/123456"
 #define MQTT_PAYLOAD     "hello aws iot"
 
@@ -226,11 +226,9 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 
     
 #ifdef ONLY_MBEDTLS_TEST_CERTFILE
-    /* doc+:load-certificate-from-se */
     ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));    //저장된 cert 사용 시
 #else
-    /*
-    // SE에 저장된 public key를 가져오는 부분, 현재 미구현
+    // SE에 저장된 Device 인증서를 가져옴.
     size_t KeyBitLen = SIZE_CLIENT_CERTIFICATE * 8;
     size_t KeyByteLen = SIZE_CLIENT_CERTIFICATE;
 
@@ -245,7 +243,6 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         LOGE(TAG, " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", (unsigned int) -ret);
         return;
     }
-    */
 #endif
 
     ////////////////////////////////////////////////////////////////////////
@@ -274,23 +271,13 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 #endif
 
 #ifndef ONLY_MBEDTLS_TEST
-    // SE에서 CA Cert 보관 시
-    //mbedtls_pk_free(&cacert.pk); //SE에서 CA Cert 보관 시엔 기존 cacert를 free    
-    ret = kss_mbedtls_associate_pubkey(&cacert.pk, &pub_obj);
-    LOGD(TAG, "=== cacert Context 상태 체크 ===");
-    LOGD(TAG, "cacert.pk_info pointer         = %p", cacert.pk.private_pk_info);
-    LOGD(TAG, "cacert.pk_info->sign pointer   = %p", cacert.pk.private_pk_info ? cacert.pk.private_pk_info->verify_func : NULL);
-    LOGD(TAG, "cacert.pk_ctx pointer          = %p", cacert.pk.private_pk_ctx);
-    LOGD(TAG, "cacert private_grp.id pointer  = %p", &((mbedtls_ecp_keypair *)cacert.pk.private_pk_ctx)->private_grp.id);
-    LOGD(TAG, "cacert pax_ctx.id val          = %d", ((mbedtls_ecp_keypair *)cacert.pk.private_pk_ctx)->private_grp.id);
-
-/*    
-    //mbedtls_pk_free(&cacert.pk);
-    kss_kose_set_kss_keystore(&keystore);
-    #if defined(MBEDTLS_ECDSA_VERIFY_ALT)
-        LOGI(TAG, "MBEDTLS_ECDSA_VERIFY_ALT define");
-    #endif
-*/
+    // SE 서명 검증 기능
+    if(kss_mbedtls_associate_pubkey(&cacert.pk, &pub_obj) != 0){
+        LOGE(TAG, "kss_mbedtls_associate_pubkey failed");
+        return;
+    }
+    
+    // SE 서명 기능
     if(kss_mbedtls_associate_keypair(&client_key, &keyobject) != 0){
         LOGE(TAG, "kss_mbedtls_associate_keypair failed");
         return;
@@ -298,7 +285,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 
 #endif
    
-    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);  //MBEDTLS_SSL_VERIFY_REQUIRED(서명 검증) MBEDTLS_SSL_VERIFY_NONE(검증X)
+    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ciphersuites(&conf, sdk_recommended_ciphersuites);
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
     mbedtls_ssl_conf_own_cert(&conf, &client_cert, &client_key);

@@ -31,6 +31,7 @@ typedef enum
     SM_ERR_DATA_INVALID = 0x6984,               // Data invalid - policy set invalid for the given object
     SM_ERR_FILE_FULL = 0x6A84,                  // Not enough memory space available (either transient or persistent memory)
     SM_ERR_APDU_THROUGHPUT = 0x66A6,            // APDU Throughput error
+    SM_WRN_RESPONSE_DATA_INCOMPLETE = 0x6100,   // Response data incomplete, 'xx' more bytes available
 } smStatus_t;
 
 typedef enum

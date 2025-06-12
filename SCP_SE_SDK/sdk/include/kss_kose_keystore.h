@@ -31,8 +31,7 @@ kss_status_t kss_kose_key_store_get_data(
     kss_kose_key_store_t *keyStore, 
     kss_kose_object_t *keyObject, 
     uint8_t *key, 
-    size_t *keylen, 
-    size_t *pKeyBitLen);
+    size_t *keylen);
 
 /** @copydoc kss_key_store_set_key
  *
