@@ -253,14 +253,7 @@ int lvDataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cm
 {
     uint8_t *pBuf = *buf;
 
-    /* if < 0x7F
-    *    len = 1 byte
-    * elif if < 0xFF
-    *    '0x81' + len == 2 Bytes
-    * elif if < 0xFFFF
-    *    '0x82' + len_msb + len_lsb == 3 Bytes
-    */
-    const size_t size_of_length = (cmdLen <= 0x7f ? 1 : (cmdLen <= 0xFf ? 2 : 3));
+    const size_t size_of_length = 1;
     const size_t size_of_tlv    = size_of_length + cmdLen;
     
     if ((UINT_MAX - (*bufLen)) < size_of_tlv) {
@@ -270,23 +263,9 @@ int lvDataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cm
     if (((*bufLen) + size_of_tlv) > KOSE_TLV_BUF_SIZE_CMD) {
         return 1;
     }
-    //*pBuf++ = (uint8_t)tag;
     
-    if (cmdLen <= 0x7Fu) {
-        *pBuf++ = (uint8_t)cmdLen;
-    }
-    else if (cmdLen <= 0xFFu) {
-        *pBuf++ = (uint8_t)(0x80 /* Extended */ | 0x01 /* Additional Length */);
-        *pBuf++ = (uint8_t)((cmdLen >> 0 * 8) & 0xFF);
-    }
-    else if (cmdLen <= 0xFFFFu) {
-        *pBuf++ = (uint8_t)(0x80 /* Extended */ | 0x02 /* Additional Length */);
-        *pBuf++ = (uint8_t)((cmdLen >> 1 * 8) & 0xFF);
-        *pBuf++ = (uint8_t)((cmdLen >> 0 * 8) & 0xFF);
-    }
-    else {
-        return 1;
-    }
+    *pBuf++ = (uint8_t)cmdLen;
+
     if ((cmdLen > 0) && (cmd != NULL)) {
         while (cmdLen-- > 0) {
             *pBuf++ = *cmd++;

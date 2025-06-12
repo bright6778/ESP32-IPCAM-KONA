@@ -332,15 +332,12 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 		}
 		// (3) send command data
 		if (sndlen > 5) {
-			debug_showframe("sndbuf", &sndbuf[5], sndlen - 5);
 			uart_write_bytes(SCR_UART_PORT_NUM, &sndbuf[5], sndlen - 5);
 			uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndlen - 5, 500 / portTICK_PERIOD_MS); // 시간 조절 필요
 		}
 		// (4) receive response data + SW
 		if (sndlen > 5) {
-			debug_printf("sndlen > 5");
 			int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 2, 1000 / portTICK_PERIOD_MS);
-			debug_showframe("rcvbuf", rcvbuf, len);
 			if (len >= 2) {
 				*rcvlen = 2;
 				debug_showframe("r-tpdu", rcvbuf, *rcvlen);

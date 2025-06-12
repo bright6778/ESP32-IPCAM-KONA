@@ -172,9 +172,12 @@ smStatus_t Kose_API_StoreData(
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
     uint8_t bufObjectID[2] = {0}; 
+    uint8_t bufAclKeyLen[2] = {0};
     uint8_t bufAcl[3] = {0};
+    uint32_t aclKeyLen =  objectDataLen + sizeof(bufAcl);
 
     uint32_to_buffer(objectID, 2, bufObjectID);
+    uint32_to_buffer(aclKeyLen, 2, bufAclKeyLen);
     uint32_to_buffer(acl, 3, bufAcl);
     memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
     
@@ -183,15 +186,18 @@ smStatus_t Kose_API_StoreData(
     uint8_t *pData = &pCmdbuf[5];   // total data pointer
     size_t totalSize = 0;
 
-    if(p2 == 0){
+    if(p2 == 0x00){
         DataSet_u8buf(&pData, bufObjectID, sizeof(bufObjectID));  //Object ID
+        DataSet_u8buf(&pData, bufAclKeyLen, sizeof(bufAclKeyLen));  //ACL + key length
         DataSet_u8buf(&pData, bufAcl, sizeof(bufAcl));  //ACL
-        lvDataSet_u8buf(&pData, &totalSize, objectData, objectDataLen);
-        totalSize += (sizeof(bufObjectID) + sizeof(bufAcl));
+        DataSet_u8buf(&pData, objectData, objectDataLen);  //object data
+
+        totalSize += (sizeof(bufObjectID) + sizeof(bufAclKeyLen) + sizeof(bufAcl) + objectDataLen);
         lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalSize);
         cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
     }
     else{
+        DataSet_u8buf(&pData, objectData, objectDataLen);  //object data
         lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, objectDataLen);
         cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
     }
@@ -203,12 +209,12 @@ smStatus_t Kose_API_StoreData(
 
 // PUT KEY
 smStatus_t Kose_API_PutKey(
-    pKoseSession_t session_ctx, uint32_t objectID, uint32_t acl, uint8_t p1, const uint8_t *objectData, const size_t objectDataLen)
+    pKoseSession_t session_ctx, uint32_t objectID, uint32_t acl, const uint8_t *objectData, const size_t objectDataLen)
 {
     LOGD(TAG, "Kose_API_PutKey");
 
     smStatus_t retStatus = SM_NOT_OK;
-    tlvHeader_t hdr = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_PUT_KEY, p1, kKOSE_P2_DEFAULT}};
+    tlvHeader_t hdr = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_PUT_KEY, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD] = {0};
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
@@ -232,7 +238,6 @@ smStatus_t Kose_API_PutKey(
     DataSet_u8buf(&pData, bufAcl, sizeof(bufAcl));  //ACL
     DataSet_u8buf(&pData, objectData, objectDataLen);  //object data
     totalSize += (sizeof(bufObjectID) + sizeof(bufAclKeyLen) + sizeof(bufAcl) + objectDataLen);
-    //lvDataSet_u8buf(&pData, &totalSize, objectData, objectDataLen);
     lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalSize);
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
     

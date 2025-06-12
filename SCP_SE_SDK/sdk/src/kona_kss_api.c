@@ -226,6 +226,16 @@ kss_status_t kss_key_store_allocate(kss_key_store_t *keyStore, uint32_t keyStore
     return kStatus_KSS_InvalidArgument;
 }
 
+void kss_key_store_context_free(kss_key_store_t *keyStore)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT
+    if (KSS_KEY_STORE_TYPE_IS_KOSE(keyStore)) {
+        kss_kose_key_store_t *kose_keyStore = (kss_kose_key_store_t *)keyStore;
+        kss_kose_key_store_context_free(kose_keyStore);
+    }
+#endif /* SSS_HAVE_APPLET_SE05X_IOT */
+}
+
 kss_status_t kss_key_store_get_data(
     kss_key_store_t *keyStore, kss_object_t *keyObject, uint8_t *data, size_t *dataLen)
 {

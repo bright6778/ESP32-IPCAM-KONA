@@ -49,6 +49,7 @@
 #define APDU_PUT_KEY                "KOSE_API_PutKey"
 #define APDU_SET_LOCK_STATE         "KOSE_API_SetLockState"
 #define KEY_STORE_GET_DATA          "kss_key_store_get_data"
+#define KEY_STORE_SET_KEY           "kss_key_store_set_key"
 #define MBEDTLS_ASSOCIATE_PUBKEY    "kss_mbedtls_associate_pubkey"
 #define SE_PROVISIONING             "se_provisioning"
 #define AWS_IOT_DEMO                "aws_iot_demo_main"
@@ -154,6 +155,7 @@ void print_manu(){
     printf("CMD : com_store_data or 3.5             - %s\n", APDU_STORE_DATA);
     printf("CMD : com_put_key or 3.6                - %s\n", APDU_PUT_KEY);
     printf("CMD : kss_key_store_get_data or 4.1     - %s\n", KEY_STORE_GET_DATA);
+    printf("CMD : kss_key_store_set_key or 4.2     - %s\n", KEY_STORE_SET_KEY);
     printf("CMD : generate random 5.1               - %s\n", RANDOM_GEN);
     printf("CMD : mbedtls_pubkey or 9.1             - %s\n", MBEDTLS_ASSOCIATE_PUBKEY);
     //printf("CMD : se_provisioning or 10.1           - %s\n", SE_PROVISIONING);
@@ -312,16 +314,32 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, "com_store_data") == 0 || strcmp((char*)buf, "3.5") == 0) {    // SE Command - STORE DATA
                     LOGI(TAG, "Start %s", APDU_STORE_DATA);
-                    Kose_API_StoreData(&kose_session->s_ctx, 0x7788, 0x010203, 0x01, 0x00, (uint8_t *)"\x01\x02\x03\x04\x05\x06\x07\x08", 8);
+                    uint8_t objectData[] = {0x30, 0x82, 0x02, 0xC2, 0x30, 0x82, 0x01, 0xAA, 0xA0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x14, 0x41,
+                                        0xF7, 0x79, 0xBA, 0xE7, 0x28, 0xE1, 0xC3, 0x88, 0xA7, 0xFC, 0x28, 0x16, 0xAD, 0x64, 0x46, 0xF9,
+                                        0xF1, 0x15, 0x0B, 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0B,
+                                        0x05, 0x00, 0x30, 0x4D, 0x31, 0x4B, 0x30, 0x49, 0x06, 0x03, 0x55, 0x04, 0x0B, 0x0C, 0x42, 0x41,
+                                        0x6D, 0x61, 0x7A, 0x6F, 0x6E, 0x20, 0x57, 0x65, 0x62, 0x20, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
+                                        0x65, 0x73, 0x20, 0x4F, 0x3D, 0x41, 0x6D, 0x61, 0x7A, 0x6F, 0x6E, 0x2E, 0x63, 0x6F, 0x6D, 0x20,
+                                        0x49, 0x6E, 0x63, 0x2E, 0x20, 0x4C, 0x3D, 0x53, 0x65, 0x61, 0x74, 0x74, 0x6C, 0x65, 0x20, 0x53,
+                                        0x54, 0x3D, 0x57, 0x61, 0x73, 0x68, 0x69, 0x6E, 0x67, 0x74, 0x6F, 0x6E, 0x20, 0x43, 0x3D, 0x55,
+                                        0x53, 0x30, 0x1E, 0x17, 0x0D, 0x32, 0x35, 0x30, 0x35, 0x32, 0x36, 0x30, 0x32, 0x34, 0x35, 0x31,
+                                        0x30, 0x5A, 0x17, 0x0D, 0x34, 0x39, 0x31, 0x32, 0x33, 0x31, 0x32, 0x33, 0x35, 0x39, 0x35, 0x39,
+                                        0x5A, 0x30, 0x52, 0x31, 0x0B, 0x30, 0x09, 0x06, 0x03, 0x55, 0x04, 0x06, 0x13, 0x02, 0x4B, 0x52,
+                                        0x31, 0x13, 0x30, 0x11, 0x06, 0x03, 0x55, 0x04, 0x08, 0x0C, 0x0A, 0x53, 0x6F, 0x6D, 0x65, 0x2D,
+                                        0x53, 0x74, 0x61, 0x74, 0x65, 0x31, 0x0E, 0x30, 0x0C, 0x06, 0x03, 0x55, 0x04, 0x0A, 0x0C, 0x05,
+                                        0x4B, 0x6F, 0x6E, 0x61, 0x69, 0x31, 0x0E, 0x30, 0x0C, 0x06, 0x03, 0x55, 0x04, 0x0B, 0x0C, 0x05,
+                                        0x4B, 0x6F, 0x6E, 0x61, 0x69, 0x31, 0x0E, 0x30, 0x0C, 0x06, 0x03, 0x55, 0x04, 0x03, 0x0C, 0x05};
+                    Kose_API_StoreData(&kose_session->s_ctx, 0x0700, 0x001032, 0x00, 0x00, objectData, sizeof(objectData));
                     LOGI(TAG, "End %s", APDU_STORE_DATA);
                 }
                 else if (strcmp((char*)buf, "com_put_key") == 0 || strcmp((char*)buf, "3.6") == 0) {    // SE Command - PUT KEY
                     LOGI(TAG, "Start %s", APDU_PUT_KEY);
-                    Kose_API_PutKey(&kose_session->s_ctx, 0x7788, 0x010203, 0x01, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
+                    Kose_API_PutKey(&kose_session->s_ctx, 0x7788, 0x010203, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
                     LOGI(TAG, "End %s", APDU_PUT_KEY);
                 }
                 else if (strcmp((char*)buf, "kss_key_store_get_data") == 0 || strcmp((char*)buf, "4.1") == 0) {    // kss_key_store_get_data
                     LOGI(TAG, "Start %s", KEY_STORE_GET_DATA);
+
                     size_t dataSize = 713;
                     memset(&keystore, 0, sizeof(kss_key_store_t));
 
@@ -350,6 +368,47 @@ void command_task(void *arg)
                     }
                     showbuf("kss_key_store_get_data", bufData, dataSize);
                     LOGI(TAG, "End %s", KEY_STORE_GET_DATA);
+
+                    kss_key_object_free(&keyobject);
+                    kss_key_store_context_free(&keystore);
+                }
+                else if (strcmp((char*)buf, "kss_key_store_set_key") == 0 || strcmp((char*)buf, "4.2") == 0) {    // kss_key_store_set_key
+                    LOGI(TAG, "Start %s", KEY_STORE_SET_KEY);
+                    size_t dataSize = 65;
+                    memset(&keystore, 0, sizeof(kss_key_store_t));
+
+                    LOGI(TAG, "Start kss_key_store_context_init");
+                    kStatus = kss_key_store_context_init(&keystore, &session);
+                    if(kStatus != kStatus_KSS_Success){
+                        LOGE(TAG, "kss_key_store_context_init failed res : %d", kStatus);
+                    }
+
+                    LOGI(TAG, "Start kss_key_object_init");
+                    kStatus = kss_key_object_init(&keyobject, &keystore);
+                    if (kStatus != kStatus_KSS_Success) {
+                        LOGE(TAG, "kss_key_object_init res : %d", kStatus);
+                    }
+
+                    LOGI(TAG, "Start kss_key_object_allocate_handle");
+                    kStatus = kss_key_object_allocate_handle(&keyobject, 0x0200, kKSS_KeyPart_Public, kKSS_CipherType_EC_NIST_P, dataSize, 0x100000, kKeyObject_Mode_Persistent);
+                    if (kStatus != kStatus_KSS_Success) {
+                        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kStatus);
+                    }
+
+                    LOGI(TAG, "Start kss_key_store_set_key");
+                    uint8_t client_pub_key[65] = {0};
+                    mempcpy(client_pub_key, (uint8_t*)"\x04\x28\xf1\x67\x05\x63\x7d\x4d\x89\x20\x19\x72\xec\x1d\x49\x00\xe2"
+                                      "\x97\x49\xe1\xa8\xb4\xe9\xc2\xfb\x72\x2d\xbe\xf5\xd0\x70\x4c\x5d"
+                                      "\x2a\x58\x5e\xf2\x42\xcb\xf1\xf2\x8d\xb2\x9e\xd8\xe4\x5e\xc9\x4e"
+                                      "\xf9\xfc\xd0\xa2\x78\xf0\x34\xff\x36\x20\x6b\x48\xc7\x2d\xbb\x62", dataSize);
+                    kStatus = kss_key_store_set_key(&keystore, &keyobject, client_pub_key, dataSize, 256, NULL, 0);
+                    if (kStatus != kStatus_KSS_Success) {
+                        LOGE(TAG, "kss_key_store_set_key res : %d", kStatus);
+                    }
+
+                    kss_key_object_free(&keyobject);
+                    kss_key_store_context_free(&keystore);
+                    LOGI(TAG, "End %s", KEY_STORE_SET_KEY);
                 }
                 else if (strcmp((char*)buf, "generate_random") == 0 || strcmp((char*)buf, "5.1") == 0) {    // kss_kose_rng
                     LOGI(TAG, "Start %s", RANDOM_GEN);

@@ -273,6 +273,11 @@ void kss_kose_set_kss_keystore(kss_key_store_t *ksskeystore)
     kss_mbedtls_set_kss_keystore(ksskeystore);
 }
 
+void kss_kose_key_store_context_free(kss_kose_key_store_t *keyStore)
+{
+    memset(keyStore, 0, sizeof(*keyStore));
+}
+
 kss_status_t kss_kose_key_store_get_data(
     kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, uint8_t *data, size_t *dataLen)
 {
@@ -573,7 +578,7 @@ static kss_status_t kss_kose_key_store_set_ecc_key(kss_kose_key_store_t *keyStor
     kss_status_t retval     = kStatus_KSS_Fail;
     smStatus_t status       = SM_NOT_OK;
 
-    status = Kose_API_PutKey(&keyStore->session->s_ctx, keyObject->keyId, keyObject->acl, 0x01, key, keyLen);
+    status = Kose_API_PutKey(&keyStore->session->s_ctx, keyObject->keyId, keyObject->acl, key, keyLen);
 
     if (status == SM_ERR_APDU_THROUGHPUT) {
         retval = kStatus_KSS_ApduThroughputError;
@@ -600,12 +605,8 @@ kss_status_t kss_kose_key_store_set_key(kss_kose_key_store_t *keyStore,
 #if KSSFTR_KOSE_KEY_SET
 
     kss_cipher_type_t cipher_type = kKSS_CipherType_NONE;
-    kss_policy_t *policies        = (kss_policy_t *)options;
     uint8_t *ppolicySet;
     size_t valid_policy_buff_len                  = 0;
-    uint8_t policies_buff[MAX_POLICY_BUFFER_SIZE] = {
-        0,
-    };
     kss_status_t kssStatus = kStatus_KSS_Fail;
 
     AX_UNUSED_ARG(optionsLen);

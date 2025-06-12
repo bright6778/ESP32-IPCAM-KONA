@@ -31,7 +31,7 @@ smStatus_t Kose_API_StoreData(
     pKoseSession_t session_ctx, uint32_t objectID, uint32_t acl, uint8_t p1, uint8_t p2, const uint8_t *objectData, const size_t objectDataLen);
 
 smStatus_t Kose_API_PutKey(
-    pKoseSession_t session_ctx, uint32_t objectID, uint32_t acl, uint8_t p1, const uint8_t *objectData, const size_t objectDataLen);
+    pKoseSession_t session_ctx, uint32_t objectID, uint32_t acl, const uint8_t *objectData, const size_t objectDataLen);
 
 smStatus_t Kose_API_SetLockState(pKoseSession_t session_ctx);
 

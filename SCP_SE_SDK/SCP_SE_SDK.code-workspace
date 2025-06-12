@@ -19,7 +19,8 @@
 			"string": "c",
 			"format": "c",
 			"uart.h": "c",
-			"array": "c"
+			"array": "c",
+			"cassert": "c"
 		}
 	}
 }
