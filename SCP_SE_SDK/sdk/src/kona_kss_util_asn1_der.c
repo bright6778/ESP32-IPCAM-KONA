@@ -1418,7 +1418,6 @@ kss_status_t kss_util_asn1_get_oid_from_kssObj(kss_object_t *pkeyObject, uint32_
 {
     kss_status_t status  = kStatus_KSS_Fail;
     uint8_t pbKey[256]   = {0};
-    size_t pbKeyBitLen   = 0;
     size_t pbKeyBytetLen = sizeof(pbKey);
 
     ENSURE_OR_GO_EXIT(pkeyObject != NULL);

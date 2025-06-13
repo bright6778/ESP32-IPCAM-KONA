@@ -244,7 +244,7 @@ const mbedtls_pk_info_t kose_mbedtls_ecpubkey_pk_info = {
 };
 
 
-int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
+int kss_mbedtls_verify_sign(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
 {
     int ret               = 1;
     void *pax_ctx         = NULL;
@@ -313,7 +313,7 @@ int kss_mbedtls_associate_ecdhctx(
     return 0;
 }
 
-int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
+int kss_mbedtls_sign(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
 {
     int ret               = 1;
     void *pax_ctx         = NULL;

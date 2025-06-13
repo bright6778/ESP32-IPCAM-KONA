@@ -50,7 +50,7 @@
 #define APDU_SET_LOCK_STATE         "KOSE_API_SetLockState"
 #define KEY_STORE_GET_DATA          "kss_key_store_get_data"
 #define KEY_STORE_SET_KEY           "kss_key_store_set_key"
-#define MBEDTLS_ASSOCIATE_PUBKEY    "kss_mbedtls_associate_pubkey"
+#define MBEDTLS_VERIFY_SIGN         "kss_mbedtls_verify_sign"
 #define SE_PROVISIONING             "se_provisioning"
 #define AWS_IOT_DEMO                "aws_iot_demo_main"
 #define RANDOM_GEN                  "kss_kose_rng"
@@ -155,9 +155,9 @@ void print_manu(){
     printf("CMD : com_store_data or 3.5             - %s\n", APDU_STORE_DATA);
     printf("CMD : com_put_key or 3.6                - %s\n", APDU_PUT_KEY);
     printf("CMD : kss_key_store_get_data or 4.1     - %s\n", KEY_STORE_GET_DATA);
-    printf("CMD : kss_key_store_set_key or 4.2     - %s\n", KEY_STORE_SET_KEY);
+    printf("CMD : kss_key_store_set_key or 4.2      - %s\n", KEY_STORE_SET_KEY);
     printf("CMD : generate random 5.1               - %s\n", RANDOM_GEN);
-    printf("CMD : mbedtls_pubkey or 9.1             - %s\n", MBEDTLS_ASSOCIATE_PUBKEY);
+    printf("CMD : mbedtls_verify_sign or 9.1        - %s\n", MBEDTLS_VERIFY_SIGN);
     //printf("CMD : se_provisioning or 10.1           - %s\n", SE_PROVISIONING);
     printf("CMD : aws_mqtt or 11.1                  - %s\n", AWS_IOT_DEMO);
     printf("//////////////////////////////////////////////////////////////////\n");
@@ -425,9 +425,9 @@ void command_task(void *arg)
                     LOGI(TAG, "%s return : %d", RANDOM_GEN, kStatus);
                     LOGI(TAG, "End %s", RANDOM_GEN);
                 }
-                else if (strcmp((char*)buf, "mbedtls_pubkey") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_associate_pubkey
-                    LOGI(TAG, "Start %s", MBEDTLS_ASSOCIATE_PUBKEY);
-                    LOGI(TAG, "End %s", MBEDTLS_ASSOCIATE_PUBKEY);
+                else if (strcmp((char*)buf, "mbedtls_verify_sign") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_verify_sign
+                    LOGI(TAG, "Start %s", MBEDTLS_VERIFY_SIGN);
+                    LOGI(TAG, "End %s", MBEDTLS_VERIFY_SIGN);
                 }
                 else if (strcmp((char*)buf, "se_provisioning") == 0 || strcmp((char*)buf, "10.1") == 0) {    // SE Provisioning
                     LOGI(TAG, "Start %s", SE_PROVISIONING);

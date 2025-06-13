@@ -158,8 +158,8 @@ static int kss_eckey_sign(void *ctx,
     int (*f_rng)(void *, unsigned char *, size_t),
     void *p_rng);
 */
-int kss_mbedtls_associate_pubkey(mbedtls_pk_context *pkey, kss_object_t *pkeyObject);
-int kss_mbedtls_associate_keypair(mbedtls_pk_context *pkey, kss_object_t *pkeyObject);
+int kss_mbedtls_verify_sign(mbedtls_pk_context *pkey, kss_object_t *pkeyObject);
+int kss_mbedtls_sign(mbedtls_pk_context *pkey, kss_object_t *pkeyObject);
 int kss_mbedtls_se_random(void *p_rng, unsigned char *output, size_t output_len);
 int kss_mbedtls_parse_keyfile(const uint8_t *pem, size_t pem_len, uint8_t *d_buf, size_t *d_bufLen);
 int kss_mbedtls_parse_crt_getpublickey(const uint8_t *cert, size_t cert_len, uint8_t *pub_buf, size_t *pub_len);

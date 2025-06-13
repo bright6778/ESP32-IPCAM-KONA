@@ -272,14 +272,14 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 
 #ifndef ONLY_MBEDTLS_TEST
     // SE 서명 검증 기능
-    if(kss_mbedtls_associate_pubkey(&cacert.pk, &pub_obj) != 0){
-        LOGE(TAG, "kss_mbedtls_associate_pubkey failed");
+    if(kss_mbedtls_verify_sign(&cacert.pk, &pub_obj) != 0){    //kss_mbedtls_verify_sign 이름 변경
+        LOGE(TAG, "kss_mbedtls_verify_sign failed");
         return;
     }
     
     // SE 서명 기능
-    if(kss_mbedtls_associate_keypair(&client_key, &keyobject) != 0){
-        LOGE(TAG, "kss_mbedtls_associate_keypair failed");
+    if(kss_mbedtls_sign(&client_key, &keyobject) != 0){    // kss_mbedtls_sign
+        LOGE(TAG, "kss_mbedtls_sign failed");
         return;
     }
 
