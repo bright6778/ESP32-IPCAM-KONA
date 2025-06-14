@@ -48,7 +48,7 @@ void se_provisioning(kss_session_t *session)
     
     // object var
     kss_object_t dev_keyobject_priv;    // device private key object
-    kss_object_t dev_cert;              // device cert object
+    //kss_object_t dev_cert;              // device cert object
     kss_object_t dev_keyobject_pub;     // device public key object
     size_t objectDataLen = 0;
 

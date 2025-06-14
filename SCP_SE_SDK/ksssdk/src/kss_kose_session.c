@@ -30,19 +30,19 @@ static smStatus_t kss_kose_TXn(struct KoseSession *pSession,
     size_t *rspLen)
 {
     smStatus_t ret     = SM_NOT_OK;
-    tlvHeader_t outHdr = {
-        0,
-    };
-    uint8_t txBuf[KOSE_MAX_BUF_SIZE_CMD] = {
-        0,
-    };
-    size_t txBufLen = sizeof(txBuf);
+    //tlvHeader_t outHdr = {
+    //    0,
+    //};
+    //uint8_t txBuf[KOSE_MAX_BUF_SIZE_CMD] = {
+    //    0,
+    //};
+    //size_t txBufLen = sizeof(txBuf);
 
-    const tlvHeader_t *sendHdr = NULL;
-    uint8_t *sendBuf           = NULL;
-    size_t sendBufLen          = 0;
+    //const tlvHeader_t *sendHdr = NULL;
+    //uint8_t *sendBuf           = NULL;
+    //size_t sendBufLen          = 0;
 
-    KoseSession_t koseSession;
+    //KoseSession_t koseSession;
     
     if (pSession->connType == kType_SE_Conn_Type_UART) {
         int rcvlen_int = (int)(*rspLen);  

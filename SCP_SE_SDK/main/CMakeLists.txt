@@ -10,11 +10,11 @@ idf_component_register(
 )
 
 target_include_directories(${COMPONENT_LIB} PUBLIC
-    "${CMAKE_SOURCE_DIR}/sdk/components/se_mbedtls"
+    "${CMAKE_SOURCE_DIR}/ksssdk/components/se_mbedtls"
 )
 
-add_compile_options(-I${CMAKE_SOURCE_DIR}/sdk/components/se_mbedtls)
+add_compile_options(-I${CMAKE_SOURCE_DIR}/ksssdk/components/se_mbedtls)
 
 set_property(TARGET mbedtls APPEND PROPERTY
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/sdk/include"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/ksssdk/include"
 )

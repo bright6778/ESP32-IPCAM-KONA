@@ -1,18 +1,22 @@
+file(GLOB SRC1 "src/*.c")
+file(GLOB SRC2 "components/se_mbedtls/*.c")
+
 if(COMMAND idf_component_register) # ESP-IDF 환경이면
     idf_component_register(
-        SRCS
-        "src/debug.c"
-        "src/kona_kss_api.c"
-        "src/kona_kss_util_asn1_der.c"
-        "src/kose_APDU_impl.c"
-        "src/kose_tlv.c"
-        "src/kss_kose_asymmetric.c"
-        "src/kss_kose_key_rng.c"
-        "src/kss_kose_keyobj.c"
-        "src/kss_kose_keystore.c"
-        "src/kss_kose_session.c"
-        "src/kss_kose_uart.c"
-        "src/smartcard.c" 
+        SRCS ${SRC1} ${SRC2}
+        #SRCS
+        #"src/debug.c"
+        #"src/kona_kss_api.c"
+        #"src/kona_kss_util_asn1_der.c"
+        #"src/kose_APDU_impl.c"
+        #"src/kose_tlv.c"
+        #"src/kss_kose_asymmetric.c"
+        #"src/kss_kose_key_rng.c"
+        #"src/kss_kose_keyobj.c"
+        #"src/kss_kose_keystore.c"
+        #"src/kss_kose_session.c"
+        #"src/kss_kose_uart.c"
+        #"src/smartcard.c" 
     INCLUDE_DIRS 
         "include" 
         "components/se_mbedtls"
