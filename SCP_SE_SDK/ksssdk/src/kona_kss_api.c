@@ -19,7 +19,7 @@ extern "C" {
 #include "kss_kose_keystore.h"
 #include "kona_kss_ftr_default.h"
 #include "kss_kose_rng.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 
 static const char *TAG = "kona_kss_api.c";
 

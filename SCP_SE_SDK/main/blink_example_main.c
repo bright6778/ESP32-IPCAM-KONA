@@ -30,7 +30,7 @@
 #include <scp03_Types.h>
 
 #include "kss_kose_uart.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 
 ///////////////////////////////////////////////////////////////
 // Define

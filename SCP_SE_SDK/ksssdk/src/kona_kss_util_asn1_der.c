@@ -13,7 +13,7 @@ extern "C" {
 #include "kona_kss_util_asn1_der.h"
 #include "ensure.h"
 #include "kona_kss_kose_types.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>

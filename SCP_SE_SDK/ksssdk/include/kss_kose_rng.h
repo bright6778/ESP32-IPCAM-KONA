@@ -18,7 +18,7 @@ extern "C" {
 #include "kss_kose_session.h"
 
 #ifdef DEBUG_PRINT
-#include "debug.h"
+#include "kona_kss_debug.h"
 #endif
 
 #define AX_UNUSED_ARG(x) (void)(x)

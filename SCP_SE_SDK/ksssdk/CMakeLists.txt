@@ -5,7 +5,7 @@ if(COMMAND idf_component_register) # ESP-IDF 환경이면
     idf_component_register(
         SRCS ${SRC1} ${SRC2}
         #SRCS
-        #"src/debug.c"
+        #"src/kona_kss_debug.c"
         #"src/kona_kss_api.c"
         #"src/kona_kss_util_asn1_der.c"
         #"src/kose_APDU_impl.c"
@@ -31,7 +31,7 @@ if(COMMAND idf_component_register) # ESP-IDF 환경이면
     )
 else()  # 일반 CMake 환경이면
     add_library(se_mbedtls STATIC
-        "src/debug.c"
+        "src/kona_kss_debug.c"
         "src/kona_kss_api.c"
         "src/kona_kss_util_asn1_der.c"
         "src/kose_APDU_impl.c"

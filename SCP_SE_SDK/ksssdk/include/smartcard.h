@@ -24,7 +24,7 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "driver/ledc.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 
 #define UART_DRIVER_ERROR "uart driver error"
 /////////////////////////////////////////////////////////////////////////////

@@ -56,7 +56,7 @@
 #include "mbedtls/error.h"
 //#include "kss_kose_keystore.h"
 #include "kona_kss_api.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 
 static const char *TAG = "ecdsa_verify_alt.c";
 

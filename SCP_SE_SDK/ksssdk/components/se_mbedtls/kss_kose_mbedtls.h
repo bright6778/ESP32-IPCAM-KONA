@@ -21,7 +21,7 @@ extern "C" {
 #include "kona_kss_mbedtls_types.h"
 
 #ifdef DEBUG_PRINT
-#include "debug.h"
+#include "kona_kss_debug.h"
 #endif
 
 typedef struct mbedtls_pk_info_t{

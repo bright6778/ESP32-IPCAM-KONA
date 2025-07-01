@@ -269,11 +269,11 @@ void smartcard_warm_reset(void)
 
 bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcvlen)
 {
-	if (sndlen > 0) debug_showframe("c-tpdu", sndbuf, sndlen);
+	if (sndlen > 0) kss_debug_showframe("c-tpdu", sndbuf, sndlen);
 	// ATR
 	if (sndlen == 0) {
 		int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 32, 500 / portTICK_PERIOD_MS); // 시간 조절 필요
-		debug_showframe("r-tpdu", rcvbuf, len);
+		kss_debug_showframe("r-tpdu", rcvbuf, len);
 		if (len > 3) {
 			*rcvlen = len;
 			return true;
@@ -285,12 +285,12 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 	}
 	// PPS exchange
 	else if (sndlen == 4) {
-		debug_showframe("sndbuf", sndbuf, 4);
+		kss_debug_showframe("sndbuf", sndbuf, 4);
 		uart_write_bytes(SCR_UART_PORT_NUM, &sndbuf[0], 4);
 		uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 4, 500 / portTICK_PERIOD_MS); // 시간 조절 필요
 		int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 4, 500 / portTICK_PERIOD_MS);
-		debug_showframe("rcvbuf", rcvbuf, len);
-		debug_showframe("r-tpdu", rcvbuf, len);
+		kss_debug_showframe("rcvbuf", rcvbuf, len);
+		kss_debug_showframe("r-tpdu", rcvbuf, len);
 		if (len == 4) {
 			*rcvlen = len;
 			return true;
@@ -303,26 +303,26 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 	// TPDU
 	else {
 		// (1) send command header
-		debug_showframe("sndbuf", sndbuf, 5);
+		kss_debug_showframe("sndbuf", sndbuf, 5);
 		uart_write_bytes(SCR_UART_PORT_NUM, &sndbuf[0], 5);
 		uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 5, 500 / portTICK_PERIOD_MS); // 시간 조절 필요
 		// (2) receive INS || NULL || SW
 		for (int loop = 0; ; loop++) {
 			int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 1, 5 / portTICK_PERIOD_MS);
 			if (len > 0) {
-				debug_showframe("rcvbuf", rcvbuf, len);
+				kss_debug_showframe("rcvbuf", rcvbuf, len);
 				if (rcvbuf[0] == sndbuf[1]) break; // INS
 				else if (rcvbuf[0] == 0x60) loop = 0; // NULL
 				else if (((rcvbuf[0] & 0xf0) == 0x60) || ((rcvbuf[0] & 0xf0) == 0x90)) { // SW
 					len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[1], 1, 5 / portTICK_PERIOD_MS);
 					*rcvlen = 2;
-					debug_showframe("r-tpdu", rcvbuf, *rcvlen);
+					kss_debug_showframe("r-tpdu", rcvbuf, *rcvlen);
 					return true;
 				}
 			}
 			else {
 				if (loop == (10000 - 1)) {
-					debug_showframe("r-tpdu", rcvbuf, 0);
+					kss_debug_showframe("r-tpdu", rcvbuf, 0);
 					return false;
 				}
 				else if(len == -1){
@@ -340,12 +340,12 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 			int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 2, 1000 / portTICK_PERIOD_MS);
 			if (len >= 2) {
 				*rcvlen = 2;
-				debug_showframe("r-tpdu", rcvbuf, *rcvlen);
+				kss_debug_showframe("r-tpdu", rcvbuf, *rcvlen);
 				return true;
 			}
 			else {
 				*rcvlen = len;
-				debug_showframe("r-tpdu", rcvbuf, *rcvlen);
+				kss_debug_showframe("r-tpdu", rcvbuf, *rcvlen);
 				return false;
 			}
 		}
@@ -358,21 +358,21 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 			else{
 				len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndbuf[4] + 2, 1000 / portTICK_PERIOD_MS);
 			}
-			debug_showframe("rcvbuf", rcvbuf, len);
+			kss_debug_showframe("rcvbuf", rcvbuf, len);
 			if (len >= 2) {
 				*rcvlen = len;
 				if (((rcvbuf[len - 2] & 0xf0) == 0x60) || ((rcvbuf[len - 2] & 0xf0) == 0x90)) {
-					debug_showframe("r-tpdu", rcvbuf, *rcvlen);
+					kss_debug_showframe("r-tpdu", rcvbuf, *rcvlen);
 					return true;
 				}
 				else {
-					debug_showframe("r-tpdu", rcvbuf, *rcvlen);
+					kss_debug_showframe("r-tpdu", rcvbuf, *rcvlen);
 					return false;
 				}
 			}
 			else {
 				*rcvlen = len;
-				debug_showframe("r-tpdu", rcvbuf, *rcvlen);
+				kss_debug_showframe("r-tpdu", rcvbuf, *rcvlen);
 				return false;
 			}
 		}
@@ -445,22 +445,22 @@ void smartcard_atr_parser(uint8_t atr[], int len)
 		atr_ifsc = 0x20;   //!< IFSC
 	}
 
-	debug_showframe((char *)"ATR", atr, len);
-	debug_printf("    TS %02x\n", atr[0]);
-	debug_printf("    T0 %02x\n", atr[1]);
+	kss_debug_showframe((char *)"ATR", atr, len);
+	kss_debug_printf("    TS %02x\n", atr[0]);
+	kss_debug_printf("    T0 %02x\n", atr[1]);
 
 	historical_len = atr[index] & 0x0f;
 	if (yi & 0x10) { // TA1
 		atr_fd = atr[++index];
-		debug_printf("    TA1 FD=%02x\n", atr_fd);
+		kss_debug_printf("    TA1 FD=%02x\n", atr_fd);
 	}
 	if (yi & 0x20) { // TB1
 		index++;
-		debug_printf("    TB1 %02x\n", atr[index]);
+		kss_debug_printf("    TB1 %02x\n", atr[index]);
 	}
 	if (yi & 0x40) { // TC1
 		index++;
-		debug_printf("    TC1 %02x\n", atr[index]);
+		kss_debug_printf("    TC1 %02x\n", atr[index]);
 	}
 	if (yi & 0x80) { // TD1
 		yi = atr[++index] & 0xf0;
@@ -472,41 +472,41 @@ void smartcard_atr_parser(uint8_t atr[], int len)
 				atr_protocol = 15;
 			}
 		}
-		debug_printf("    TD1 T=%d\n", atr[index] & 0x0f);
+		kss_debug_printf("    TD1 T=%d\n", atr[index] & 0x0f);
 		if (yi & 0x10) { // TA2
 			index++;
-			debug_printf("    TA2 %02x\n", atr[index]);
+			kss_debug_printf("    TA2 %02x\n", atr[index]);
 		}
 		if (yi & 0x20) { // TB2
 			index++;
-			debug_printf("    TB2 %02x\n", atr[index]);
+			kss_debug_printf("    TB2 %02x\n", atr[index]);
 		}
 		if (yi & 0x40) { // TC2
 			index++;
-			debug_printf("    TC2 %02x\n", atr[index]);
+			kss_debug_printf("    TC2 %02x\n", atr[index]);
 		}
 		if (yi & 0x80) { // TD2
 			yi = atr[++index] & 0xf0;
 			if (((atr[index] & 0x0f) == 1) || ((atr[index] & 0x0f) == 15)) {
 				if (atr_protocol != 1) atr_protocol = atr[index] & 0x0f;
 			}
-			debug_printf("    TD2 T=%d\n", atr[index] & 0x0f);
+			kss_debug_printf("    TD2 T=%d\n", atr[index] & 0x0f);
 			if (yi & 0x10) { // TA3
 				if (atr_protocol == 1) {
 					atr_ifsc = atr[++index];
-					debug_printf("    TA3 IFSC=%d\n", atr_ifsc);
+					kss_debug_printf("    TA3 IFSC=%d\n", atr_ifsc);
 				}
 				else {
-					debug_printf("    TA3 %02x\n", atr[index]);
+					kss_debug_printf("    TA3 %02x\n", atr[index]);
 				}
 			}
 			if (yi & 0x20) { // TB3
 				index++;
-				debug_printf("    TB3 %02x\n", atr[index]);
+				kss_debug_printf("    TB3 %02x\n", atr[index]);
 			}
 			if (yi & 0x40) { // TC3
 				index++;
-				debug_printf("    TC3 %02x\n", atr[index]);
+				kss_debug_printf("    TC3 %02x\n", atr[index]);
 			}
 		}
 	}
@@ -515,18 +515,18 @@ void smartcard_atr_parser(uint8_t atr[], int len)
 		char tmpbuf[128] = "";
 		index++;
 		for (int i = 0; i < historical_len; i++) sprintf(&tmpbuf[i * 3], "%02x ", atr[index + i]);
-		debug_printf("    T1K %s\n", tmpbuf);
+		kss_debug_printf("    T1K %s\n", tmpbuf);
 		index += historical_len;
 	}
 	// TCK
 	if (atr_protocol) {
-		debug_printf("    TCK %02x\n", atr[index]);
+		kss_debug_printf("    TCK %02x\n", atr[index]);
 	}
 	// result
 	{
-		debug_printf("- FD = 0x%02x\n", atr_fd);
-		debug_printf("- PROTOCOL = %d\n", atr_protocol);
-		debug_printf("- IFSC = 0x%02x\n", atr_ifsc);
+		kss_debug_printf("- FD = 0x%02x\n", atr_fd);
+		kss_debug_printf("- PROTOCOL = %d\n", atr_protocol);
+		kss_debug_printf("- IFSC = 0x%02x\n", atr_ifsc);
 	}
 }
 

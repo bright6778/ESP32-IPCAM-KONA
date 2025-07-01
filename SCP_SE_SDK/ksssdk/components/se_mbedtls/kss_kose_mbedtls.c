@@ -427,8 +427,8 @@ int kss_mbedtls_parse_crt_getpublickey(const uint8_t *cert, size_t cert_len, uin
     mbedtls_mpi_write_binary(&ec->Q.X, pub_buf, x_len);
     mbedtls_mpi_write_binary(&ec->Q.Y, pub_buf + x_len, y_len);
 
-    debug_showframe("Q.X", pub_buf, x_len);
-    debug_showframe("Q.Y", pub_buf, x_len+y_len);
+    kss_debug_showframe("Q.X", pub_buf, x_len);
+    kss_debug_showframe("Q.Y", pub_buf, x_len+y_len);
     LOGD(TAG, "x_len : %d", x_len);
     LOGD(TAG, "y_len : %d", y_len);
 

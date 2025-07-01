@@ -18,7 +18,7 @@ extern "C" {
 #include "kona_kss_policy.h"
 #include "ecdsa_verify_alt.h"
 #include "kss_kose_keystore.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 
 static const char *TAG = "kss_kose_keystore.c";
 

@@ -1,6 +1,6 @@
 
 #include "driver/uart.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -13,7 +13,7 @@ static const char *TAG = "DBG";
 //! @param[in] format : 출력할 메세지 포멧
 /////////////////////////////////////////////////////////////////////////////
 
-void debug_printf(const char *format, ...)
+void kss_debug_printf(const char *format, ...)
 {
 	#ifdef DEBUG 
 		va_list ap;
@@ -36,7 +36,7 @@ void debug_printf(const char *format, ...)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-void debug_showframe(const char *title, const uint8_t *buf, int len)
+void kss_debug_showframe(const char *title, const uint8_t *buf, int len)
 {
     #ifdef DEBUG 
         #define MAX_BUF_SIZE (128)

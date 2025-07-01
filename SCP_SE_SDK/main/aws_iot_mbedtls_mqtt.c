@@ -16,7 +16,7 @@
 #include "kss_kose_keystore.h"
 
 #ifdef DEBUG_PRINT
-#include "debug.h"
+#include "kona_kss_debug.h"
 #endif
 
 #define ONLY_MBEDTLS_TEST_CERTFILE  // device keypair & CA Cert in file
@@ -108,7 +108,7 @@ int mqtt_read_response(mbedtls_ssl_context *ssl)
 
     if (ret > 0) {
         LOGI(TAG, "[MQTT] Received %d bytes from broker:", ret);
-        debug_showframe("buf", buf, ret);
+        kss_debug_showframe("buf", buf, ret);
 
         if (buf[0] == 0x20 && ret >= 4) {
             if (buf[3] == 0x00) {
@@ -179,14 +179,13 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     kss_key_store_t keystore;
     kss_status_t kss_status;
     
-    memset(&keystore, 0, sizeof(kss_key_store_t));
-    
     kss_status = kss_key_store_context_init(&keystore, session);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_store_context_init failed res : %d", kss_status);
         return;
     }
 
+    LOGD(TAG, "keystore-sessionID : %d", keystore.session->subsystem);
     ////////////////////////////////////////////////////////////////////////
     //////////////////// device private key handle /////////////////////////
     ////////////////////////////////////////////////////////////////////////
@@ -270,17 +269,45 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_start, (root_cert_auth_end - root_cert_auth_start)); 
 #endif
 
+    if (cacert.version != 0) {
+            printf("cert version: %d\n", cacert.version);
+            printf("cert subject: %s\n", cacert.subject.val.p ? (char *)cacert.subject.val.p : "NULL");
+            printf("issuer: %s\n", cacert.issuer.val.p ? (char *)cacert.issuer.val.p : "NULL");
+            printf("expire: %04d-%02d-%02d\n",
+                cacert.valid_from.year,
+                cacert.valid_from.mon,
+                cacert.valid_from.day);
+        }
+
 #ifndef ONLY_MBEDTLS_TEST
     // SE 서명 검증 기능
     if(kss_mbedtls_verify_sign(&cacert.pk, &pub_obj) != 0){    //kss_mbedtls_verify_sign 이름 변경
         LOGE(TAG, "kss_mbedtls_verify_sign failed");
         return;
     }
-    
+    #ifdef MBEDTLS_ALLOW_PRIVATE_ACCESS
+        LOGD(TAG, "MBEDTLS_ALLOW_PRIVATE_ACCESS 상태 체크 ===");    
+    #endif
+
+    mbedtls_ecp_keypair* ecp_key = (mbedtls_ecp_keypair *)cacert.pk.private_pk_ctx;
+    mbedtls_ecp_group* eckey_gp = &(ecp_key->private_grp);
+
+    LOGD(TAG, "=== cacert Context 상태 체크 ===");
+    LOGD(TAG, "tls->cacert_ptr.pk_info name             = %s", cacert.pk.private_pk_info->name);
+    LOGD(TAG, "tls->cacert_ptr.pk_info pointer          = %p", cacert.pk.private_pk_info);
+    LOGD(TAG, "tls->cacert_ptr.pk_ctx pointer           = %p", cacert.pk.private_pk_ctx);
+    LOGD(TAG, "tls->cacert_ptr private_grp.id pointer   = %p", &((mbedtls_ecp_keypair *)cacert.pk.private_pk_ctx)->private_grp.id);
+    LOGD(TAG, "eckey_gp id pointer                      = %p", &(eckey_gp->id));
+    LOGD(TAG, "eckey_gp id                              = %d", eckey_gp->id);
+    LOGD(TAG, "pub_obj->keyStore->session->subsystem pointer  = %p", &pub_obj.keyStore->session->subsystem);
+    LOGD(TAG, "pub_obj->keyStore->session->subsystem    = %d", pub_obj.keyStore->session->subsystem);
+    LOGD(TAG, "pub_obj pointer                          = %p", &pub_obj);
+    LOGD(TAG, "pub_obj.T_size pointer                   = %p", &(eckey_gp->private_T_size));
+    LOGD(TAG, "pub_obj.T_size                           = %d", (eckey_gp->private_T_size));
+
     // SE 서명 기능
     if(kss_mbedtls_sign(&client_key, &keyobject) != 0){    // kss_mbedtls_sign
         LOGE(TAG, "kss_mbedtls_sign failed");
-        return;
     }
 
 #endif
@@ -314,6 +341,8 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         LOGE(TAG, "TLS handshake failed: -0x%04X - %s\n", ret, err_buf);
         return;
     }
+
+    LOGI(TAG, "TLS handshake success");
 
     // MQTT 연결 및 메시지 전송
     ret = mqtt_send_connect(&ssl, MQTT_CLIENT_ID);

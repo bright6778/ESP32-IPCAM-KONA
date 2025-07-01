@@ -15,7 +15,7 @@ extern "C" {
 #include "kona_kss_ftr_default.h"
 #include "kose_APDU_impl.h"
 #include "kss_kose_keyobj.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 
 static const char *TAG = "kss_kose_keyobj.c";
 /* ************************************************************************** */

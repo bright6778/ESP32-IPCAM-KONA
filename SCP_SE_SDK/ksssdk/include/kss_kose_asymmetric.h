@@ -17,7 +17,7 @@ extern "C" {
 #include "kose_tlv.h"
 
 #ifdef DEBUG_PRINT
-#include "debug.h"
+#include "kona_kss_debug.h"
 #endif
 
 /**

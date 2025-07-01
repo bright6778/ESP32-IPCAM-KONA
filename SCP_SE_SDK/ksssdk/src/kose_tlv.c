@@ -15,7 +15,7 @@ extern "C" {
 #include "kose_enums.h"
 #include "kona_kss_api.h"
 #include "kose_tlv.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 
 #define KOSE_TLV_BUF_SIZE_CMD 255
 #define KOSE_TLV_BUF_SIZE_RSP 2048

@@ -15,7 +15,7 @@ extern "C" {
 #include "kona_kss_api.h"
 #include "kose_tlv.h"
 #include "ensure.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 #include "scp03_Types.h"
 #include "kona_kss_ftr_default.h"
 #include "kss_kose_uart.h"

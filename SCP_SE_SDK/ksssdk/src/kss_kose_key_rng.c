@@ -14,7 +14,7 @@ extern "C" {
 #include "kss_kose_rng.h"
 #include "kose_APDU_impl.h"
 #include "ensure.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 
 static const char *TAG = "kss_kose_key_rng.c";
 

@@ -32,5 +32,5 @@
 #define LOGD(tag, fmt, ...) do {} while (0);
 #endif
 
-void debug_printf(const char *format, ...);
-void debug_showframe(const char *title, const uint8_t *buf, int len);
+void kss_debug_printf(const char *format, ...);
+void kss_debug_showframe(const char *title, const uint8_t *buf, int len);

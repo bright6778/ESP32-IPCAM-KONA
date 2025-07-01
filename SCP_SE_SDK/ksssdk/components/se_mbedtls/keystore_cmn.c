@@ -21,7 +21,7 @@ static const char *TAG = "keystore_cmn.c";
 #include "sm_types.h"
 
 #ifdef DEBUG_PRINT
-#include "debug.h"
+#include "kona_kss_debug.h"
 #endif
 
 /* ************************************************************************** */

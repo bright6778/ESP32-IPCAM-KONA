@@ -9,7 +9,7 @@
 #include "kss_kose_uart.h"
 #include "kona_kss_kose_types.h"
 #include "kss_kose_mbedtls.h"
-#include "debug.h"
+#include "kona_kss_debug.h"
 
 /* clang-format off */
 
