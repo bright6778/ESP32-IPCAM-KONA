@@ -19,7 +19,7 @@
 #include "kona_kss_debug.h"
 #endif
 
-#define ONLY_MBEDTLS_TEST_CERTFILE  // device keypair & CA Cert in file
+//#define ONLY_MBEDTLS_TEST_CERTFILE  // device keypair & CA Cert in file
 //#define ONLY_MBEDTLS_TEST         // no use SE keypair
 #define AWS_CA_CERT_ECC
 #define MBEDTLS_RANDOM_USE_SE       // SE에서 Random을 생성.
@@ -173,6 +173,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
     
     kss_object_t keyobject; // device private key object
+    kss_object_t dev_pub;   // device public key object
     kss_object_t dev_cert;  // device cert object
     kss_object_t pub_obj;   // CA cert object
     
@@ -208,16 +209,16 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 #endif // ONLY_MBEDTLS_TEST_CERTFILE
 #endif // ONLY_MBEDTLS_TEST
     ////////////////////////////////////////////////////////////////////////
-    //////////////////////// device cert handle ////////////////////////////
+    //////////////////// device public key handle //////////////////////////
     ////////////////////////////////////////////////////////////////////////
     // keypair init
-    kss_status = kss_key_object_init(&dev_cert, &keystore);
+    kss_status = kss_key_object_init(&dev_pub, &keystore);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_init failed res : %d", kss_status);
         return;
     }
 
-    kss_status = kss_key_object_get_handle(&dev_cert, 0x0200);
+    kss_status = kss_key_object_get_handle(&dev_pub, 0x0200);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
         return;
@@ -227,13 +228,28 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 #ifdef ONLY_MBEDTLS_TEST_CERTFILE
     ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));    //저장된 cert 사용 시
 #else
-    // SE에 저장된 Device 인증서를 가져옴.
-    size_t KeyBitLen = SIZE_CLIENT_CERTIFICATE * 8;
-    size_t KeyByteLen = SIZE_CLIENT_CERTIFICATE;
-
-    kss_status = kss_key_store_get_key(&keystore, &dev_cert, aclient_cer, &KeyByteLen, &KeyBitLen);
+    ////////////////////////////////////////////////////////////////////////
+    //////////////////////// device cert handle ////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    // keypair init
+    kss_status = kss_key_object_init(&dev_cert, &keystore);
     if(kss_status != kStatus_KSS_Success){
-        LOGE(TAG, "kss_key_store_get_key failed res : %d", kss_status);
+        LOGE(TAG, "kss_key_object_init failed res : %d", kss_status);
+        return;
+    }
+
+    kss_status = kss_key_object_get_handle(&dev_cert, 0x0700);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
+        return;
+    }
+
+    size_t dataSize = 0;
+    uint8_t aclient_cer[SIZE_CLIENT_CERTIFICATE];
+
+    kss_status = kss_key_store_get_data(&keystore, &dev_cert, aclient_cer, &dataSize);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_store_get_data failed res : %d", kss_status);
         return;
     }
 
