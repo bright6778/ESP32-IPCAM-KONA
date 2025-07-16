@@ -1,0 +1,132 @@
+/*
+ *
+ * Copyright 2018-2020 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ * Modifications Copyright 2025 KONA I
+ */
+
+#ifndef __KSS_KOSE_CONFIG_H
+#define __KSS_KOSE_CONFIG_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+#include <stdint.h>
+#include <stdbool.h>
+
+#define KSS_SESSION_MAX_CONTEXT_SIZE 100
+#define DEBUG_PRINT
+//#define KSS_HAVE_APPLET_KOSE_IOT 1
+
+/* clang-format off */
+/*
+#define KSS_SESSION_MAX_CONTEXT_SIZE        ( 0 \
+    + (1 * sizeof(void *)) \
+    + (1 * sizeof(void *)) \
+    + (8 * sizeof(void *)) \
+    + (7 * sizeof(void *)) \
+    + 32)*/
+#define KSS_KEY_STORE_MAX_CONTEXT_SIZE      ( 0 \
+    + (1 * sizeof(void *)) \
+    + (4 * sizeof(void *)) \
+    + 32)
+#define KSS_KEY_OBJECT_MAX_CONTEXT_SIZE     ( 0 \
+    + (1 * sizeof(void *)) \
+    + (2 * sizeof(int)) \
+    + (4 * sizeof(void *)) \
+    + 32)
+#define KSS_SYMMETRIC_MAX_CONTEXT_SIZE      ( 0 \
+    + (2 * sizeof(void *)) \
+    + (2 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 16 /* Buffer in case of unaligned block cipher operations */ \
+    + 4  /* Buffer length in case of unaligned block cipher operations */ \
+    + 32)
+#define KSS_AEAD_MAX_CONTEXT_SIZE           ( 0 \
+    + (5 * sizeof(void *)) \
+    + (6 * sizeof(int)) \
+    + (5 * sizeof(void *)) \
+    + 32)
+#define KSS_DIGEST_MAX_CONTEXT_SIZE         ( 0 \
+    + (1 * sizeof(void *)) \
+    + (3 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_MAC_MAX_CONTEXT_SIZE            ( 0 \
+    + (2 * sizeof(void *)) \
+    + (2 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_ASYMMETRIC_MAX_CONTEXT_SIZE      ( 0 \
+    + (2 * sizeof(void *)) \
+    + (3 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_TUNNEL_MAX_CONTEXT_SIZE         ( 0 \
+    + (1 * sizeof(void *)) \
+    + (2 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_CHANNEL_MAX_CONTEXT_SIZE         ( 0 \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_DERIVE_KEY_MAX_CONTEXT_SIZE     ( 0 \
+    + (2 * sizeof(void *)) \
+    + (2 * sizeof(int)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+#define KSS_RNG_MAX_CONTEXT_SIZE            ( 0 \
+    + (1 * sizeof(void *)) \
+    + (2 * sizeof(void *)) \
+    + 32)
+
+#define KSS_CONNECT_MAX_CONTEXT_SIZE ( 0 \
+    + (4 * sizeof(void *)) \
+    + 8 \
+    )
+
+#define KSS_AUTH_MAX_CONTEXT_SIZE ( 0 \
+    + (3 * sizeof(void *)) \
+    + 8 \
+    )
+
+#define KSS_POLICY_COUNT_MAX (10)
+
+/////////////////////////////////////////////////////////////////////////////
+// SE Interface 설정
+/////////////////////////////////////////////////////////////////////////////
+#define CONNECT_SE_UART
+//#define CONNECT_SE_I2C
+
+#ifdef CONNECT_SE_UART
+/////////////////////////////////////////////////////////////////////////////
+// SE IO 핀 정의 (UART 통신 설정)
+/////////////////////////////////////////////////////////////////////////////
+
+#define SE_UART_TXD (7)   // TXD pin
+#define SE_UART_RXD (6)   // RXD pin
+#define SE_UART_RTS (-1)  // RTS pin
+#define SE_UART_CTS (-1)  // CTS pin
+
+#define SE_UART_PORT_NUM      (UART_NUM_1)
+#define SE_UART_BAUD_RATE     (9600)
+#define SE_UART_BUFF_SIZE    (1024)
+
+/////////////////////////////////////////////////////////////////////////////
+// CLK 핀 정의 (PWM 설정)
+/////////////////////////////////////////////////////////////////////////////
+
+#define SCR_PWM_CHANNEL   LEDC_CHANNEL_0
+#define SCR_PWM_TIMER     LEDC_TIMER_0
+#define SCR_PWM_OUTPUT_IO (8)                 // 사용할 GPIO 핀 번호 (5:ok, 8:ok, 9:fail)
+#define SCR_PWM_FREQUENCY (3579545)           // PWM 주파수 (Hz)
+#define SCR_PWM_DUTY_RES  LEDC_TIMER_1_BIT    // 1비트 해상도
+#define SCR_PWM_DUTY      (2 - 1)             // 최대 듀티 사이클
+
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+#endif
