@@ -347,7 +347,11 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
-    mbedtls_net_connect(&net, AWS_IOT_ENDPOINT, AWS_IOT_PORT, MBEDTLS_NET_PROTO_TCP);
+    ret = mbedtls_net_connect(&net, AWS_IOT_ENDPOINT, AWS_IOT_PORT, MBEDTLS_NET_PROTO_TCP);
+    if(ret != 0){
+        LOGE(TAG, "mbedtls_net_connect failed : %d", ret);
+        return;
+    }
     mbedtls_ssl_set_bio(&ssl, &net, mbedtls_net_send, mbedtls_net_recv, NULL);
  
     // TLS handshake
