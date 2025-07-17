@@ -1,25 +1,15 @@
 file(GLOB SRC1 "src/*.c")
 file(GLOB SRC2 "components/se_mbedtls/*.c")
 
-if(COMMAND idf_component_register) # ESP-IDF 환경이면
+if(DEFINED ENV{IDF_PATH}) # ESP-IDF 환경이면
+    file(GLOB SRC3 "components/interface/esp/*.c")
+
     idf_component_register(
-        SRCS ${SRC1} ${SRC2}
-        #SRCS
-        #"src/kona_kss_debug.c"
-        #"src/kona_kss_api.c"
-        #"src/kona_kss_util_asn1_der.c"
-        #"src/kose_APDU_impl.c"
-        #"src/kose_tlv.c"
-        #"src/kss_kose_asymmetric.c"
-        #"src/kss_kose_key_rng.c"
-        #"src/kss_kose_keyobj.c"
-        #"src/kss_kose_keystore.c"
-        #"src/kss_kose_session.c"
-        #"src/kss_kose_uart.c"
-        #"src/smartcard.c" 
+        SRCS ${SRC1} ${SRC2} ${SRC3}
     INCLUDE_DIRS 
         "include" 
         "components/se_mbedtls"
+        "components/interface/esp"
     REQUIRES 
         driver
         se_mbedtls
@@ -30,21 +20,20 @@ if(COMMAND idf_component_register) # ESP-IDF 환경이면
         MBEDTLS_ALLOW_PRIVATE_ACCESS=1
     )
 else()  # 일반 CMake 환경이면
-    add_library(se_mbedtls STATIC
-        "src/kona_kss_debug.c"
-        "src/kona_kss_api.c"
-        "src/kona_kss_util_asn1_der.c"
-        "src/kose_APDU_impl.c"
-        "src/kose_tlv.c"
-        "src/kss_kose_asymmetric.c"
-        "src/kss_kose_key_rng.c"
-        "src/kss_kose_keyobj.c"
-        "src/kss_kose_keystore.c"
-        "src/kss_kose_session.c"
-        "src/kss_kose_uart.c"
-        "src/smartcard.c" 
+    cmake_minimum_required(VERSION 3.10)
+    project(ksssdk)
+    
+    set(
+        SRCS ${SRC1} ${SRC2}
+    )    
+    add_library(ksssdk STATIC ${SRCS})
+    message(STATUS "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+
+    target_include_directories(ksssdk PUBLIC
+    	${CMAKE_CURRENT_SOURCE_DIR}/components/se_mbedtls
+    	${CMAKE_CURRENT_SOURCE_DIR}/include
     )
-    target_compile_definitions(se_mbedtls PUBLIC
+    target_compile_definitions(ksssdk PRIVATE
         KSS_HAVE_MBEDTLS_ALT_KSS=1
         MBEDTLS_ALLOW_PRIVATE_ACCESS=1
     )

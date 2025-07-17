@@ -29,7 +29,7 @@
 #define AWS_IOT_ENDPOINT "a34vuzhubahjfj-ats.iot.ap-northeast-2.amazonaws.com"
 #define MQTT_CLIENT_ID   "ee2e9203f0a0971c599888fb8b67e3a1882626cd-kona"
 #define MQTT_TOPIC       "client/test/ee2e9203f0a0971c599888fb8b67e3a1882626cd/la/123456"
-#define MQTT_PAYLOAD     "{\"message\":\"hello aws iot\"}" //"hello aws iot"
+#define MQTT_PAYLOAD     "hello aws iot"
 
 static const char *TAG = "aws_iot_mbedtls_mqtt.c";
 
@@ -82,23 +82,7 @@ int mqtt_send_connect(mbedtls_ssl_context *ssl, const char *client_id)
     
     return mbedtls_ssl_write(ssl, buf, len);
 }
-/*
-int mqtt_send_publish(mbedtls_ssl_context *ssl, const char *topic, const char *payload)
-{
-    unsigned char buf[512];
-    size_t len = 0;
-    size_t topic_len = strlen(topic);
-    size_t payload_len = strlen(payload);
 
-    buf[len++] = 0x30; // PUBLISH packet
-    buf[len++] = 2 + topic_len + payload_len;
-    buf[len++] = 0x00; buf[len++] = topic_len;
-    memcpy(&buf[len], topic, topic_len); len += topic_len;
-    memcpy(&buf[len], payload, payload_len); len += payload_len;
-
-    return mbedtls_ssl_write(ssl, buf, len);
-}
-*/
 int mqtt_send_publish(mbedtls_ssl_context *ssl, const char *topic, const char *payload)
 {
     unsigned char buf[512];

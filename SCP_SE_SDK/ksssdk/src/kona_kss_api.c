@@ -48,6 +48,7 @@ kss_status_t kss_session_open(kss_session_t *session,
     kss_connection_type_t connection_type,
     void *connectionData)
 {
+    LOGD(TAG, "kss_session_open start");
     if (kType_KSS_SecureElement == subsystem){
         kss_kose_session_t *kose_session = (kss_kose_session_t *)session;
         return kss_kose_session_open(kose_session, subsystem, application_id, connection_type, connectionData);

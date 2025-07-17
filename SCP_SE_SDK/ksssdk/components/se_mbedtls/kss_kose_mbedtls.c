@@ -116,7 +116,6 @@ static int kss_eckey_verify(void *ctx,
     default:
         return 1;
     }
-    LOGD(TAG, "%s: Verify using key %08" PRIX32"", __FUNCTION__, pax_ctx->grp.pKSSObject->keyId);
     
     status = kss_asymmetric_context_init(
         &asymVerifyCtx, kssObject->keyStore->session, kssObject, algorithm, kMode_KSS_Verify);
@@ -257,8 +256,7 @@ int kss_mbedtls_verify_sign(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
         pkeyObject->cipherType == kKSS_CipherType_EC_BRAINPOOL ||
         pkeyObject->cipherType == kKSS_CipherType_EC_MONTGOMERY ||
         pkeyObject->cipherType == kKSS_CipherType_EC_TWISTED_ED) {
-        LOGD(TAG, "Associating ECC public key '0x%08" PRIX32 "'", pkeyObject->keyId);
-
+        
         pkey->pk_info = &kose_mbedtls_ecpubkey_pk_info;
         if (pkey->pk_ctx == NULL) {
             pax_ctx = (mbedtls_ecp_keypair *)mbedtls_calloc(1, sizeof(mbedtls_ecp_keypair));
@@ -429,8 +427,8 @@ int kss_mbedtls_parse_crt_getpublickey(const uint8_t *cert, size_t cert_len, uin
 
     kss_debug_showframe("Q.X", pub_buf, x_len);
     kss_debug_showframe("Q.Y", pub_buf, x_len+y_len);
-    LOGD(TAG, "x_len : %d", x_len);
-    LOGD(TAG, "y_len : %d", y_len);
+    LOGD(TAG, "x_len : %zu", x_len);
+    LOGD(TAG, "y_len : %zu", y_len);
 
     *pub_len = total;
 

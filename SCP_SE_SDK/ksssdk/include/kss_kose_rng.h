@@ -14,7 +14,6 @@ extern "C" {
 #include "kona_kss_kose_types.h"
 #include "kona_kss_kose_config.h"
 #include "kose_tlv.h"
-#include "kss_kose_uart.h"
 #include "kss_kose_session.h"
 
 #ifdef DEBUG_PRINT

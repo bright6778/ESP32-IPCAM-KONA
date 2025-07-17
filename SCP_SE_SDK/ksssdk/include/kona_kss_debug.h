@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DEBUG
+//#define KSS_DEBUG
 
 #include <stdio.h>
 #include <string.h>
@@ -26,7 +26,7 @@
 #define LOGI(tag, fmt, ...) printf(ANSI_COLOR_GREEN "[INF] %s: " fmt "\n", tag, ##__VA_ARGS__);
 #define LOGE(tag, fmt, ...) printf(ANSI_COLOR_RED "[ERR] %s: " fmt "\n", tag, ##__VA_ARGS__);
 
-#ifdef DEBUG
+#ifdef KSS_DEBUG
 #define LOGD(tag, fmt, ...) printf(ANSI_COLOR_YELLOW "[DBG] %s: " fmt "\n", tag, ##__VA_ARGS__);
 #else
 #define LOGD(tag, fmt, ...) do {} while (0);

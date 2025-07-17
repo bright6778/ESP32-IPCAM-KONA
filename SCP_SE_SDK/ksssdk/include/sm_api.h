@@ -1,11 +1,11 @@
 #ifndef _SM_API_
 #define _SM_API_
 
-//#include "sm_types.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdint.h>
 
 typedef enum
 {

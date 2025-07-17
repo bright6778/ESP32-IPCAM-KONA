@@ -12,6 +12,7 @@ extern "C" {
 
 #include <string.h> // memcpy
 #include <limits.h>
+#include <stdint.h>
 #include "kose_enums.h"
 #include "kona_kss_api.h"
 #include "kose_tlv.h"
@@ -329,7 +330,9 @@ smStatus_t DoAPDUTx_s_Case3(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_t 
         apduStatus = SM_NOT_OK;
     }
     else {
+        kss_debug_showframe(TAG, cmdBuf, cmdBufLen);
         apduStatus = pSessionCtx->fp_TXn(pSessionCtx, cmdBuf, cmdBufLen, rxBuf, &rxBufLen);
+        kss_debug_showframe(TAG, rxBuf, rxBufLen);
     }
     return apduStatus;
 }
@@ -346,7 +349,9 @@ smStatus_t DoAPDUTxRx_s_Case2(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_
         apduStatus = SM_NOT_OK;
     }
     else {
+        kss_debug_showframe(TAG, cmdBuf, cmdBufLen);
         apduStatus = pSessionCtx->fp_TXn(pSessionCtx, cmdBuf, cmdBufLen, rspBuf, pRspBufLen);
+        kss_debug_showframe(TAG, rspBuf, *pRspBufLen);
     }
     return apduStatus;
 }
@@ -363,7 +368,9 @@ smStatus_t DoAPDUTxRx_s_Case4(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_
         apduStatus = SM_NOT_OK;
     }
     else {
+        kss_debug_showframe(TAG, cmdBuf, cmdBufLen);
         apduStatus = pSessionCtx->fp_TXn(pSessionCtx, cmdBuf, cmdBufLen, rspBuf, pRspBufLen);
+        kss_debug_showframe(TAG, rspBuf, *pRspBufLen);
     }
     return apduStatus;
 }

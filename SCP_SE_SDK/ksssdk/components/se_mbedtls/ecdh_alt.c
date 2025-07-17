@@ -33,7 +33,7 @@
  */
 
 #if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/mbedtls_config.h"
+#include "mbedtls_config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif

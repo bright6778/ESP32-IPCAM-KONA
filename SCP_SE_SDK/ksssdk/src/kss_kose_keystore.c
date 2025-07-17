@@ -620,7 +620,7 @@ kss_status_t kss_kose_key_store_set_key(kss_kose_key_store_t *keyStore,
     cipher_type = (kss_cipher_type_t)keyObject->cipherType;
     ppolicySet = NULL;
 
-    LOGD(TAG, "keyBitLen : %d", keyBitLen);
+    LOGD(TAG, "keyBitLen : %zu", keyBitLen);
     ENSURE_OR_GO_EXIT(keyBitLen == 256);
 
     switch (cipher_type) {

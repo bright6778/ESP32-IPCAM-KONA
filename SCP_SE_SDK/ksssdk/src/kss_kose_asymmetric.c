@@ -218,6 +218,18 @@ void kss_kose_asymmetric_context_free(kss_kose_asymmetric_t *context)
     memset(context, 0, sizeof(*context));
 }
 
+kss_status_t kss_kose_asymmetric_encrypt(
+    kss_kose_asymmetric_t *context, const uint8_t *srcData, size_t srcLen, uint8_t *destData, size_t *destLen)
+{
+    return kStatus_KSS_Success;
+}
+
+kss_status_t kss_kose_asymmetric_decrypt(
+    kss_kose_asymmetric_t *context, const uint8_t *srcData, size_t srcLen, uint8_t *destData, size_t *destLen)
+{
+    return kStatus_KSS_Success;
+}
+
 #ifdef __cplusplus
 }
 #endif

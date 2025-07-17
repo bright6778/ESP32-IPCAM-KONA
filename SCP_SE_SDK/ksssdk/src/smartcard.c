@@ -11,6 +11,7 @@
 //! @file    smartcard.c
 //! @brief   Smartcard processing module
 /////////////////////////////////////////////////////////////////////////////
+#ifdef ESP_PLATFORM
 #include "smartcard.h"
 
 
@@ -71,7 +72,6 @@ ledc_channel_config_t ledc_channel = {
 	.duty = 1,                          // 초기 듀티 사이클
 	.hpoint = 0,
 };
-
 
 /////////////////////////////////////////////////////////////////////////////
 // Variables
@@ -636,3 +636,4 @@ void smartcard_task_create(void)
     xTaskCreate(smartcard_task, "smartcard_task", 4096, NULL, 1, NULL);
 }
 
+#endif	// ESP_PLATFORM

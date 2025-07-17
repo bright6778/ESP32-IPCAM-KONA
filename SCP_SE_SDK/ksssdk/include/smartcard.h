@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef ESP_PLATFORM
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "driver/ledc.h"
@@ -79,5 +80,5 @@ bool smartcard_getATR(uint8_t *rcvbuf, int rcvlen);
 bool smartcard_pps_exchange(uint8_t *rcvbuf, int rcvlen);
 
 
-
+#endif // ESP_PLATFORM
 #endif // __SMARTCARD_H

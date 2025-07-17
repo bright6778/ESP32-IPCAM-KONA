@@ -18,11 +18,15 @@ extern "C" {
 #include "kona_kss_debug.h"
 #include "scp03_Types.h"
 #include "kona_kss_ftr_default.h"
-#include "kss_kose_uart.h"
 #include "kss_kose_session.h"
+#ifdef ESP_PLATFORM
+#include "kss_kose_uart.h"
+#endif
+
 
 static const char *TAG = "kss_kose_session.c";
 
+#ifdef ESP_PLATFORM
 static smStatus_t kss_kose_TXn(struct KoseSession *pSession,
     uint8_t *cmdBuf,
     size_t cmdBufLen,
@@ -30,28 +34,16 @@ static smStatus_t kss_kose_TXn(struct KoseSession *pSession,
     size_t *rspLen)
 {
     smStatus_t ret     = SM_NOT_OK;
-    //tlvHeader_t outHdr = {
-    //    0,
-    //};
-    //uint8_t txBuf[KOSE_MAX_BUF_SIZE_CMD] = {
-    //    0,
-    //};
-    //size_t txBufLen = sizeof(txBuf);
-
-    //const tlvHeader_t *sendHdr = NULL;
-    //uint8_t *sendBuf           = NULL;
-    //size_t sendBufLen          = 0;
-
-    //KoseSession_t koseSession;
     
     if (pSession->connType == kType_SE_Conn_Type_UART) {
-        int rcvlen_int = (int)(*rspLen);  
+        int rcvlen_int = (int)(*rspLen);
         ret = kss_kose_uart_transceive(cmdBuf, cmdBufLen, rsp, &rcvlen_int);
         *rspLen = (size_t)rcvlen_int;
     }
     
     return ret;
 }
+#endif
 
 kss_status_t kss_kose_session_create(kss_kose_session_t *session)
 {
@@ -67,11 +59,10 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     kss_connection_type_t connection_type,
     void *connectionData)
 {
+    LOGD(TAG, "kss_kose_session_open start");
     kss_status_t retval             = kStatus_KSS_Success;
     SE_Connect_Ctx_t *pAuthCtx      = NULL;
-    SmCommState_t CommState         = {0};
     smStatus_t status               = SM_NOT_OK;
-    //int sm_connected              = 0;
     pKoseSession_t koseSession;
 
     ENSURE_OR_RETURN_ON_ERROR(session, kStatus_KSS_Fail);
@@ -82,12 +73,7 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     if (pAuthCtx->connType == kType_SE_Conn_Type_UART) {
         koseSession->conn_ctx = pAuthCtx->conn_ctx;
         koseSession->connType = pAuthCtx->connType;
-        
-        CommState.connType = pAuthCtx->connType;
-        if (1 == pAuthCtx->sessionResume) {
-            CommState.sessionResume = 1;
-        }
-
+#ifdef ESP_PLATFORM
         if(koseSession->conn_ctx == NULL){
             LOGD(TAG, "conn_ctx == NULL");
             koseSession->conn_ctx = calloc(1, sizeof(kss_kose_uart_ctx_t));
@@ -95,12 +81,14 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
         }
         if(kss_kose_uart_init(koseSession->conn_ctx) == false){
             retval = kStatus_KSS_Fail;
-            goto exit;
+            return retval;
         }
+        koseSession->fp_TXn = &kss_kose_TXn;
+#else
+    koseSession->fp_TXn = koseSession->conn_ctx;
+#endif
     }
 
-    // KOSE Select
-    koseSession->fp_TXn = &kss_kose_TXn;
     uint8_t rcvbuf[256] = {0};
     size_t rcvlen;
 
@@ -116,7 +104,6 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
         }
     }
 
-exit:
     if (retval != kStatus_KSS_Success) {
         memset(koseSession, 0x00, sizeof(*koseSession));
     }
@@ -125,9 +112,11 @@ exit:
 }
 
 void kss_kose_session_close(kss_kose_session_t *session){
+#ifdef ESP_PLATFORM
 #ifdef CONNECT_SE_UART
    kss_kose_uart_close();
-#endif
+#endif  // CONNECT_SE_UART
+#endif  // ESP_PLATFORM
    memset(session, 0, sizeof(*session));
 }
 

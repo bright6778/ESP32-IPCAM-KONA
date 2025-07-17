@@ -1,5 +1,8 @@
 
+#ifdef ESP_PLATFORM
 #include "driver/uart.h"
+#endif
+#include <stdarg.h>
 #include "kona_kss_debug.h"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -15,7 +18,7 @@ static const char *TAG = "DBG";
 
 void kss_debug_printf(const char *format, ...)
 {
-	#ifdef DEBUG 
+	#ifdef KSS_DEBUG 
 		va_list ap;
 		char string[128];
 
@@ -38,7 +41,7 @@ void kss_debug_printf(const char *format, ...)
 
 void kss_debug_showframe(const char *title, const uint8_t *buf, int len)
 {
-    #ifdef DEBUG 
+    #ifdef KSS_DEBUG 
         #define MAX_BUF_SIZE (128)
         char tmpbuf[MAX_BUF_SIZE + 8];
         int count = 0;

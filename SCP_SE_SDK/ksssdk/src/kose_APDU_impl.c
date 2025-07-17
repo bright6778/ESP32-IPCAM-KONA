@@ -24,9 +24,12 @@ extern "C" {
 #include <limits.h>
 #include "kona_kss_kose_types.h"
 #include "kose_APDU_impl.h"
+#ifdef ESP_PLATFORM
 #include "kss_kose_uart.h"
+#endif
 #include "kose_tlv.h"
 #include "kss_kose_keyobj.h"
+#include "kona_kss_debug.h"
 
 static const char *TAG = "kose_APDU_impl.c";
  
