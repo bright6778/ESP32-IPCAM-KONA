@@ -162,7 +162,7 @@ int load_cert_to_buffer(const char *filepath, unsigned char **start, unsigned ch
 {
     FILE *f = fopen(filepath, "rb");
     if (!f) {
-        perror("fopen");
+        printf("fopen\n");
         return -1;
     }
     fseek(f, 0, SEEK_END);
@@ -174,7 +174,12 @@ int load_cert_to_buffer(const char *filepath, unsigned char **start, unsigned ch
         fclose(f);
         return -1;
     }
-    fread(buf, 1, filesize, f);
+    size_t read_size = fread(buf, 1, filesize, f);
+    if (read_size != filesize) {
+        printf("파일을 모두 읽지 못했습니다. 읽은 바이트 수: %zu\n", read_size);
+        fclose(f);
+        return -1;
+    }
     fclose(f);
 
     buf[filesize] = '\0'; // null-terminate (PEM 파일일 경우)
