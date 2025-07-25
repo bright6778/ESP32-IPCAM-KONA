@@ -31,6 +31,8 @@
 
 #include "kss_kose_uart.h"
 #include "kona_kss_debug.h"
+#include "tsm_sdk.h"
+//#include "kona_se.h"
 
 ///////////////////////////////////////////////////////////////
 // Define
@@ -54,10 +56,26 @@
 #define SE_PROVISIONING             "se_provisioning"
 #define AWS_IOT_DEMO                "aws_iot_demo_main"
 #define RANDOM_GEN                  "kss_kose_rng"
+#define GEN_CSR                     "gen_csr"
+#define CHECK_SE                    "check_se"
+
+//#define SE_ID								"8009069009064009061520"
+#define SE_ID								"0290000290002400000005"
+//#define CPLC								"81009809409105005200FFFFFFFFFFFFFFFF4092"
+#define CPLC								"8100980940915343FE414021240A05300D304092"
+#define BASE_URL							"http://220.72.230.41:2011/TSM_PROXY"
+#define SE_ID_DUMMY_ISSUE_APPLET			"8982201311151721561F"
+#define IMEI_DUMMY_ISSUE_APPLET				"353490061878118"
+#define SERVICE_ID_DUMMY_ISSUE_APPLET 			"2A831A8CE0682424A1021200000016"
+#define SERVICE_VERSION_DUMMY_ISSUE_APPLET 	"1.0.0"
+#define CUSTOMER_ID_DUMMY_ISSUE_APPLET 		"konaone10@konai.com"
+#define A_ID_DUMMY_ISSUE_APPLET 			"A0000000031010"
+#define IMEI_DUMMY_REGISTER_SE 				"353490061878118"
+
 void aws_iot_mbedtls_mqtt_test(kss_session_t *session);
 int aws_iot_demo_main( int argc, char ** argv );
 void se_provisioning(kss_session_t *session);
-
+int gen_csr();
 static const char *TAG = "example";
 
 /* Use project configuration menu (idf.py menuconfig) to choose the GPIO to blink,
@@ -160,6 +178,8 @@ void print_manu(){
     printf("CMD : mbedtls_verify_sign or 9.1        - %s\n", MBEDTLS_VERIFY_SIGN);
     //printf("CMD : se_provisioning or 10.1           - %s\n", SE_PROVISIONING);
     printf("CMD : aws_mqtt or 11.1                  - %s\n", AWS_IOT_DEMO);
+    printf("CMD : gen_csr or 12.1                   - %s\n", GEN_CSR);
+    printf("CMD : check_se or 13.1                   - %s\n", CHECK_SE);
     printf("//////////////////////////////////////////////////////////////////\n");
 }
 
@@ -439,6 +459,42 @@ void command_task(void *arg)
                     //aws_iot_demo_main(0,NULL);    // AWS IoT Device Embedded C SDK
                     aws_iot_mbedtls_mqtt_test(&session);    // mbedTLS MQTT
                     LOGI(TAG, "End %s", AWS_IOT_DEMO);
+                }
+                else if (strcmp((char*)buf, "gen_csr") == 0 || strcmp((char*)buf, "12.1") == 0) {    // gen_csr
+                    LOGI(TAG, "Start %s", GEN_CSR);
+                    gen_csr(&session);
+                    LOGI(TAG, "End %s", GEN_CSR);
+                }else if (strcmp((char*)buf, "check_se") == 0 || strcmp((char*)buf, "13.1") == 0) {    // check_se
+                    LOGI(TAG, "Start %s", CHECK_SE);
+                    tsm_sdk_init();
+                    init_se();
+
+                    char* se_id = SE_ID;
+                    char* imei = IMEI_DUMMY_ISSUE_APPLET;
+                    /*char* pushToken = IMEI_DUMMY_ISSUE_APPLET;
+                    char* cplc = CPLC;
+                    char* service_id = SERVICE_ID_DUMMY_ISSUE_APPLET;
+                    char* service_version = SERVICE_VERSION_DUMMY_ISSUE_APPLET;
+                    char* customer_id = CUSTOMER_ID_DUMMY_ISSUE_APPLET;
+                    char* a_id = A_ID_DUMMY_ISSUE_APPLET;
+                    char* osName = "RTOS";
+                    char* osVersion = "1.0.0";
+                    char* msisdn = "+821199991111";
+                    char* mnoName = "MONA";*/
+                    SeIdType seIdType = CARD_UNIQUE_DATA;
+                    SeType seType = SIM;
+                    Push_Token_Type pushType = Xinjie;
+                    SeDetail seList[1] = {
+                        {se_id, seIdType, seType, false},
+                };
+
+	                int seListSize = sizeof(seList) / sizeof(seList[0]);
+
+                    set_base_url(BASE_URL);
+                        if(!check_se(imei, seList, seListSize)){
+                            printf("error audit_se\n");
+                        }
+                    LOGI(TAG, "End %s", CHECK_SE);
                 }
                 print_manu();
 

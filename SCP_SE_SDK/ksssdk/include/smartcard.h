@@ -79,6 +79,14 @@ void smartcard_task_create(void);
 bool smartcard_getATR(uint8_t *rcvbuf, int rcvlen);
 bool smartcard_pps_exchange(uint8_t *rcvbuf, int rcvlen);
 
-
 #endif // ESP_PLATFORM
+
+extern uint8_t *rcvbuf ;
+extern int rcvlen;
+extern uint8_t atr_fd;
+extern uint8_t atr_protocol;
+extern uint8_t atr_ifsc;
+extern uart_port_t SCR_UART_PORT_NUM;
+
+
 #endif // __SMARTCARD_H

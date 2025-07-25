@@ -320,7 +320,8 @@ int kss_mbedtls_sign(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
         memset(pkey, 0, sizeof(*pkey));
     }
     
-    if (pkeyObject->cipherType == kKSS_CipherType_EC_NIST_P || pkeyObject->cipherType == kKSS_CipherType_EC_NIST_K ||
+    if (pkeyObject->cipherType == kKSS_CipherType_EC_NIST_P || 
+        pkeyObject->cipherType == kKSS_CipherType_EC_NIST_K ||
         pkeyObject->cipherType == kKSS_CipherType_EC_BRAINPOOL ||
         pkeyObject->cipherType == kKSS_CipherType_EC_MONTGOMERY ||
         pkeyObject->cipherType == kKSS_CipherType_EC_TWISTED_ED) {

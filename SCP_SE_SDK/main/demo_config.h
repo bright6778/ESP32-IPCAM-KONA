@@ -35,6 +35,7 @@
 
 /* Include header that defines log levels. */
 #include "logging_levels.h"
+#include "kona_kss_api.h"
 
 /* Logging configuration for the Demo. */
 #ifndef LIBRARY_LOG_NAME
@@ -149,3 +150,5 @@
 #define MQTT_LIB    "core-mqtt@" MQTT_LIBRARY_VERSION
 
 #endif /* ifndef DEMO_CONFIG_H_ */
+
+int gen_csr(kss_session_t *session) ;

@@ -42,8 +42,6 @@ kss_kose_uart_ctx_t se_uart_init = {
 /////////////////////////////////////////////////////////////////////////////
 // Variables
 /////////////////////////////////////////////////////////////////////////////
-uint8_t *rcvbuf;
-int rcvlen;
 
 void set_se_uart_init_default(kss_kose_uart_ctx_t *se_uart_init){
     se_uart_init->se_uart_pin.se_uart_txd = SE_UART_TXD,

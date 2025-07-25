@@ -5,12 +5,15 @@ cmake_minimum_required(VERSION 3.16)
 if(DEFINED ENV{IDF_PATH}) # ESP-IDF 환경이면
     message(STATUS "ESP-IDF 환경으로 인식됨")
 
-    set(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/ksssdk"
-                            "${CMAKE_CURRENT_LIST_DIR}/ksssdk/components/se_mbedtls"
-                            "$ENV{IDF_PATH}/examples/common_components/protocol_examples_common"
-                            "${CMAKE_CURRENT_LIST_DIR}/libraries/backoffAlgorithm"
-                            "${CMAKE_CURRENT_LIST_DIR}/libraries/coreMQTT"
-                            "${CMAKE_CURRENT_LIST_DIR}/libraries/common/posix_compat")
+set(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/ksssdk"
+                         "${CMAKE_CURRENT_LIST_DIR}/ksssdk/components/se_mbedtls"
+                         "${CMAKE_CURRENT_LIST_DIR}/ksssdk/components/tsm-agent/include"
+                         "${CMAKE_CURRENT_LIST_DIR}/ksssdk/components/tsm-agent/src"
+                         "$ENV{IDF_PATH}/examples/common_components/protocol_examples_common"
+                         "${CMAKE_CURRENT_LIST_DIR}/libraries/backoffAlgorithm"
+						 "${CMAKE_CURRENT_LIST_DIR}/libraries/coreMQTT"
+						 "${CMAKE_CURRENT_LIST_DIR}/libraries/common/posix_compat")
+
 
     add_compile_options(-I${CMAKE_SOURCE_DIR}/ksssdk/components/se_mbedtls)
 
