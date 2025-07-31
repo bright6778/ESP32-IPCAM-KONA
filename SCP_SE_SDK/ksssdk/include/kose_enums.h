@@ -22,19 +22,21 @@ typedef enum
     /** INS External Authenticate */
     kKOSE_INS_EXTERNAL_AUTHENTICATE = 0x82,
     /** INS Get Data */
-    kKOSE_GET_DATA = 0xCA,
+    kKOSE_INS_GET_DATA = 0xCA,
     /** INS SIGN CDATA */
     kKOSE_INS_SIGN_CDATA = 0x2A,
     /** INS VERIFY SIGNATURE */
     kKOSE_INS_VERIFY_SIGNATURE = 0x20,
     /** INS Get Random */
-    kKOSE_GET_RANDOM = 0x84,
+    kKOSE_INS_GET_RANDOM = 0x84,
     /** INS Store Data */
-    kKOSE_STORE_DATA = 0xE2,
+    kKOSE_INS_STORE_DATA = 0xE2,
     /** INS Put Key */
-    kKOSE_PUT_KEY = 0xD8,
+    kKOSE_INS_PUT_KEY = 0xD8,
     /** INS Set Lock State */
-    kKOSE_SET_LOCK_STATE = 0xF0,
+    kKOSE_INS_SET_LOCK_STATE = 0xF0,
+    /** INS Encrypt/Decrypt CData */
+    kKOSE_INS_ENCRYPT_DECRYPT_CDATA = 0xB0,
     
     // 여기 아래는 삭제할지 고민중 - uc.nam
     /** INS Read Binary */
@@ -95,6 +97,8 @@ typedef enum
     kKOSE_P1_HMAC        = 0x06,
     kKOSE_P1_CMAC        = 0x07,
 
+    /** Encrypt/Decrypt CDATA P1 */
+    kKOSE_P1_ENCRYPT = 0x01,
 
 
 
@@ -206,6 +210,7 @@ typedef enum
     kKOSE_P2_SCP = 0x52,
     kKOSE_P2_AUTH_FIRST_PART1 = 0x53,
     kKOSE_P2_AUTH_NONFIRST_PART1 = 0x54,
+
 #if KSS_HAVE_KOSE_VER_GTE_07_02
     kKOSE_P2_CM_COMMAND = 0x55,
     kKOSE_P2_MODE_OF_OPERATION = 0x56,

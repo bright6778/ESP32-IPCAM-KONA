@@ -28,6 +28,9 @@ smStatus_t Kose_API_External_Authenticate(pKoseSession_t session_ctx, kss_object
 smStatus_t Kose_API_GetData(pKoseSession_t session_ctx, uint32_t objectID, uint8_t *data, size_t *pdataLen);
 
 smStatus_t Kose_API_StoreData(
+    pKoseSession_t session_ctx, uint32_t objectID, uint32_t acl, uint32_t totalObjectLen, uint8_t p1, uint8_t p2, const uint8_t *objectData, const size_t objectDataLen);
+
+smStatus_t Kose_API_StoreData_MoreBlock(
     pKoseSession_t session_ctx, uint32_t objectID, uint32_t acl, uint8_t p1, uint8_t p2, const uint8_t *objectData, const size_t objectDataLen);
 
 smStatus_t Kose_API_PutKey(
@@ -61,3 +64,12 @@ smStatus_t Kose_API_ECDSAVerify(pKoseSession_t session_ctx,
     size_t signatureLen,
     KOSE_Result_t *presult);
 
+smStatus_t Kose_API_EncryptData(pKoseSession_t session_ctx,
+    uint32_t objectID,
+    kss_algorithm_t encryptionAlgo,
+    const uint8_t *iv,
+    size_t ivLen,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    uint8_t *encryptedData,
+    size_t *pencryptedDataLen);

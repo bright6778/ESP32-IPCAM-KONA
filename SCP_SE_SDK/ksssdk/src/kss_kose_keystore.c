@@ -346,6 +346,86 @@ exit:
     return retval;
 }
 
+kss_status_t kss_kose_key_store_data(
+    kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, uint8_t *data, size_t dataLen)
+{
+    kss_status_t retval           = kStatus_KSS_Fail;
+    kss_cipher_type_t cipher_type = kKSS_CipherType_NONE;
+    smStatus_t status             = SM_NOT_OK;
+    uint8_t p1                    = 0x00;
+    uint8_t p2                    = 0x00;
+    size_t currentDataLen         = 0x00;
+    size_t maxBlock               = 0x00;
+    size_t dataOffset             = 0x00;
+    size_t totalDataLen           = dataLen;
+
+    ENSURE_OR_GO_EXIT(keyObject);
+    ENSURE_OR_GO_EXIT(data);
+    ENSURE_OR_GO_EXIT(dataLen);
+    cipher_type = (kss_cipher_type_t)keyObject->cipherType;
+
+    switch (cipher_type) {
+    case kKSS_CipherType_EC_NIST_P:
+#if KSS_HAVE_EC_NIST_K
+    case kKSS_CipherType_EC_NIST_K:
+#endif
+#if KSS_HAVE_EC_BP
+    case kKSS_CipherType_EC_BRAINPOOL:
+#endif
+#if KSS_HAVE_EC_MONT
+    case kKSS_CipherType_EC_MONTGOMERY:
+#endif
+#if KSS_HAVE_EC_ED
+    case kKSS_CipherType_EC_TWISTED_ED:
+#endif
+    {
+        status = Kose_API_StoreData(&keyStore->session->s_ctx, keyObject->keyId, keyObject->acl, totalDataLen, 0x80, 0x00, data, dataLen);
+        if (status == SM_ERR_APDU_THROUGHPUT) {
+            retval = kStatus_KSS_ApduThroughputError;
+            goto exit;
+        }
+        ENSURE_OR_GO_EXIT(status == SM_OK);
+
+        break;
+    }
+    case kKSS_CipherType_Certificate:
+    case kKSS_CipherType_Binary:
+    {
+        maxBlock = (dataLen / 0xFF) + 1;
+        for(; p2 < maxBlock; p2++){
+            if(p2 == (maxBlock - 1)){
+                p1 = 0x80;
+                currentDataLen = dataLen;
+            }
+            else{
+                currentDataLen = (KOSE_MAX_BUF_SIZE_CMD - 15);
+                dataLen -= currentDataLen;
+            }
+            if(p2 == 0x00){
+                status = Kose_API_StoreData(&keyStore->session->s_ctx, keyObject->keyId, keyObject->acl, totalDataLen, p1, p2, &data[dataOffset], currentDataLen);    
+            }
+            else{
+                status = Kose_API_StoreData_MoreBlock(&keyStore->session->s_ctx, keyObject->keyId, keyObject->acl, p1, p2, &data[dataOffset], currentDataLen);
+            }
+            if (status == SM_ERR_APDU_THROUGHPUT) {
+                retval = kStatus_KSS_ApduThroughputError;
+                goto exit;
+            }
+            ENSURE_OR_GO_EXIT(status == SM_OK);
+            dataOffset += currentDataLen;
+        }
+        
+        break;
+    }
+    default:
+        goto exit;
+    }
+
+    retval = kStatus_KSS_Success;
+exit:
+    return retval;
+}
+
 #if 0 
 static kss_status_t kss_kose_key_store_set_ecc_public_key(kss_kose_key_store_t *keyStore,
     kss_kose_object_t *keyObject,

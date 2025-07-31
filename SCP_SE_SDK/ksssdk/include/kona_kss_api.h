@@ -988,6 +988,18 @@ kss_status_t kss_key_store_generate_key(
 kss_status_t kss_key_store_get_data(
     kss_key_store_t *keyStore, kss_object_t *keyObject, uint8_t *data, size_t *dataLen);
 
+/** @brief This function stored data[] from memory to the keyObject.
+ *
+ * @param keyStore Key store context
+ * @param keyObject Reference to a key and it's properties
+ * @param data Data to be stored in object
+ * @param dataLen Length of the data
+ *
+ * @return The kss status.
+ */
+kss_status_t kss_key_store_data(
+    kss_key_store_t *keyStore, kss_object_t *keyObject, uint8_t *data, size_t dataLen);
+
 /**
  * @brief      Access key store using one more level of encryption
  *

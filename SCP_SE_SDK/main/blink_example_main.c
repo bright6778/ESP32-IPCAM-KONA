@@ -50,8 +50,11 @@
 #define APDU_STORE_DATA             "KOSE_API_StoreData"
 #define APDU_PUT_KEY                "KOSE_API_PutKey"
 #define APDU_SET_LOCK_STATE         "KOSE_API_SetLockState"
+#define APDU_ENCRYPT_DECRYPT_CDATA_ENC  "Kose_API_EncryptData"
+#define APDU_ENCRYPT_DECRYPT_CDATA_DEC  "Kose_API_DecryptData"
 #define KEY_STORE_GET_DATA          "kss_key_store_get_data"
 #define KEY_STORE_SET_KEY           "kss_key_store_set_key"
+#define KEY_STORE_DATA              "kss_key_store_data"
 #define MBEDTLS_VERIFY_SIGN         "kss_mbedtls_verify_sign"
 #define SE_PROVISIONING             "se_provisioning"
 #define AWS_IOT_DEMO                "aws_iot_demo_main"
@@ -172,14 +175,17 @@ void print_manu(){
     //printf("CMD : com_external_authenticate or 3.4  - %s\n", APDU_EXTERNAL_AUTHENTICATE);
     printf("CMD : com_store_data or 3.5             - %s\n", APDU_STORE_DATA);
     printf("CMD : com_put_key or 3.6                - %s\n", APDU_PUT_KEY);
+    printf("CMD : " APDU_ENCRYPT_DECRYPT_CDATA_ENC " or 3.7       - %s\n", APDU_ENCRYPT_DECRYPT_CDATA_ENC);
+    printf("CMD : " APDU_ENCRYPT_DECRYPT_CDATA_DEC " or 3.8       - %s\n", APDU_ENCRYPT_DECRYPT_CDATA_DEC);
     printf("CMD : kss_key_store_get_data or 4.1     - %s\n", KEY_STORE_GET_DATA);
     printf("CMD : kss_key_store_set_key or 4.2      - %s\n", KEY_STORE_SET_KEY);
+    printf("CMD : " KEY_STORE_DATA " or 4.3         - %s\n", KEY_STORE_DATA);
     printf("CMD : generate random 5.1               - %s\n", RANDOM_GEN);
     printf("CMD : mbedtls_verify_sign or 9.1        - %s\n", MBEDTLS_VERIFY_SIGN);
     //printf("CMD : se_provisioning or 10.1           - %s\n", SE_PROVISIONING);
     printf("CMD : aws_mqtt or 11.1                  - %s\n", AWS_IOT_DEMO);
     printf("CMD : gen_csr or 12.1                   - %s\n", GEN_CSR);
-    printf("CMD : check_se or 13.1                   - %s\n", CHECK_SE);
+    printf("CMD : check_se or 13.1                  - %s\n", CHECK_SE);
     printf("//////////////////////////////////////////////////////////////////\n");
 }
 
@@ -349,13 +355,21 @@ void command_task(void *arg)
                                         0x53, 0x74, 0x61, 0x74, 0x65, 0x31, 0x0E, 0x30, 0x0C, 0x06, 0x03, 0x55, 0x04, 0x0A, 0x0C, 0x05,
                                         0x4B, 0x6F, 0x6E, 0x61, 0x69, 0x31, 0x0E, 0x30, 0x0C, 0x06, 0x03, 0x55, 0x04, 0x0B, 0x0C, 0x05,
                                         0x4B, 0x6F, 0x6E, 0x61, 0x69, 0x31, 0x0E, 0x30, 0x0C, 0x06, 0x03, 0x55, 0x04, 0x03, 0x0C, 0x05};
-                    Kose_API_StoreData(&kose_session->s_ctx, 0x0700, 0x001032, 0x00, 0x00, objectData, sizeof(objectData));
+                    Kose_API_StoreData(&kose_session->s_ctx, 0x0700, 0x001032, sizeof(objectData), 0x80, 0x00, objectData, sizeof(objectData));
                     LOGI(TAG, "End %s", APDU_STORE_DATA);
                 }
                 else if (strcmp((char*)buf, "com_put_key") == 0 || strcmp((char*)buf, "3.6") == 0) {    // SE Command - PUT KEY
                     LOGI(TAG, "Start %s", APDU_PUT_KEY);
                     Kose_API_PutKey(&kose_session->s_ctx, 0x7788, 0x010203, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
                     LOGI(TAG, "End %s", APDU_PUT_KEY);
+                }
+                else if (strcmp((char*)buf, APDU_ENCRYPT_DECRYPT_CDATA_ENC) == 0 || strcmp((char*)buf, "3.7") == 0) {    // SE Command - ENCRYPT/DECRYPT CDATA
+                    LOGI(TAG, "Start %s", APDU_ENCRYPT_DECRYPT_CDATA_ENC);
+                    size_t recLen = 0;
+                    Kose_API_EncryptData(&kose_session->s_ctx, 0x7788, kAlgorithm_KSS_AES_CBC, 
+                        (uint8_t *)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 16, 
+                        (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16, resbuf, &recLen);
+                    LOGI(TAG, "End %s", APDU_ENCRYPT_DECRYPT_CDATA_ENC);
                 }
                 else if (strcmp((char*)buf, "kss_key_store_get_data") == 0 || strcmp((char*)buf, "4.1") == 0) {    // kss_key_store_get_data
                     LOGI(TAG, "Start %s", KEY_STORE_GET_DATA);
@@ -429,6 +443,89 @@ void command_task(void *arg)
                     kss_key_object_free(&keyobject);
                     kss_key_store_context_free(&keystore);
                     LOGI(TAG, "End %s", KEY_STORE_SET_KEY);
+                }
+                else if (strcmp((char*)buf, KEY_STORE_DATA) == 0 || strcmp((char*)buf, "4.3") == 0) {    // kss_key_store_data
+                    LOGI(TAG, "Start %s", KEY_STORE_DATA);
+                    size_t dataSize = 710;
+                    memset(&keystore, 0, sizeof(kss_key_store_t));
+
+                    LOGI(TAG, "Start kss_key_store_context_init");
+                    kStatus = kss_key_store_context_init(&keystore, &session);
+                    if(kStatus != kStatus_KSS_Success){
+                        LOGE(TAG, "kss_key_store_context_init failed res : %d", kStatus);
+                        goto Exit;
+                    }
+
+                    LOGI(TAG, "Start kss_key_object_init");
+                    kStatus = kss_key_object_init(&keyobject, &keystore);
+                    if (kStatus != kStatus_KSS_Success) {
+                        LOGE(TAG, "kss_key_object_init res : %d", kStatus);
+                        goto Exit;
+                    }
+
+                    LOGI(TAG, "Start kss_key_object_allocate_handle");
+                    kStatus = kss_key_object_allocate_handle(&keyobject, 0x0700, kKSS_KeyPart_Default, kKSS_CipherType_Binary, dataSize, 0x001032, kKeyObject_Mode_Persistent);
+                    if (kStatus != kStatus_KSS_Success) {
+                        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kStatus);
+                        goto Exit;
+                    }
+
+                    LOGI(TAG, "Start " KEY_STORE_DATA);
+                    uint8_t objectData[710] = {0};
+                    mempcpy(objectData, (uint8_t*)  "\x30\x82\x02\xc2\x30\x82\x01\xaa\xa0\x03\x02\x01\x02\x02\x14\x41"
+                                                    "\xf7\x79\xba\xe7\x28\xe1\xc3\x88\xa7\xfc\x28\x16\xad\x64\x46\xf9"
+                                                    "\xf1\x15\x0b\x30\x0d\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x01\x0b"
+                                                    "\x05\x00\x30\x4d\x31\x4b\x30\x49\x06\x03\x55\x04\x0b\x0c\x42\x41"
+                                                    "\x6d\x61\x7a\x6f\x6e\x20\x57\x65\x62\x20\x53\x65\x72\x76\x69\x63"
+                                                    "\x65\x73\x20\x4f\x3d\x41\x6d\x61\x7a\x6f\x6e\x2e\x63\x6f\x6d\x20"
+                                                    "\x49\x6e\x63\x2e\x20\x4c\x3d\x53\x65\x61\x74\x74\x6c\x65\x20\x53"
+                                                    "\x54\x3d\x57\x61\x73\x68\x69\x6e\x67\x74\x6f\x6e\x20\x43\x3d\x55"
+                                                    "\x53\x30\x1e\x17\x0d\x32\x35\x30\x35\x32\x36\x30\x32\x34\x35\x31"
+                                                    "\x30\x5a\x17\x0d\x34\x39\x31\x32\x33\x31\x32\x33\x35\x39\x35\x39"
+                                                    "\x5a\x30\x52\x31\x0b\x30\x09\x06\x03\x55\x04\x06\x13\x02\x4b\x52"
+                                                    "\x31\x13\x30\x11\x06\x03\x55\x04\x08\x0c\x0a\x53\x6f\x6d\x65\x2d"
+                                                    "\x53\x74\x61\x74\x65\x31\x0e\x30\x0c\x06\x03\x55\x04\x0a\x0c\x05"
+                                                    "\x4b\x6f\x6e\x61\x69\x31\x0e\x30\x0c\x06\x03\x55\x04\x0b\x0c\x05"
+                                                    "\x4b\x6f\x6e\x61\x69\x31\x0e\x30\x0c\x06\x03\x55\x04\x03\x0c\x05"
+                                                    "\x4b\x6f\x6e\x61\x69\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d"
+                                                    "\x02\x01\x06\x08\x2a\x86\x48\xce\x3d\x03\x01\x07\x03\x42\x00\x04"
+                                                    "\x28\xf1\x67\x05\x63\x7d\x4d\x89\x20\x19\x72\xec\x1d\x49\x00\xe2"
+                                                    "\x97\x49\xe1\xa8\xb4\xe9\xc2\xfb\x72\x2d\xbe\xf5\xd0\x70\x4c\x5d"
+                                                    "\x2a\x58\x5e\xf2\x42\xcb\xf1\xf2\x8d\xb2\x9e\xd8\xe4\x5e\xc9\x4e"
+                                                    "\xf9\xfc\xd0\xa2\x78\xf0\x34\xff\x36\x20\x6b\x48\xc7\x2d\xbb\x62"
+                                                    "\xa3\x60\x30\x5e\x30\x1f\x06\x03\x55\x1d\x23\x04\x18\x30\x16\x80"
+                                                    "\x14\xe6\xd5\xbc\x49\xd5\xd1\x52\xfa\x62\xd7\x2b\xdc\x66\x59\xaf"
+                                                    "\xa5\x77\x90\xeb\x59\x30\x1d\x06\x03\x55\x1d\x0e\x04\x16\x04\x14"
+                                                    "\x36\x44\xac\x2b\x94\xcd\x65\xc0\xf6\xdf\x8a\x8c\x20\x85\xdb\x79"
+                                                    "\x42\xe5\xd4\x41\x30\x0c\x06\x03\x55\x1d\x13\x01\x01\xff\x04\x02"
+                                                    "\x30\x00\x30\x0e\x06\x03\x55\x1d\x0f\x01\x01\xff\x04\x04\x03\x02"
+                                                    "\x07\x80\x30\x0d\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x01\x0b\x05"
+                                                    "\x00\x03\x82\x01\x01\x00\x11\x0b\x91\xd5\xf1\x57\x31\xfb\xbc\xfa"
+                                                    "\x16\x3d\xbe\x21\xe6\xd0\x32\x34\xf9\x9f\x17\x2f\x07\x66\x0b\x06"
+                                                    "\xba\x90\x9d\x43\xdb\x07\x88\xe6\x11\x27\xd6\x08\x10\xa9\xb4\x28"
+                                                    "\xd1\xcf\x9e\xb8\x9c\x40\x16\x4f\x29\x64\x56\x71\x84\x85\x48\xad"
+                                                    "\x84\xdc\xc2\xe2\x9b\x56\x25\x18\xf7\x7c\x6b\x61\x91\x68\xc2\xdb"
+                                                    "\x85\x28\xc4\xfa\x05\xa5\xa6\xcd\x6a\x19\x66\xc8\x9b\x42\xcc\x1d"
+                                                    "\xae\x7d\x1d\x0b\x4a\x39\xdb\xa1\xfd\x5b\xd5\xcf\xc7\xaa\xa3\x22"
+                                                    "\x1d\x81\x61\x09\x69\xa9\x18\xb3\x53\xf7\xf5\xfb\x8b\x94\xb3\xa5"
+                                                    "\x49\xae\x05\xe1\xc3\x43\x2c\x88\xab\x5c\x60\x0a\xef\xe1\x73\xed"
+                                                    "\x1a\x28\xd0\x24\xae\x07\xef\x6d\x95\xe7\xc4\x26\xb5\xc1\x76\x8b"
+                                                    "\xcf\x7b\xc2\xb8\x52\xc9\x78\xc3\xbf\x43\x4b\xa2\x38\x78\x60\x58"
+                                                    "\x54\x94\x17\xf1\xcb\xe5\x1b\x1d\x94\x08\x4c\x91\xf0\xa1\x23\xe9"
+                                                    "\xc1\x7f\xfe\x16\x23\xf0\x8b\x77\x6f\x9f\xbd\x5f\x19\x9e\x36\x65"
+                                                    "\xd2\x47\x2e\xe2\x25\xa4\x83\xac\xab\x5c\xf1\xa0\x34\x05\xbb\xaa"
+                                                    "\x4f\x7b\xaf\x1c\xa8\x3d\x6a\x28\x9c\xa2\x25\x10\xe9\x3b\x9d\x1b"
+                                                    "\xe5\x80\x40\xc8\x7e\x88\x4f\x41\x6e\x12\x53\x88\x09\x80\x74\x70"
+                                                    "\x13\xbe\xdb\x03\x55\xc3", dataSize);
+                    kStatus = kss_key_store_data(&keystore, &keyobject, objectData, dataSize);
+                    if (kStatus != kStatus_KSS_Success) {
+                        LOGE(TAG, KEY_STORE_DATA " res : %d", kStatus);
+                        goto Exit;
+                    }
+                    
+                    kss_key_object_free(&keyobject);
+                    kss_key_store_context_free(&keystore);
+                    LOGI(TAG, "End %s", KEY_STORE_DATA);
                 }
                 else if (strcmp((char*)buf, "generate_random") == 0 || strcmp((char*)buf, "5.1") == 0) {    // kss_kose_rng
                     LOGI(TAG, "Start %s", RANDOM_GEN);
@@ -508,6 +605,7 @@ void command_task(void *arg)
                 }
             }
         }
+Exit:
     }
 }
 

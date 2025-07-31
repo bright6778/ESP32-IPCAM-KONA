@@ -219,6 +219,8 @@ typedef struct
     uint8_t cache_data[16];
     /** Length of bytes cached on host */
     size_t cache_data_len;
+    /** Initalize vector */
+    uint8_t iv[16];
 } kss_kose_symmetric_t;
 
 /** @copydoc kss_mac_t */

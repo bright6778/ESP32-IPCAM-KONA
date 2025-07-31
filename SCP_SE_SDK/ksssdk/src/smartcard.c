@@ -285,11 +285,11 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 	}
 	// PPS exchange
 	else if (sndlen == 4) {
-		kss_debug_showframe("sndbuf", sndbuf, 4);
+		//kss_debug_showframe("sndbuf", sndbuf, 4);
 		uart_write_bytes(SCR_UART_PORT_NUM, &sndbuf[0], 4);
 		uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 4, 500 / portTICK_PERIOD_MS); // 시간 조절 필요
 		int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 4, 500 / portTICK_PERIOD_MS);
-		kss_debug_showframe("rcvbuf", rcvbuf, len);
+		//kss_debug_showframe("rcvbuf", rcvbuf, len);
 		kss_debug_showframe("r-tpdu", rcvbuf, len);
 		if (len == 4) {
 			*rcvlen = len;
@@ -303,14 +303,14 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 	// TPDU
 	else {
 		// (1) send command header
-		kss_debug_showframe("sndbuf", sndbuf, 5);
+		//kss_debug_showframe("sndbuf", sndbuf, 5);
 		uart_write_bytes(SCR_UART_PORT_NUM, &sndbuf[0], 5);
 		uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 5, 500 / portTICK_PERIOD_MS); // 시간 조절 필요
 		// (2) receive INS || NULL || SW
 		for (int loop = 0; ; loop++) {
 			int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 1, 5 / portTICK_PERIOD_MS);
 			if (len > 0) {
-				kss_debug_showframe("rcvbuf", rcvbuf, len);
+				//kss_debug_showframe("rcvbuf", rcvbuf, len);
 				if (rcvbuf[0] == sndbuf[1]) break; // INS
 				else if (rcvbuf[0] == 0x60) loop = 0; // NULL
 				else if (((rcvbuf[0] & 0xf0) == 0x60) || ((rcvbuf[0] & 0xf0) == 0x90)) { // SW
@@ -358,7 +358,7 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 			else{
 				len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndbuf[4] + 2, 1000 / portTICK_PERIOD_MS);
 			}
-			kss_debug_showframe("rcvbuf", rcvbuf, len);
+			//kss_debug_showframe("rcvbuf", rcvbuf, len);
 			if (len >= 2) {
 				*rcvlen = len;
 				if (((rcvbuf[len - 2] & 0xf0) == 0x60) || ((rcvbuf[len - 2] & 0xf0) == 0x90)) {
