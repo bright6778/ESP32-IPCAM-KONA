@@ -272,7 +272,7 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 	if (sndlen > 0) kss_debug_showframe("c-tpdu", sndbuf, sndlen);
 	// ATR
 	if (sndlen == 0) {
-		int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 32, 500 / portTICK_PERIOD_MS); // 시간 조절 필요
+		int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 32, UART_TIMEOUT / portTICK_PERIOD_MS); // 시간 조절 필요
 		kss_debug_showframe("r-tpdu", rcvbuf, len);
 		if (len > 3) {
 			*rcvlen = len;
@@ -287,8 +287,8 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 	else if (sndlen == 4) {
 		//kss_debug_showframe("sndbuf", sndbuf, 4);
 		uart_write_bytes(SCR_UART_PORT_NUM, &sndbuf[0], 4);
-		uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 4, 500 / portTICK_PERIOD_MS); // 시간 조절 필요
-		int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 4, 500 / portTICK_PERIOD_MS);
+		uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 4, UART_TIMEOUT / portTICK_PERIOD_MS); // 시간 조절 필요
+		int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 4, UART_TIMEOUT / portTICK_PERIOD_MS);
 		//kss_debug_showframe("rcvbuf", rcvbuf, len);
 		kss_debug_showframe("r-tpdu", rcvbuf, len);
 		if (len == 4) {
@@ -305,16 +305,16 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 		// (1) send command header
 		//kss_debug_showframe("sndbuf", sndbuf, 5);
 		uart_write_bytes(SCR_UART_PORT_NUM, &sndbuf[0], 5);
-		uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 5, 500 / portTICK_PERIOD_MS); // 시간 조절 필요
+		uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 5, UART_TIMEOUT / portTICK_PERIOD_MS); // 시간 조절 필요
 		// (2) receive INS || NULL || SW
 		for (int loop = 0; ; loop++) {
-			int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 1, 5 / portTICK_PERIOD_MS);
+			int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 1, 10 / portTICK_PERIOD_MS);
 			if (len > 0) {
 				//kss_debug_showframe("rcvbuf", rcvbuf, len);
 				if (rcvbuf[0] == sndbuf[1]) break; // INS
 				else if (rcvbuf[0] == 0x60) loop = 0; // NULL
 				else if (((rcvbuf[0] & 0xf0) == 0x60) || ((rcvbuf[0] & 0xf0) == 0x90)) { // SW
-					len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[1], 1, 5 / portTICK_PERIOD_MS);
+					len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[1], 1, 10 / portTICK_PERIOD_MS);
 					*rcvlen = 2;
 					kss_debug_showframe("r-tpdu", rcvbuf, *rcvlen);
 					return true;
@@ -330,33 +330,58 @@ bool smartcard_transceive(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcv
 				}
 			}
 		}
+
 		// (3) send command data
 		if (sndlen > 5) {
 			uart_write_bytes(SCR_UART_PORT_NUM, &sndbuf[5], sndlen - 5);
-			uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndlen - 5, 500 / portTICK_PERIOD_MS); // 시간 조절 필요
+			uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndlen - 5, UART_TIMEOUT / portTICK_PERIOD_MS); // 시간 조절 필요
 		}
 		// (4) receive response data + SW
 		if (sndlen > 5) {
-			int len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], 2, 1000 / portTICK_PERIOD_MS);
-			if (len >= 2) {
-				*rcvlen = 2;
+			int total_read = 0;
+			int retry = 0;
+			const int max_retry = 10000;
+			uint8_t sw[2];
+			while (total_read < 2 && retry < max_retry) {
+				int len = uart_read_bytes(SCR_UART_PORT_NUM, &sw[total_read], 2 - total_read, 10 / portTICK_PERIOD_MS);
+				if (len > 0) {
+					total_read += len;
+					// 만약 첫 바이트가 0x60이면 무시하고, 다음 바이트부터 해석
+					if (total_read == 1 && sw[0] == 0x60) {
+						// 첫 바이트가 0x60이라면, 다시 읽기
+						total_read = 0;
+						retry++;
+						continue;
+					}
+					// 만약 두 바이트가 다 왔는데, 첫 바이트가 0x60이면 무시
+					if (total_read == 2 && sw[0] == 0x60) {
+						sw[0] = sw[1];
+						total_read = 1;
+						retry++;
+						continue;
+					}
+				} else {
+					retry++;
+				}
+			}
+			*rcvlen = total_read;
+			if (total_read == 2) {
+				memcpy(rcvbuf, sw, 2);
 				kss_debug_showframe("r-tpdu", rcvbuf, *rcvlen);
 				return true;
-			}
-			else {
-				*rcvlen = len;
-				kss_debug_showframe("r-tpdu", rcvbuf, *rcvlen);
+			} else {
+				kss_debug_showframe("r-tpdu", sw, *rcvlen);
 				return false;
 			}
 		}
-		else {
+		else{
 			int len = 0;
 			if(sndbuf[4] == 0x00){
 				sndbuf[4] = 0xFF;
-				len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndbuf[4] + 3, 1000 / portTICK_PERIOD_MS);
+				len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndbuf[4] + 3, UART_TIMEOUT / portTICK_PERIOD_MS);
 			}
 			else{
-				len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndbuf[4] + 2, 1000 / portTICK_PERIOD_MS);
+				len = uart_read_bytes(SCR_UART_PORT_NUM, &rcvbuf[0], sndbuf[4] + 2, UART_TIMEOUT / portTICK_PERIOD_MS);
 			}
 			//kss_debug_showframe("rcvbuf", rcvbuf, len);
 			if (len >= 2) {
@@ -403,6 +428,7 @@ bool smartcard_apdu(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcvlen)
 	// 61/6c
 	if (ret) {
 		if (*rcvlen == 2) {
+			LOGD(TAG, "Get Response");
 			if (rcvbuf[*rcvlen - 2] == 0x61) {
 				uint8_t sndbuf2[] = "\x00\xc0\x00\x00\x00";
 				sndbuf2[0] = sndbuf[0];
