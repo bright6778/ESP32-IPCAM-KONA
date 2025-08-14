@@ -32,36 +32,12 @@
 #include "kss_kose_uart.h"
 #include "kona_kss_debug.h"
 #include "tsm_sdk.h"
+#include "menu_define.h"
 //#include "kona_se.h"
 
 ///////////////////////////////////////////////////////////////
 // Define
 ///////////////////////////////////////////////////////////////
-#define UART_INIT                   "kss_kose_uart_init"
-#define UART_TRANSCEIVE             "kss_kose_uart_transceive"
-#define UART_CLOSE                  "kss_kose_uart_close"
-#define SESSION_CREATE              "kss_kose_session_create"
-#define SESSION_OPEN                "kss_kose_session_open"
-#define SESSION_CLOSE               "kss_kose_session_close"
-#define APDU_SELECT_AID             "Kose_API_Select"
-#define APDU_GET_RANDOM             "Kose_API_GetRandom"
-#define APDU_INITIALIZE_UPDATE      "Kose_API_Initialize_Update"
-#define APDU_EXTERNAL_AUTHENTICATE  "KOSE_API_External_Authenticate"
-#define APDU_STORE_DATA             "KOSE_API_StoreData"
-#define APDU_PUT_KEY                "KOSE_API_PutKey"
-#define APDU_SET_LOCK_STATE         "KOSE_API_SetLockState"
-#define APDU_ENCRYPT_DECRYPT_CDATA_ENC  "Kose_API_EncryptData"
-#define APDU_ENCRYPT_DECRYPT_CDATA_DEC  "Kose_API_DecryptData"
-#define KEY_STORE_GET_DATA          "kss_key_store_get_data"
-#define KEY_STORE_SET_KEY           "kss_key_store_set_key"
-#define KEY_STORE_DATA              "kss_key_store_data"
-#define MBEDTLS_VERIFY_SIGN         "kss_mbedtls_verify_sign"
-#define SE_PROVISIONING             "se_provisioning"
-#define AWS_IOT_DEMO                "aws_iot_demo_main"
-#define RANDOM_GEN                  "kss_kose_rng"
-#define GEN_CSR                     "gen_csr"
-#define CHECK_SE                    "check_se"
-
 //#define SE_ID								"8009069009064009061520"
 #define SE_ID								"0290000290002400000005"
 //#define CPLC								"81009809409105005200FFFFFFFFFFFFFFFF4092"
@@ -161,32 +137,31 @@ uint8_t bufData[DATA_BUF_SIZE];
 int buf_index = 0;
 
 void print_manu(){
-    printf("//////////////////////////////////////////////////////////////////\n");
-    printf("CMD : REBOOT                            - Board Reboot\n");
-    printf("CMD : uart_init or 1.1                  - %s\n", UART_INIT);
-    printf("CMD : uart_transceive or 1.2            - %s\n", UART_TRANSCEIVE);
-    printf("CMD : uart_close or 1.3                 - %s\n", UART_CLOSE);
-    printf("CMD : session_create or 2.1             - %s\n", SESSION_CREATE);
-    printf("CMD : session_open or 2.2               - %s\n", SESSION_OPEN);
-    printf("CMD : session_close or 2.3              - %s\n", SESSION_CLOSE);
-    printf("CMD : com_select_aid or 3.1             - %s\n", APDU_SELECT_AID);
-    printf("CMD : com_get_random or 3.2             - %s\n", APDU_GET_RANDOM);
-    //printf("CMD : com_initialize_update or 3.3      - %s\n", APDU_INITIALIZE_UPDATE);
-    //printf("CMD : com_external_authenticate or 3.4  - %s\n", APDU_EXTERNAL_AUTHENTICATE);
-    printf("CMD : com_store_data or 3.5             - %s\n", APDU_STORE_DATA);
-    printf("CMD : com_put_key or 3.6                - %s\n", APDU_PUT_KEY);
-    printf("CMD : " APDU_ENCRYPT_DECRYPT_CDATA_ENC " or 3.7       - %s\n", APDU_ENCRYPT_DECRYPT_CDATA_ENC);
-    printf("CMD : " APDU_ENCRYPT_DECRYPT_CDATA_DEC " or 3.8       - %s\n", APDU_ENCRYPT_DECRYPT_CDATA_DEC);
-    printf("CMD : kss_key_store_get_data or 4.1     - %s\n", KEY_STORE_GET_DATA);
-    printf("CMD : kss_key_store_set_key or 4.2      - %s\n", KEY_STORE_SET_KEY);
-    printf("CMD : " KEY_STORE_DATA " or 4.3         - %s\n", KEY_STORE_DATA);
-    printf("CMD : generate random 5.1               - %s\n", RANDOM_GEN);
-    printf("CMD : mbedtls_verify_sign or 9.1        - %s\n", MBEDTLS_VERIFY_SIGN);
-    //printf("CMD : se_provisioning or 10.1           - %s\n", SE_PROVISIONING);
-    printf("CMD : aws_mqtt or 11.1                  - %s\n", AWS_IOT_DEMO);
-    printf("CMD : gen_csr or 12.1                   - %s\n", GEN_CSR);
-    printf("CMD : check_se or 13.1                  - %s\n", CHECK_SE);
-    printf("//////////////////////////////////////////////////////////////////\n");
+    printf("//////////////////////////////////////////////////////////////////////////////////\n");
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " REBOOT " or " REBOOT_NUM, REBOOT);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " UART_INIT " or " UART_INIT_NUM, UART_INIT);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " UART_TRANSCEIVE " or " UART_TRANSCEIVE_NUM, UART_TRANSCEIVE);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " UART_CLOSE " or " UART_CLOSE_NUM, UART_CLOSE);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " SESSION_CREATE " or " SESSION_CREATE_NUM, SESSION_CREATE);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " SESSION_OPEN " or " SESSION_OPEN_NUM, SESSION_OPEN);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " SESSION_CLOSE " or " SESSION_CLOSE_NUM, SESSION_CLOSE);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " APDU_SELECT_AID " or " APDU_SELECT_AID_NUM, APDU_SELECT_AID);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " APDU_GET_RANDOM " or " APDU_GET_RANDOM_NUM, APDU_GET_RANDOM);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " APDU_STORE_DATA " or " APDU_STORE_DATA_NUM, APDU_STORE_DATA);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " APDU_PUT_KEY " or " APDU_PUT_KEY_NUM, APDU_PUT_KEY);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " APDU_ENCRYPT_DECRYPT_CDATA_ENC " or " APDU_ENCRYPT_DECRYPT_CDATA_ENC_NUM, APDU_ENCRYPT_DECRYPT_CDATA_ENC);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " APDU_ENCRYPT_DECRYPT_CDATA_DEC " or " APDU_ENCRYPT_DECRYPT_CDATA_DEC_NUM, APDU_ENCRYPT_DECRYPT_CDATA_DEC);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " APDU_GENERATEKEY " or " APDU_GENERATEKEY_NUM, APDU_GENERATEKEY);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " KEY_STORE_GET_DATA " or " KEY_STORE_GET_DATA_NUM, KEY_STORE_GET_DATA);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " KEY_STORE_SET_KEY " or " KEY_STORE_SET_KEY_NUM, KEY_STORE_SET_KEY);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " KEY_STORE_DATA " or " KEY_STORE_DATA_NUM, KEY_STORE_DATA);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " GENERATE_KEY " or " GENERATE_KEY_NUM, GENERATE_KEY);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " RANDOM_GEN " or " RANDOM_GEN_NUM, RANDOM_GEN);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " MBEDTLS_VERIFY_SIGN " or " MBEDTLS_VERIFY_SIGN_NUM, MBEDTLS_VERIFY_SIGN);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " AWS_IOT_DEMO " or " AWS_IOT_DEMO_NUM, AWS_IOT_DEMO);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " GEN_CSR " or " GEN_CSR_NUM, GEN_CSR);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " CHECK_SE " or " CHECK_SE_NUM, CHECK_SE);
+    printf("//////////////////////////////////////////////////////////////////////////////////\n");
 }
 
 void set_se_uart_init(kss_kose_uart_ctx_t *se_uart_init){
@@ -240,6 +215,7 @@ void command_task(void *arg)
     uint8_t byte;
     bool ret;
     kss_status_t kStatus = kStatus_KSS_Fail;
+    smStatus_t status   = SM_NOT_OK; 
 
     // uart variables
     kss_kose_uart_ctx_t se_uart_init;
@@ -261,18 +237,18 @@ void command_task(void *arg)
                 buf[buf_index] = '\0';
                 printf("\n>> 명령 수신: %s\n", buf);
 
-                if (strcmp((char*)buf, "REBOOT") == 0) {
+                if (strcmp((char*)buf, REBOOT) == 0 || strcmp((char*)buf, REBOOT_NUM) == 0) {
                     LOGI(TAG, "ESP32 재부팅!");
                     esp_restart();
                 }
-                else if (strcmp((char*)buf, "uart_init") == 0 || strcmp((char*)buf, "1.1") == 0) {    // kss_kose_uart_init
+                else if (strcmp((char*)buf, UART_INIT) == 0 || strcmp((char*)buf, UART_INIT_NUM) == 0) {    // kss_kose_uart_init
                     LOGI(TAG, "Start %s", UART_INIT);
                     set_se_uart_init_default(&se_uart_init);
                     ret = kss_kose_uart_init(&se_uart_init);
                     LOGI(TAG, "%s return : %d", UART_INIT, ret);
                     LOGI(TAG, "End %s", UART_INIT);
                 }
-                else if (strcmp((char*)buf, "uart_transceive") == 0 || strcmp((char*)buf, "1.2") == 0) {    // kss_kose_uart_transceive
+                else if (strcmp((char*)buf, UART_TRANSCEIVE) == 0 || strcmp((char*)buf, UART_TRANSCEIVE_NUM) == 0) {    // kss_kose_uart_transceive
                     LOGI(TAG, "Start %s", UART_TRANSCEIVE);
                     uint8_t *rcvbuf = (uint8_t *)malloc(512); // Loopback + ProcedureBytes + TPDU;
                     int rcvlen;
@@ -281,12 +257,12 @@ void command_task(void *arg)
                     LOGI(TAG, "End %s", UART_TRANSCEIVE);
                     free(rcvbuf);
                 }
-                else if (strcmp((char*)buf, "uart_close") == 0 || strcmp((char*)buf, "1.3") == 0) {    // kss_kose_uart_close
+                else if (strcmp((char*)buf, UART_CLOSE) == 0 || strcmp((char*)buf, UART_CLOSE_NUM) == 0) {    // kss_kose_uart_close
                     LOGI(TAG, "Start %s", UART_CLOSE);
                     kss_kose_uart_close();
                     LOGI(TAG, "Start %s", UART_CLOSE);
                 }
-                else if (strcmp((char*)buf, "session_create") == 0 || strcmp((char*)buf, "2.1") == 0) {    // kss_kose_session_create
+                else if (strcmp((char*)buf, SESSION_CREATE) == 0 || strcmp((char*)buf, SESSION_CREATE_NUM) == 0) {    // kss_kose_session_create
                     LOGI(TAG, "Start %s", SESSION_CREATE);
                     kStatus = kss_session_create(&session, kType_KSS_SecureElement, 0, kKSS_ConnectionType_Plain, connectionData);
                     if (kStatus_KSS_Success != kStatus) {
@@ -295,7 +271,7 @@ void command_task(void *arg)
                     LOGI(TAG, "%s return : %d", SESSION_CREATE, kStatus);
                     LOGI(TAG, "End %s", SESSION_CREATE);
                 }
-                else if (strcmp((char*)buf, "session_open") == 0 || strcmp((char*)buf, "2.2") == 0) {    // kss_kose_session_open
+                else if (strcmp((char*)buf, SESSION_OPEN) == 0 || strcmp((char*)buf, SESSION_OPEN_NUM) == 0) {    // kss_kose_session_open
                     LOGI(TAG, "Start %s", SESSION_OPEN);
                     set_se_uart_init_default(&se_uart_init);
                     se_conn_ctx.connType = kType_SE_Conn_Type_UART;
@@ -309,36 +285,36 @@ void command_task(void *arg)
                     LOGI(TAG, "%s return : %d", SESSION_OPEN, kStatus);
                     LOGI(TAG, "End %s", SESSION_OPEN);
                 }
-                else if (strcmp((char*)buf, "session_close") == 0 || strcmp((char*)buf, "2.3") == 0) {    // kss_kose_session_close
+                else if (strcmp((char*)buf, SESSION_CLOSE) == 0 || strcmp((char*)buf, SESSION_CLOSE_NUM) == 0) {    // kss_kose_session_close
                     LOGI(TAG, "Start %s", SESSION_CLOSE);
                     kss_session_close(&session);
                     LOGI(TAG, "End %s", SESSION_CLOSE);
                 }
-                else if (strcmp((char*)buf, "com_select_aid") == 0 || strcmp((char*)buf, "3.1") == 0) {    // SE Command - SELECT AID 
+                else if (strcmp((char*)buf, APDU_SELECT_AID) == 0 || strcmp((char*)buf, APDU_SELECT_AID_NUM) == 0) {    // SE Command - SELECT AID 
                     LOGI(TAG, "Start %s", APDU_SELECT_AID);
                     size_t recLen = 0;
                     Kose_API_Select(&kose_session->s_ctx, resbuf, &recLen);
                     LOGI(TAG, "End %s", APDU_SELECT_AID);
                 }
-                else if (strcmp((char*)buf, "com_get_random") == 0 || strcmp((char*)buf, "3.2") == 0) {    // SE Command - GET RANDOM
+                else if (strcmp((char*)buf, APDU_GET_RANDOM) == 0 || strcmp((char*)buf, APDU_GET_RANDOM_NUM) == 0) {    // SE Command - GET RANDOM
                     LOGI(TAG, "Start %s", APDU_GET_RANDOM);
                     size_t recLen = 0;
                     Kose_API_GetRandom(&kose_session->s_ctx, 16, resbuf, &recLen);
                     LOGI(TAG, "End %s", APDU_GET_RANDOM);
                 }
-                else if (strcmp((char*)buf, "com_initialize_update") == 0 || strcmp((char*)buf, "3.3") == 0) {    // SE Command - INITIALIZE UPDATE
+                else if (strcmp((char*)buf, APDU_INITIALIZE_UPDATE) == 0 || strcmp((char*)buf, APDU_INITIALIZE_UPDATE_NUM) == 0) {    // SE Command - INITIALIZE UPDATE
                     LOGI(TAG, "Start %s", APDU_INITIALIZE_UPDATE);
                     size_t recLen = 0;
                     Kose_API_Initialize_Update(&kose_session->s_ctx, resbuf, &recLen, 0x0100, (uint8_t *)"\x01\x02\x03\x04\x05\x06\x07\x08");
                     LOGI(TAG, "End %s", APDU_INITIALIZE_UPDATE);
                 }
-                else if (strcmp((char*)buf, "com_external_autnenticate") == 0 || strcmp((char*)buf, "3.4") == 0) {    // SE Command - EXTERNAL AUTHENTICATE
+                else if (strcmp((char*)buf, APDU_EXTERNAL_AUTHENTICATE) == 0 || strcmp((char*)buf, APDU_EXTERNAL_AUTHENTICATE_NUM) == 0) {    // SE Command - EXTERNAL AUTHENTICATE
                     LOGI(TAG, "Start %s", APDU_EXTERNAL_AUTHENTICATE);
                     kss_object_t *keyObj = NULL;   //지금은 미사용
                     Kose_API_External_Authenticate(&kose_session->s_ctx, keyObj, 0x00, (uint8_t *)"\x01\x02\x03\x04\x05\x06\x07\x08", (uint8_t *)"\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8");
                     LOGI(TAG, "End %s", APDU_EXTERNAL_AUTHENTICATE);
                 }
-                else if (strcmp((char*)buf, "com_store_data") == 0 || strcmp((char*)buf, "3.5") == 0) {    // SE Command - STORE DATA
+                else if (strcmp((char*)buf, APDU_STORE_DATA) == 0 || strcmp((char*)buf, APDU_STORE_DATA_NUM) == 0) {    // SE Command - STORE DATA
                     LOGI(TAG, "Start %s", APDU_STORE_DATA);
                     uint8_t objectData[] = {0x30, 0x82, 0x02, 0xC2, 0x30, 0x82, 0x01, 0xAA, 0xA0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x14, 0x41,
                                         0xF7, 0x79, 0xBA, 0xE7, 0x28, 0xE1, 0xC3, 0x88, 0xA7, 0xFC, 0x28, 0x16, 0xAD, 0x64, 0x46, 0xF9,
@@ -358,12 +334,12 @@ void command_task(void *arg)
                     Kose_API_StoreData(&kose_session->s_ctx, 0x0700, 0x001032, sizeof(objectData), 0x80, 0x00, objectData, sizeof(objectData));
                     LOGI(TAG, "End %s", APDU_STORE_DATA);
                 }
-                else if (strcmp((char*)buf, "com_put_key") == 0 || strcmp((char*)buf, "3.6") == 0) {    // SE Command - PUT KEY
+                else if (strcmp((char*)buf, APDU_PUT_KEY) == 0 || strcmp((char*)buf, APDU_PUT_KEY_NUM) == 0) {    // SE Command - PUT KEY
                     LOGI(TAG, "Start %s", APDU_PUT_KEY);
-                    Kose_API_PutKey(&kose_session->s_ctx, 0x7788, 0x010203, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
+                    Kose_API_PutKey(&kose_session->s_ctx, 0x0400, 0x003200, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
                     LOGI(TAG, "End %s", APDU_PUT_KEY);
                 }
-                else if (strcmp((char*)buf, APDU_ENCRYPT_DECRYPT_CDATA_ENC) == 0 || strcmp((char*)buf, "3.7") == 0) {    // SE Command - ENCRYPT/DECRYPT CDATA
+                else if (strcmp((char*)buf, APDU_ENCRYPT_DECRYPT_CDATA_ENC) == 0 || strcmp((char*)buf, APDU_ENCRYPT_DECRYPT_CDATA_ENC_NUM) == 0) {    // SE Command - ENCRYPT/DECRYPT CDATA
                     LOGI(TAG, "Start %s", APDU_ENCRYPT_DECRYPT_CDATA_ENC);
                     size_t recLen = 0;
                     Kose_API_EncryptData(&kose_session->s_ctx, 0x7788, kAlgorithm_KSS_AES_CBC, 
@@ -371,7 +347,7 @@ void command_task(void *arg)
                         (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16, resbuf, &recLen);
                     LOGI(TAG, "End %s", APDU_ENCRYPT_DECRYPT_CDATA_ENC);
                 }
-                else if (strcmp((char*)buf, "kss_key_store_get_data") == 0 || strcmp((char*)buf, "4.1") == 0) {    // kss_key_store_get_data
+                else if (strcmp((char*)buf, KEY_STORE_GET_DATA) == 0 || strcmp((char*)buf, KEY_STORE_GET_DATA_NUM) == 0) {    // kss_key_store_get_data
                     LOGI(TAG, "Start %s", KEY_STORE_GET_DATA);
 
                     size_t dataSize = 713;
@@ -406,7 +382,7 @@ void command_task(void *arg)
                     kss_key_object_free(&keyobject);
                     kss_key_store_context_free(&keystore);
                 }
-                else if (strcmp((char*)buf, "kss_key_store_set_key") == 0 || strcmp((char*)buf, "4.2") == 0) {    // kss_key_store_set_key
+                else if (strcmp((char*)buf, KEY_STORE_SET_KEY) == 0 || strcmp((char*)buf, KEY_STORE_SET_KEY_NUM) == 0) {    // kss_key_store_set_key
                     LOGI(TAG, "Start %s", KEY_STORE_SET_KEY);
                     size_t dataSize = 65;
                     memset(&keystore, 0, sizeof(kss_key_store_t));
@@ -444,7 +420,7 @@ void command_task(void *arg)
                     kss_key_store_context_free(&keystore);
                     LOGI(TAG, "End %s", KEY_STORE_SET_KEY);
                 }
-                else if (strcmp((char*)buf, KEY_STORE_DATA) == 0 || strcmp((char*)buf, "4.3") == 0) {    // kss_key_store_data
+                else if (strcmp((char*)buf, KEY_STORE_DATA) == 0 || strcmp((char*)buf, KEY_STORE_DATA_NUM) == 0) {    // kss_key_store_data
                     LOGI(TAG, "Start %s", KEY_STORE_DATA);
                     size_t dataSize = 710;
                     memset(&keystore, 0, sizeof(kss_key_store_t));
@@ -527,7 +503,7 @@ void command_task(void *arg)
                     kss_key_store_context_free(&keystore);
                     LOGI(TAG, "End %s", KEY_STORE_DATA);
                 }
-                else if (strcmp((char*)buf, "generate_random") == 0 || strcmp((char*)buf, "5.1") == 0) {    // kss_kose_rng
+                else if (strcmp((char*)buf, RANDOM_GEN) == 0 || strcmp((char*)buf, RANDOM_GEN_NUM) == 0) {    // kss_kose_rng
                     LOGI(TAG, "Start %s", RANDOM_GEN);
                     uint8_t random_data[32] = {0}; 
                     int dataLen = 32;
@@ -542,26 +518,26 @@ void command_task(void *arg)
                     LOGI(TAG, "%s return : %d", RANDOM_GEN, kStatus);
                     LOGI(TAG, "End %s", RANDOM_GEN);
                 }
-                else if (strcmp((char*)buf, "mbedtls_verify_sign") == 0 || strcmp((char*)buf, "9.1") == 0) {    // kss_mbedtls_verify_sign
+                else if (strcmp((char*)buf, MBEDTLS_VERIFY_SIGN) == 0 || strcmp((char*)buf, MBEDTLS_VERIFY_SIGN_NUM) == 0) {    // kss_mbedtls_verify_sign
                     LOGI(TAG, "Start %s", MBEDTLS_VERIFY_SIGN);
                     LOGI(TAG, "End %s", MBEDTLS_VERIFY_SIGN);
                 }
-                else if (strcmp((char*)buf, "se_provisioning") == 0 || strcmp((char*)buf, "10.1") == 0) {    // SE Provisioning
+                else if (strcmp((char*)buf, SE_PROVISIONING) == 0 || strcmp((char*)buf, SE_PROVISIONING_NUM) == 0) {    // SE Provisioning
                     LOGI(TAG, "Start %s", SE_PROVISIONING);
                     se_provisioning(&session);
                     LOGI(TAG, "End %s", SE_PROVISIONING);
                 }
-                else if (strcmp((char*)buf, "aws_mqtt") == 0 || strcmp((char*)buf, "11.1") == 0) {    // aws_iot_demo_main
+                else if (strcmp((char*)buf, AWS_IOT_DEMO) == 0 || strcmp((char*)buf, AWS_IOT_DEMO_NUM) == 0) {    // aws_iot_demo_main
                     LOGI(TAG, "Start %s", AWS_IOT_DEMO);
                     //aws_iot_demo_main(0,NULL);    // AWS IoT Device Embedded C SDK
                     aws_iot_mbedtls_mqtt_test(&session);    // mbedTLS MQTT
                     LOGI(TAG, "End %s", AWS_IOT_DEMO);
                 }
-                else if (strcmp((char*)buf, "gen_csr") == 0 || strcmp((char*)buf, "12.1") == 0) {    // gen_csr
+                else if (strcmp((char*)buf, GEN_CSR) == 0 || strcmp((char*)buf, GEN_CSR_NUM) == 0) {    // gen_csr
                     LOGI(TAG, "Start %s", GEN_CSR);
                     gen_csr(&session);
                     LOGI(TAG, "End %s", GEN_CSR);
-                }else if (strcmp((char*)buf, "check_se") == 0 || strcmp((char*)buf, "13.1") == 0) {    // check_se
+                }else if (strcmp((char*)buf, CHECK_SE) == 0 || strcmp((char*)buf, CHECK_SE_NUM) == 0) {    // check_se
                     LOGI(TAG, "Start %s", CHECK_SE);
                     tsm_sdk_init();
                     init_se();
