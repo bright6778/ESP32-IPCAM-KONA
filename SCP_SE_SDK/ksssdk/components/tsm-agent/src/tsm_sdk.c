@@ -240,14 +240,15 @@ bool servicelistall(char* imei, char* seId, SeIdType seIdType, SeType seType)
 
 }
 
-bool register_se(char* imei, char* cplc, SeType seType)
+//bool register_se(char* imei, char* cplc, SeType seType)
+bool register_se(SeDetail seList[], int seListSize, char* profileid, char* profilever, char* sep, char* sdm, char* sei)
 {
 
 	bool ret = false;
 
 	const char* seType_str = "00";
 
-	switch (seType) {
+	switch (seList->seType) {
 		case SIM:
 			seType_str = "01";
 			break;
@@ -267,14 +268,31 @@ bool register_se(char* imei, char* cplc, SeType seType)
 			break;
 	};
 	cJSON_bool is_polling = true;
+	char* seJsonArray = se_detail_to_json(seList, seListSize);
+	char* reqJson = (char*)malloc(JSON_OBJECT_STRING_LEN + strlen(profileid) + strlen(profilever) + strlen(sep) + strlen(sdm) + strlen(sei) + strlen(seJsonArray));
+	if(reqJson == NULL) {
+		fprintf(stderr, "Memory allocation failed\n");
+		exit(EXIT_FAILURE);
+	}
+	snprintf(reqJson, JSON_OBJECT_STRING_LEN + strlen(profileid) + strlen(profilever) + strlen(sep) + strlen(sdm) + strlen(sei) + strlen(seJsonArray),
+				"{\"seList\":%s, \"profileid\":\"%s\", \"profilever\":\"%s\", \"sep\":\"%s\", \"sdm\":\"%s\", \"sei\":\"%s\"}",
+				seJsonArray, profileid, profilever, sep, sdm, sei);
+	free(seJsonArray);
 
-	cJSON* request_data_json = cJSON_CreateObject();
-	cJSON_AddStringToObject(request_data_json, "imei", imei);
-	cJSON_AddStringToObject(request_data_json, "cplc", cplc);
-	cJSON_AddStringToObject(request_data_json, "seType", seType_str);
-	cJSON_AddBoolToObject(request_data_json,"isPolling",is_polling);
+	/*cJSON* request_data_json = cJSON_CreateObject();
+	
+    cJSON_AddItemToObject(request_data_json, "seList", seList_array);
+	cJSON_AddStringToObject(request_data_json, "profileid", profileid);
+	cJSON_AddStringToObject(request_data_json, "profilever", profilever);
+	cJSON_AddStringToObject(request_data_json, "sep", sep);
+	cJSON_AddStringToObject(request_data_json, "sdm", sdm);
+	cJSON_AddStringToObject(request_data_json, "sei", sei);*/
+	//cJSON_AddStringToObject(request_data_json, "imei", imei);
+	//cJSON_AddStringToObject(request_data_json, "cplc", cplc);
+	//cJSON_AddStringToObject(request_data_json, "seType", seType_str);
+	//cJSON_AddBoolToObject(request_data_json,"isPolling",is_polling);
 
-	int http_conn_success = 0;
+	/*int http_conn_success = 0;
 	char* request_data_str = cJSON_Print(request_data_json);
 	long data_len = strlen(request_data_str);
 	char* parsed_msg_id = NULL;
@@ -291,7 +309,8 @@ bool register_se(char* imei, char* cplc, SeType seType)
 
 	ret = communicate_tsm_and_card(tsm_conn_info, NULL, parsed_msg_id, app_id, NULL);
 
-	free_tsm_conn_info(&tsm_conn_info);
+	free_tsm_conn_info(&tsm_conn_info); */
+	ret = communicate_btwn_tsm_proxy(reqJson,base_url,REGISTER_SE);
 	return ret;
 
 }
@@ -330,12 +349,14 @@ bool audit_se(char* imei, char* seId)
 
 }
 
-bool issue_applet(char* imei, char* seId, char* aId, char* serviceId, char* serviceVer, char* customerId)
+//bool issue_applet(char* imei, char* seId, char* aId, char* serviceId, char* serviceVer, char* exchangeData,  char* device_info)
+bool issue_applet(char* imei, char* seId, char* aId, char* serviceId, char* serviceVer, char* persoType, char* persoData,  char* device_info)
 {
 
 	bool ret = false;
 	cJSON_bool is_polling = true;
 	cJSON_bool is_wait_work = false;
+	char *action = "ISSUE_CERTIFICATE";
 
 	cJSON* request_data_json = cJSON_CreateObject();
 	cJSON_AddStringToObject(request_data_json, "imei", imei);
@@ -343,9 +364,69 @@ bool issue_applet(char* imei, char* seId, char* aId, char* serviceId, char* serv
 	cJSON_AddStringToObject(request_data_json, "AID", aId);
 	cJSON_AddStringToObject(request_data_json, "serviceID", serviceId);
 	cJSON_AddStringToObject(request_data_json, "serviceVersion", serviceVer);
-	cJSON_AddStringToObject(request_data_json, "customerID", customerId);
+	//cJSON_AddStringToObject(request_data_json, "exchangeData", exchangeData);
+	cJSON_AddStringToObject(request_data_json, "action", action);
 	cJSON_AddBoolToObject(request_data_json,"isPolling",is_polling);
 	cJSON_AddBoolToObject(request_data_json, "isWaitWork", is_wait_work);
+
+	int http_conn_success = 0;
+	char* request_data_str = cJSON_Print(request_data_json);
+	long data_len = strlen(request_data_str);
+	char* parsed_msg_id = NULL;
+	char* parsed_sir_id = NULL;
+
+	TSM_Connection_Info_Struct* tsm_conn_info = NULL;
+
+	http_conn_success = call_tsm_to_get_connection_info(request_data_str, data_len, is_polling, base_url, URI_DEVICE_ISSUE_APPLET, &tsm_conn_info, &parsed_msg_id, &parsed_sir_id);
+
+	if(http_conn_success<0){
+        printf("\nConnection to TSM proxy failed, Operation terminated.\n");
+        return false;
+    }
+
+	ret = communicate_tsm_and_card(tsm_conn_info, seId, parsed_msg_id, app_id, parsed_sir_id);
+
+	free_tsm_conn_info(&tsm_conn_info);
+	return ret;
+
+}
+
+bool exchange_service_data(char* imei, char* seId, char* aId, char* serviceId, char* serviceVer, char* thingType, char* device_info)
+{
+
+	bool ret = false;
+	cJSON_bool is_polling = true;
+	cJSON_bool is_wait_work = false;
+
+	cJSON* request_data_json = cJSON_CreateObject();
+
+//	if(persoType == '10') {
+
+	//	cJSON_AddStringToObject(request_data_json, "persoType", persoType);
+		//persoData : "{\"type\":\"la\", \"csr\":\"-----BEGIN CERTIFICATE REQUEST-----\\nMIIClzCCAX8CAQAwUjELMAkGA1UEBhMCS1IxEzARBgNVBAgMClNvbWUtU3RhdGUx\\nDjAMBgNVBAoMBUtvbmFpMQ4wDAYDVQQLDAVLb25haTEOMAwGA1UEAwwFS29uYWkw\\nggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC5qutvOYybFRel+0xAVvXh\\nZcUzZ8i9Jh0hSybB66SIrdLGxnPXNkaTpgtWhwaQMkASagD/UoZy8OyfxSXKGHW8\\n9TYSaO+6eFGpR0IPGXusxNedrRVin4AeKXrfyXHWkLAWvUKHBX7aWVE357Wk+lV3\\nRKts9tSPSRTMjl2HN9t4fWxryWQvxu2GMzxsApMMYVQU/MHcA/YYID/ibjv5iuI6\\ndDgloYTXf77GvVegFCawVryZm7q0DxJS61dripRUxcSK6ojl1VFIZ1+mWS9x2jd5\\nGkyadGk6T3Nz/ZMSEPEPe5WmoeM6q9SFLui9mQjUav1VQ2XbymE+Q6cSXnMgcepx\\nAgMBAAGgADANBgkqhkiG9w0BAQsFAAOCAQEAn2O4tu6a7xcsZNIRfE5wmwvec17x\\n+SR9v138RSDm4WFOEFM47Vw8uBadpHhl/mkhhNIY4hbatRswMLBoTYot8QD77G1f\\nz2ISBk0wBDZHRqHFcNa9CYangtuku9yanBQhVYuBi13358P6/tV0WxE2Vh+IyNxS\\nC+I2womn5L+dVt5y9vxn0rQ4jX3OenF0bIRLWVdWIX9/Z9BnmsR8D+luyKc0ivx5\\n/6tKPlmMNUz3NNBMgI3SJarCAn/10BdnX0DnG8mN7hlls2yQQGPLBkUFW5TSEqQl\\nNaXvvCDP6Y2X1y454F1Yi5zHkb9FuAQSmE/mZ4HYsKIXUKBq5T4ALO/8Hw==\\n-----END CERTIFICATE REQUEST-----\\n\", \"deviceInfo\":\"123456789ABCDEF00102030405000000\"}"
+		//csr 추가 
+
+	//}
+
+	//else{	
+		cJSON_AddStringToObject(request_data_json, "imei", imei);
+		cJSON_AddStringToObject(request_data_json, "seId", seId);
+		cJSON_AddStringToObject(request_data_json, "AID", aId);
+		cJSON_AddStringToObject(request_data_json, "serviceID", serviceId);
+		cJSON_AddStringToObject(request_data_json, "serviceVersion", serviceVer);
+
+        // Build inner JSON (to be stringified into "exchangeData")
+    	cJSON* exchange = cJSON_CreateObject();
+    	if (!exchange)  return false;
+
+    	cJSON_AddStringToObject(exchange, "thingType", thingType);
+    //	cJSON_AddStringToObject(exchange, "csr", csr_pem);
+    	cJSON_AddStringToObject(exchange, "deviceInfo", device_info);
+
+
+		cJSON_AddBoolToObject(request_data_json,"isPolling",is_polling);
+		cJSON_AddBoolToObject(request_data_json, "isWaitWork", is_wait_work);
+	//}
 
 	int http_conn_success = 0;
 	char* request_data_str = cJSON_Print(request_data_json);
@@ -446,7 +527,8 @@ bool lockunlock_applet(char* imei, char* seId, char* aId, char* serviceId, char*
 
 }
 
-bool register_device_info(char* imei, char* pushToken, Push_Token_Type pushType, char* osName,char* osVersion,char* msisdn, char* mnoName)
+//bool register_device_info(char* imei, char* pushToken, Push_Token_Type pushType, char* osName,char* osVersion,char* msisdn, char* mnoName)
+bool register_device_info(char* imei, Push_Token_Type pushType)
 {
 
 	const char* pushType_str = "00";
@@ -491,4 +573,11 @@ bool register_device_info(char* imei, char* pushToken, Push_Token_Type pushType,
     }
 
 	return true;
+}
+
+bool generate_csr( char *csr ){
+
+	
+	
+return true;
 }

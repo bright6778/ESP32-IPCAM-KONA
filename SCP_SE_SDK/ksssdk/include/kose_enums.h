@@ -37,7 +37,8 @@ typedef enum
     kKOSE_INS_SET_LOCK_STATE = 0xF0,
     /** INS Encrypt/Decrypt CData */
     kKOSE_INS_ENCRYPT_DECRYPT_CDATA = 0xB0,
-    
+    /** INS Generate Key */
+    kKOSE_INS_GENERATE_KEY = 0x46,
     // 여기 아래는 삭제할지 고민중 - uc.nam
     /** INS Read Binary */
     kKOSE_INS_READ_BINARY = 0xB0,

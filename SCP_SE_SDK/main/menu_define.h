@@ -27,7 +27,12 @@
 #define AWS_IOT_DEMO                "aws_iot_demo_main"
 #define GEN_CSR                     "gen_csr"
 #define CHECK_SE                    "check_se"
-
+#define REGISTER_SE                 "register_se"
+#define REGISTER_DEVICE             "register_device"
+#define ISSUE_APPLET                "issue_applet"
+#define EXCHANGE_SERVICE_DATA       "exchange_service_data"
+#define DELETE_APPLET               "delete_applet"
+#define GSMCALLBACKRESPONSE         "gsmcallbackresponse"
 
 /** Select number of menu */
 #define REBOOT_NUM                          "0.0"
@@ -56,5 +61,11 @@
 #define AWS_IOT_DEMO_NUM                    "11.1"
 #define GEN_CSR_NUM                         "12.1"
 #define CHECK_SE_NUM                        "13.1"
+#define REGISTER_DEVICE_NUM                 "14.1"
+#define REGISTER_SE_NUM                     "15.1"
+#define ISSUE_APPLET_NUM                    "16.1"
+#define EXCHANGE_SERVICE_DATA_NUM           "17.1"
+#define DELETE_APPLET_NUM                   "18.1"
+#define GSMCALLBACKRESPONSE_NUM             "19.1"
 
 #define MENU_TEXT_SIZE  50

@@ -209,98 +209,218 @@ void get_gsm_tsm_response_from_json_string(char* response_json, GSM_TSM_Response
 	*gsm_response = gsm_response_from_tsm;
 }
 
-void get_applet_list_response_from_json_string(char* response_json,Applet_List_Response_Struct** appletlist_response){
+// void get_applet_list_response_from_json_string(char* response_json,Applet_List_Response_Struct** appletlist_response){
 
-	printf("\nIn method to parse applet_list_response json\n");
+// 	printf("\nIn method to parse applet_list_response json\n");
 
-	cJSON* appletlist_response_json_obj = cJSON_Parse(response_json);
+// 	cJSON* appletlist_response_json_obj = cJSON_Parse(response_json);
 
-	Applet_List_Response_Struct *appletlist_response_from_tsm = ( Applet_List_Response_Struct*)malloc(sizeof( Applet_List_Response_Struct));
+// 	Applet_List_Response_Struct *appletlist_response_from_tsm = ( Applet_List_Response_Struct*)malloc(sizeof( Applet_List_Response_Struct));
 
-	cJSON* status_json = cJSON_GetObjectItem(appletlist_response_json_obj,"status");
+// 	cJSON* status_json = cJSON_GetObjectItem(appletlist_response_json_obj,"status");
 
-	char* status = cJSON_GetStringValue(status_json);
-	get_status_code_from_response(status,&appletlist_response_from_tsm->status);
+// 	char* status = cJSON_GetStringValue(status_json);
+// 	get_status_code_from_response(status,&appletlist_response_from_tsm->status);
 
-	if(cJSON_HasObjectItem(appletlist_response_json_obj,"erroMsg")){
+// 	if(cJSON_HasObjectItem(appletlist_response_json_obj,"erroMsg")){
 
-		cJSON* error_msg_json = cJSON_GetObjectItem(appletlist_response_json_obj,"erroMsg");//shouldn't it be errorMsg??
+// 		cJSON* error_msg_json = cJSON_GetObjectItem(appletlist_response_json_obj,"erroMsg");//shouldn't it be errorMsg??
 
-		char* error_msg = cJSON_GetStringValue(error_msg_json);
-		appletlist_response_from_tsm->error_msg =(char*)malloc(strlen(error_msg)*sizeof(char)+1);
-		memcpy(appletlist_response_from_tsm->error_msg,error_msg,strlen(error_msg));
-		error_msg[strlen(error_msg)] = '\0';
-	}else{
-		appletlist_response_from_tsm->error_msg = NULL;
-	}
+// 		char* error_msg = cJSON_GetStringValue(error_msg_json);
+// 		appletlist_response_from_tsm->error_msg =(char*)malloc(strlen(error_msg)*sizeof(char)+1);
+// 		memcpy(appletlist_response_from_tsm->error_msg,error_msg,strlen(error_msg));
+// 		error_msg[strlen(error_msg)] = '\0';
+// 	}else{
+// 		appletlist_response_from_tsm->error_msg = NULL;
+// 	}
 
-	cJSON* applet_list_info_json = cJSON_GetObjectItem(appletlist_response_json_obj,"serviceList");
-	if(applet_list_info_json != NULL && cJSON_IsArray(applet_list_info_json)) {
-		int array_size = cJSON_GetArraySize(applet_list_info_json);
-		appletlist_response_from_tsm->service_list = (Service_List_Info_Struct *)malloc(array_size * sizeof(Service_List_Info_Struct));
-		//Service_List_Info_Struct * service_list = (Service_List_Info_Struct *)malloc(array_size * sizeof(Service_List_Info_Struct));
-		cJSON *serviceListItem = NULL;
-		int index = 0;
-		cJSON_ArrayForEach(serviceListItem, applet_list_info_json) {
-			cJSON *svcIdItem = cJSON_GetObjectItem(serviceListItem, "svcId");
-			cJSON *svcVerItem = cJSON_GetObjectItem(serviceListItem, "svcVer");
-			cJSON *svcNameItem = cJSON_GetObjectItem(serviceListItem, "svcName");
-			cJSON *aidItem = cJSON_GetObjectItem(serviceListItem, "aid");
-			cJSON *svcInsStatusItem = cJSON_GetObjectItem(serviceListItem, "svcInsStatus");
-			cJSON *svcImgUriItem = cJSON_GetObjectItem(serviceListItem, "svcImgUri");
-			cJSON *svcThumbnailImgUriItem = cJSON_GetObjectItem(serviceListItem, "svcThumbnailImgUri");
-			cJSON *servicestatusItem = cJSON_GetObjectItem(serviceListItem, "servicestatus");
+// 	cJSON* applet_list_info_json = cJSON_GetObjectItem(appletlist_response_json_obj,"serviceList");
+// 	if(applet_list_info_json != NULL && cJSON_IsArray(applet_list_info_json)) {
+// 		int array_size = cJSON_GetArraySize(applet_list_info_json);
+// 		appletlist_response_from_tsm->service_list = (Service_List_Info_Struct *)malloc(array_size * sizeof(Service_List_Info_Struct));
+// 		//Service_List_Info_Struct * service_list = (Service_List_Info_Struct *)malloc(array_size * sizeof(Service_List_Info_Struct));
+// 		cJSON *serviceListItem = NULL;
+// 		int index = 0;
+// 		cJSON_ArrayForEach(serviceListItem, applet_list_info_json) {
+// 			cJSON *svcIdItem = cJSON_GetObjectItem(serviceListItem, "svcId");
+// 			cJSON *svcVerItem = cJSON_GetObjectItem(serviceListItem, "svcVer");
+// 			cJSON *svcNameItem = cJSON_GetObjectItem(serviceListItem, "svcName");
+// 			cJSON *aidItem = cJSON_GetObjectItem(serviceListItem, "aid");
+// 			cJSON *svcInsStatusItem = cJSON_GetObjectItem(serviceListItem, "svcInsStatus");
+// 			cJSON *svcImgUriItem = cJSON_GetObjectItem(serviceListItem, "svcImgUri");
+// 			cJSON *svcThumbnailImgUriItem = cJSON_GetObjectItem(serviceListItem, "svcThumbnailImgUri");
+// 			cJSON *servicestatusItem = cJSON_GetObjectItem(serviceListItem, "servicestatus");
 
-			if(svcIdItem != NULL && cJSON_IsString(svcIdItem) && svcVerItem != NULL && cJSON_IsString(svcVerItem)) {
-				char* svcIdItem_str = cJSON_GetStringValue(svcIdItem);
-				appletlist_response_from_tsm->service_list[index].svc_id =(char*)malloc(strlen(svcIdItem_str)*sizeof(char));
-				memcpy(appletlist_response_from_tsm->service_list[index].svc_id,svcIdItem_str,strlen(svcIdItem_str));
-				char* svcVerItem_str = cJSON_GetStringValue(svcVerItem);
-				appletlist_response_from_tsm->service_list[index].svc_ver =(char*)malloc(strlen(svcVerItem_str)*sizeof(char));
-				memcpy(appletlist_response_from_tsm->service_list[index].svc_ver,svcVerItem_str,strlen(svcVerItem_str));
-				char* svcNameItem_str = cJSON_GetStringValue(svcNameItem);
-				appletlist_response_from_tsm->service_list[index].svc_name =(char*)malloc(strlen(svcNameItem_str)*sizeof(char));
-				memcpy(appletlist_response_from_tsm->service_list[index].svc_name,svcNameItem_str,strlen(svcNameItem_str));
-				char* aidItem_str = cJSON_GetStringValue(aidItem);
-				appletlist_response_from_tsm->service_list[index].aid =(char*)malloc(strlen(aidItem_str)*sizeof(char));
-				memcpy(appletlist_response_from_tsm->service_list[index].aid,aidItem_str,strlen(aidItem_str));
-				char* svcInsStatusItem_str = cJSON_GetStringValue(svcInsStatusItem);
-				appletlist_response_from_tsm->service_list[index].svc_ins_status =(char*)malloc(strlen(svcInsStatusItem_str)*sizeof(char));
-				memcpy(appletlist_response_from_tsm->service_list[index].svc_ins_status,svcInsStatusItem_str,strlen(svcInsStatusItem_str));
-				char* svcImgUriItem_str = cJSON_GetStringValue(svcImgUriItem);
-				appletlist_response_from_tsm->service_list[index].svc_img_uri =(char*)malloc(strlen(svcImgUriItem_str)*sizeof(char));
-				memcpy(appletlist_response_from_tsm->service_list[index].svc_img_uri,svcImgUriItem_str,strlen(svcImgUriItem_str));
-				char* svcThumbnailImgUriItem_str = cJSON_GetStringValue(svcThumbnailImgUriItem);
-				appletlist_response_from_tsm->service_list[index].svc_thumbnail_img_uri =(char*)malloc(strlen(svcThumbnailImgUriItem_str)*sizeof(char));
-				memcpy(appletlist_response_from_tsm->service_list[index].svc_thumbnail_img_uri,svcIdItem_str,strlen(svcThumbnailImgUriItem_str));
-				//char* servicestatusItem_str = cJSON_GetStringValue(servicestatusItem);
-				//appletlist_response_from_tsm->service_list[index].servicestatus =(char*)malloc(strlen(servicestatusItem_str)*sizeof(char));
-				//memcpy(appletlist_response_from_tsm->service_list[index].servicestatus,servicestatusItem_str,strlen(servicestatusItem_str));
-				//strcpy(service_list[index].svc_id, svcIdItem->valuestring);
-				/*strcpy(appletlist_response_from_tsm->service_list[index].svc_ver, svcVerItem->valuestring);
-				strcpy(appletlist_response_from_tsm->service_list[index].svc_name, svcNameItem->valuestring);
-				strcpy(appletlist_response_from_tsm->service_list[index].aid, aidItem->valuestring);
-				strcpy(appletlist_response_from_tsm->service_list[index].svc_ins_status, svcInsStatusItem->valuestring);
-				strcpy(appletlist_response_from_tsm->service_list[index].svc_img_uri, svcImgUriItem->valuestring);
-				strcpy(appletlist_response_from_tsm->service_list[index].svc_thumbnail_img_uri, svcThumbnailImgUriItem->valuestring);
-				strcpy(appletlist_response_from_tsm->service_list[index].servicestatus, servicestatusItem->valuestring);*/
-				index++;
-				printf("SvcId: %s, SvcVer: %s, SvcName: %s, aid: %s, SvcInsStatus: %s, SvcImgUri: %s, SvcThumbnailImgUri: %s, ServiceStatus: %s\n", svcIdItem->valuestring, svcVerItem->valuestring, svcNameItem->valuestring, aidItem->valuestring, svcInsStatusItem->valuestring, svcImgUriItem->valuestring, svcThumbnailImgUriItem->valuestring, servicestatusItem->valuestring);
-			}
-		}
-	}else{
-		appletlist_response_from_tsm->service_list = NULL;
-	}
-	/*if(cJSON_HasObjectItem(checkse_response_json_obj,"seList")){
+// 			if(svcIdItem != NULL && cJSON_IsString(svcIdItem) && svcVerItem != NULL && cJSON_IsString(svcVerItem)) {
+// 				char* svcIdItem_str = cJSON_GetStringValue(svcIdItem);
+// 				appletlist_response_from_tsm->service_list[index].svc_id =(char*)malloc(strlen(svcIdItem_str)*sizeof(char));
+// 				memcpy(appletlist_response_from_tsm->service_list[index].svc_id,svcIdItem_str,strlen(svcIdItem_str));
+// 				char* svcVerItem_str = cJSON_GetStringValue(svcVerItem);
+// 				appletlist_response_from_tsm->service_list[index].svc_ver =(char*)malloc(strlen(svcVerItem_str)*sizeof(char));
+// 				memcpy(appletlist_response_from_tsm->service_list[index].svc_ver,svcVerItem_str,strlen(svcVerItem_str));
+// 				char* svcNameItem_str = cJSON_GetStringValue(svcNameItem);
+// 				appletlist_response_from_tsm->service_list[index].svc_name =(char*)malloc(strlen(svcNameItem_str)*sizeof(char));
+// 				memcpy(appletlist_response_from_tsm->service_list[index].svc_name,svcNameItem_str,strlen(svcNameItem_str));
+// 				char* aidItem_str = cJSON_GetStringValue(aidItem);
+// 				appletlist_response_from_tsm->service_list[index].aid =(char*)malloc(strlen(aidItem_str)*sizeof(char));
+// 				memcpy(appletlist_response_from_tsm->service_list[index].aid,aidItem_str,strlen(aidItem_str));
+// 				char* svcInsStatusItem_str = cJSON_GetStringValue(svcInsStatusItem);
+// 				appletlist_response_from_tsm->service_list[index].svc_ins_status =(char*)malloc(strlen(svcInsStatusItem_str)*sizeof(char));
+// 				memcpy(appletlist_response_from_tsm->service_list[index].svc_ins_status,svcInsStatusItem_str,strlen(svcInsStatusItem_str));
+// 				char* svcImgUriItem_str = cJSON_GetStringValue(svcImgUriItem);
+// 				appletlist_response_from_tsm->service_list[index].svc_img_uri =(char*)malloc(strlen(svcImgUriItem_str)*sizeof(char));
+// 				memcpy(appletlist_response_from_tsm->service_list[index].svc_img_uri,svcImgUriItem_str,strlen(svcImgUriItem_str));
+// 				char* svcThumbnailImgUriItem_str = cJSON_GetStringValue(svcThumbnailImgUriItem);
+// 				appletlist_response_from_tsm->service_list[index].svc_thumbnail_img_uri =(char*)malloc(strlen(svcThumbnailImgUriItem_str)*sizeof(char));
+// 				memcpy(appletlist_response_from_tsm->service_list[index].svc_thumbnail_img_uri,svcIdItem_str,strlen(svcThumbnailImgUriItem_str));
+// 				//char* servicestatusItem_str = cJSON_GetStringValue(servicestatusItem);
+// 				//appletlist_response_from_tsm->service_list[index].servicestatus =(char*)malloc(strlen(servicestatusItem_str)*sizeof(char));
+// 				//memcpy(appletlist_response_from_tsm->service_list[index].servicestatus,servicestatusItem_str,strlen(servicestatusItem_str));
+// 				//strcpy(service_list[index].svc_id, svcIdItem->valuestring);
+// 				/*strcpy(appletlist_response_from_tsm->service_list[index].svc_ver, svcVerItem->valuestring);
+// 				strcpy(appletlist_response_from_tsm->service_list[index].svc_name, svcNameItem->valuestring);
+// 				strcpy(appletlist_response_from_tsm->service_list[index].aid, aidItem->valuestring);
+// 				strcpy(appletlist_response_from_tsm->service_list[index].svc_ins_status, svcInsStatusItem->valuestring);
+// 				strcpy(appletlist_response_from_tsm->service_list[index].svc_img_uri, svcImgUriItem->valuestring);
+// 				strcpy(appletlist_response_from_tsm->service_list[index].svc_thumbnail_img_uri, svcThumbnailImgUriItem->valuestring);
+// 				strcpy(appletlist_response_from_tsm->service_list[index].servicestatus, servicestatusItem->valuestring);*/
+// 				index++;
+// 				printf("SvcId: %s, SvcVer: %s, SvcName: %s, aid: %s, SvcInsStatus: %s, SvcImgUri: %s, SvcThumbnailImgUri: %s, ServiceStatus: %s\n", svcIdItem->valuestring, svcVerItem->valuestring, svcNameItem->valuestring, aidItem->valuestring, svcInsStatusItem->valuestring, svcImgUriItem->valuestring, svcThumbnailImgUriItem->valuestring, servicestatusItem->valuestring);
+// 			}
+// 		}
+// 	}else{
+// 		appletlist_response_from_tsm->service_list = NULL;
+// 	}
+// 	/*if(cJSON_HasObjectItem(checkse_response_json_obj,"seList")){
 
-		cJSON* se_status_info_json = cJSON_GetObjectItem(checkse_response_json_obj,"seList");
-		//get_tsm_connection_info_from_json_obj(tsm_conn_info_json,&sestatus_response_from_tsm->tsm_conn_info);
-		get_se_status_info_from_json_obj(se_status_info_json,&checkse_response_from_tsm->se_list);
-	}else{
-		checkse_response_from_tsm->se_list = NULL;
-	}*/
+// 		cJSON* se_status_info_json = cJSON_GetObjectItem(checkse_response_json_obj,"seList");
+// 		//get_tsm_connection_info_from_json_obj(tsm_conn_info_json,&sestatus_response_from_tsm->tsm_conn_info);
+// 		get_se_status_info_from_json_obj(se_status_info_json,&checkse_response_from_tsm->se_list);
+// 	}else{
+// 		checkse_response_from_tsm->se_list = NULL;
+// 	}*/
 
-	*appletlist_response = appletlist_response_from_tsm;
+// 	*appletlist_response = appletlist_response_from_tsm;
+// }
+#include "cJSON.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+static char* xstrdup(const char* s) {
+    if (!s) return NULL;
+    size_t n = strlen(s) + 1;
+    char* p = (char*)malloc(n);
+    if (p) memcpy(p, s, n);
+    return p;
+}
+
+static const char* safe_str(const char* s) { return s ? s : "(null)"; }
+
+void get_applet_list_response_from_json_string(char* response_json,
+                                               Applet_List_Response_Struct** appletlist_response)
+{
+    if (!response_json || !appletlist_response) {
+        return;
+    }
+    printf("\nIn method to parse applet_list_response json\n");
+	printf("\n[%s] HTTP raw response_json", (const char*)response_json);
+
+    // 0) JSON 파싱 (널 종료 보장 안 되면 ParseWithLength를 고려)
+    cJSON* root = cJSON_Parse(response_json);
+    if (!root) {
+        printf("JSON parse failed at: %s\n", cJSON_GetErrorPtr());
+        *appletlist_response = NULL;
+        return;
+    }
+
+    Applet_List_Response_Struct *out = (Applet_List_Response_Struct*)calloc(1, sizeof(*out));
+    if (!out) { cJSON_Delete(root); *appletlist_response = NULL; return; }
+
+    // 1) status
+    {
+        cJSON* status_json = cJSON_GetObjectItemCaseSensitive(root, "status");
+        const char* status = cJSON_IsString(status_json) ? status_json->valuestring : NULL;
+        if (status) {
+            get_status_code_from_response(status, &out->status);
+        } else {
+            // 기본값/에러 처리
+			
+            get_status_code_from_response("UNKNOWN", &out->status);
+        }
+    }
+
+    // 2) errorMsg (오타 방어)
+    {
+        cJSON* err_json = cJSON_GetObjectItemCaseSensitive(root, "errorMsg");
+        if (!err_json) err_json = cJSON_GetObjectItemCaseSensitive(root, "erroMsg");
+        if (cJSON_IsString(err_json) && err_json->valuestring) {
+            out->error_msg = xstrdup(err_json->valuestring);
+        } else {
+            out->error_msg = NULL;
+        }
+    }
+
+    // 3) serviceList
+    out->service_list = NULL;
+   // out->service_count = 0; // 구조체에 count 필드 추가 권장
+
+    cJSON* arr = cJSON_GetObjectItemCaseSensitive(root, "serviceList");
+    if (cJSON_IsArray(arr)) {
+        int n = cJSON_GetArraySize(arr);
+        if (n > 0) {
+            out->service_list = (Service_List_Info_Struct*)calloc(n, sizeof(Service_List_Info_Struct));
+            if (!out->service_list) { cJSON_Delete(root); /* 누수 정리 생략 */ *appletlist_response = out; return; }
+      //      out->service_count = n;
+
+            int idx = 0;
+            cJSON* it = NULL;
+            cJSON_ArrayForEach(it, arr) {
+                Service_List_Info_Struct* svc = &out->service_list[idx];
+
+                cJSON* svcId   = cJSON_GetObjectItemCaseSensitive(it, "svcId");
+                cJSON* svcVer  = cJSON_GetObjectItemCaseSensitive(it, "svcVer");
+                cJSON* svcName = cJSON_GetObjectItemCaseSensitive(it, "svcName");
+                cJSON* aid     = cJSON_GetObjectItemCaseSensitive(it, "aid");
+                cJSON* insSt   = cJSON_GetObjectItemCaseSensitive(it, "svcInsStatus");
+                cJSON* imgUri  = cJSON_GetObjectItemCaseSensitive(it, "svcImgUri");
+                cJSON* thUri   = cJSON_GetObjectItemCaseSensitive(it, "svcThumbnailImgUri");
+                cJSON* stItem  = cJSON_GetObjectItemCaseSensitive(it, "servicestatus");
+
+                const char* svcId_s   = cJSON_IsString(svcId)   ? svcId->valuestring   : NULL;
+                const char* svcVer_s  = cJSON_IsString(svcVer)  ? svcVer->valuestring  : NULL;
+                const char* svcName_s = cJSON_IsString(svcName) ? svcName->valuestring : NULL;
+                const char* aid_s     = cJSON_IsString(aid)     ? aid->valuestring     : NULL;
+                const char* insSt_s   = cJSON_IsString(insSt)   ? insSt->valuestring   : NULL;
+                const char* imgUri_s  = cJSON_IsString(imgUri)  ? imgUri->valuestring  : NULL;
+                const char* thUri_s   = cJSON_IsString(thUri)   ? thUri->valuestring   : NULL;
+                const char* st_s      = cJSON_IsString(stItem)  ? stItem->valuestring  : NULL;
+
+                // strdup로 안전 복사(+널)
+                svc->svc_id               = xstrdup(svcId_s);
+                svc->svc_ver              = xstrdup(svcVer_s);
+                svc->svc_name             = xstrdup(svcName_s);
+                svc->aid                  = xstrdup(aid_s);
+                svc->svc_ins_status       = xstrdup(insSt_s);
+                svc->svc_img_uri          = xstrdup(imgUri_s);
+                svc->svc_thumbnail_img_uri= xstrdup(thUri_s);
+                svc->servicestatus        = xstrdup(st_s);
+
+                printf("SvcId:%s, SvcVer:%s, SvcName:%s, aid:%s, SvcInsStatus:%s, SvcImgUri:%s, SvcThumbnailImgUri:%s, ServiceStatus:%s\n",
+                       safe_str(svcId_s), safe_str(svcVer_s), safe_str(svcName_s), safe_str(aid_s),
+                       safe_str(insSt_s), safe_str(imgUri_s), safe_str(thUri_s), safe_str(st_s));
+
+                idx++;
+                if (idx >= n) break; // 방어
+            }
+        }
+    }
+
+    // 4) 반환
+    *appletlist_response = out;
+
+    // 5) cJSON 정리
+    cJSON_Delete(root);
 }
 
 void get_checkse_tsm_response_from_json_string(char* response_json,Checkse_TSM_Response_Struct** checkse_response){
@@ -385,6 +505,8 @@ void get_base_tsm_response_from_json_string(char* response_json,Base_TSM_Respons
 
 	printf("\nIn method to parse base_tsm_response json\n");
 
+	printf("\n HTTP raw response_json: [%s]\n", (const char*)response_json);
+
 	cJSON* base_response_json_obj = cJSON_Parse(response_json);
 
 	Base_TSM_Response_Struct *base_response_from_tsm = ( Base_TSM_Response_Struct*)malloc(sizeof( Base_TSM_Response_Struct));
@@ -393,6 +515,7 @@ void get_base_tsm_response_from_json_string(char* response_json,Base_TSM_Respons
 
 	char* status = cJSON_GetStringValue(status_json);
 	get_status_code_from_response(status,&base_response_from_tsm->status);
+	printf("\nDevice status: %s \n", status);
 
 	if(cJSON_HasObjectItem(base_response_json_obj,"erroMsg")){
 

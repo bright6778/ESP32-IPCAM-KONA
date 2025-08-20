@@ -31,7 +31,7 @@ typedef enum {
 
 typedef enum {
     ICCID = 1,
-    CARD_UNIQUE_DATA,
+    CARD_UNIQUE_DATA = 2,
 } SeIdType;
 
 typedef enum _Push_Token_Type

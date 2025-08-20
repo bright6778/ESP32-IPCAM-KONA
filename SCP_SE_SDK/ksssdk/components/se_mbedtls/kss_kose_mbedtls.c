@@ -338,8 +338,17 @@ int kss_mbedtls_sign(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
             goto cleanup;
         }
         
-        ((mbedtls_ecp_keypair *)pax_ctx)->grp.pKSSObject = pkeyObject;
-        ((mbedtls_ecp_keypair *)pax_ctx)->grp.id = MBEDTLS_ECP_DP_SECP256R1;
+      /* ((mbedtls_ecp_keypair *)pax_ctx)->grp.pKSSObject = pkeyObject;
+        ((mbedtls_ecp_keypair *)pax_ctx)->grp.id = MBEDTLS_ECP_DP_SECP256R1;*/ 
+
+        if (pkeyObject->cipherType == kKSS_CipherType_EC_NIST_P) {
+         ((mbedtls_ecp_keypair *)pax_ctx)->grp.id = MBEDTLS_ECP_DP_SECP256R1;
+        } else if (pkeyObject->cipherType == kKSS_CipherType_EC_NIST_K) {
+         ((mbedtls_ecp_keypair *)pax_ctx)->grp.id = MBEDTLS_ECP_DP_SECP256K1;
+        } else if (pkeyObject->cipherType == kKSS_CipherType_EC_BRAINPOOL) {
+            return -4;
+        }
+
     }
     else {
         goto cleanup;

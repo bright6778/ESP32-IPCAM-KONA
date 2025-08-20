@@ -246,6 +246,10 @@ bool communicate_btwn_tsm_proxy(char* request_data_str, char* base_url, TSM_HTTP
 	{
 		http_conn_success = call_tsm_to_get_list_info(request_data_str, data_len, base_url, URI_DEVICE_AVAILABLE_APPLETS);
 	}
+	else if(tsm_req_type == REGISTER_SE)
+	{
+		http_conn_success = call_tsm_to_get_list_info(request_data_str, data_len, base_url, URI_DEVICE_REGISTER_SEID);
+	}
 	else
 	{
 		printf("\nUnknown Request Type;ABORT");

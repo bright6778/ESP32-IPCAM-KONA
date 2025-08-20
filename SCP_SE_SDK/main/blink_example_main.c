@@ -33,11 +33,44 @@
 #include "kona_kss_debug.h"
 #include "tsm_sdk.h"
 #include "menu_define.h"
+//#include "kss_sdk_api_test.h"
 //#include "kona_se.h"
 
 ///////////////////////////////////////////////////////////////
 // Define
 ///////////////////////////////////////////////////////////////
+#define UART_INIT                   "kss_kose_uart_init"
+#define UART_TRANSCEIVE             "kss_kose_uart_transceive"
+#define UART_CLOSE                  "kss_kose_uart_close"
+#define SESSION_CREATE              "kss_kose_session_create"
+#define SESSION_OPEN                "kss_kose_session_open"
+#define SESSION_CLOSE               "kss_kose_session_close"
+#define APDU_SELECT_AID             "Kose_API_Select"
+#define APDU_GET_RANDOM             "Kose_API_GetRandom"
+#define APDU_INITIALIZE_UPDATE      "Kose_API_Initialize_Update"
+#define APDU_EXTERNAL_AUTHENTICATE  "KOSE_API_External_Authenticate"
+#define APDU_STORE_DATA             "KOSE_API_StoreData"
+#define APDU_PUT_KEY                "KOSE_API_PutKey"
+#define APDU_SET_LOCK_STATE         "KOSE_API_SetLockState"
+#define APDU_ENCRYPT_DECRYPT_CDATA_ENC  "Kose_API_EncryptData"
+#define APDU_ENCRYPT_DECRYPT_CDATA_DEC  "Kose_API_DecryptData"
+#define KEY_STORE_GET_DATA          "kss_key_store_get_data"
+#define KEY_STORE_SET_KEY           "kss_key_store_set_key"
+#define KEY_STORE_DATA              "kss_key_store_data"
+#define MBEDTLS_VERIFY_SIGN         "kss_mbedtls_verify_sign"
+#define SE_PROVISIONING             "se_provisioning"
+#define AWS_IOT_DEMO                "aws_iot_demo_main"
+#define RANDOM_GEN                  "kss_kose_rng"
+#define GEN_CSR                     "gen_csr"
+#define CHECK_SE                    "check_se"
+#define REGISTER_SE                 "register_se"
+#define REGISTER_DEVICE             "register_device"
+#define ISSUE_APPLET                "issue_applet"
+#define EXCHANGE_SERVICE_DATA       "exchange_service_data"
+#define DELETE_APPLET               "delete_applet"
+#define GSMCALLBACKRESPONSE         "gsmcallbackresponse"
+
+
 //#define SE_ID								"8009069009064009061520"
 #define SE_ID								"0290000290002400000005"
 //#define CPLC								"81009809409105005200FFFFFFFFFFFFFFFF4092"
@@ -137,6 +170,7 @@ uint8_t bufData[DATA_BUF_SIZE];
 int buf_index = 0;
 
 void print_manu(){
+    printf(ANSI_COLOR_RESET);
     printf("//////////////////////////////////////////////////////////////////////////////////\n");
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " REBOOT " or " REBOOT_NUM, REBOOT);
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " UART_INIT " or " UART_INIT_NUM, UART_INIT);
@@ -161,7 +195,13 @@ void print_manu(){
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " AWS_IOT_DEMO " or " AWS_IOT_DEMO_NUM, AWS_IOT_DEMO);
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " GEN_CSR " or " GEN_CSR_NUM, GEN_CSR);
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " CHECK_SE " or " CHECK_SE_NUM, CHECK_SE);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " REGISTER_DEVICE " or " REGISTER_DEVICE_NUM, REGISTER_DEVICE);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " ISSUE_APPLET " or " ISSUE_APPLET_NUM, ISSUE_APPLET);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " EXCHANGE_SERVICE_DATA " or " EXCHANGE_SERVICE_DATA_NUM, EXCHANGE_SERVICE_DATA);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " DELETE_APPLET " or " DELETE_APPLET_NUM, DELETE_APPLET);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " GSMCALLBACKRESPONSE " or " GSMCALLBACKRESPONSE_NUM, GSMCALLBACKRESPONSE);
     printf("//////////////////////////////////////////////////////////////////////////////////\n");
+
 }
 
 void set_se_uart_init(kss_kose_uart_ctx_t *se_uart_init){
@@ -503,6 +543,9 @@ void command_task(void *arg)
                     kss_key_store_context_free(&keystore);
                     LOGI(TAG, "End %s", KEY_STORE_DATA);
                 }
+                else if (strcmp((char*)buf, GENERATE_KEY) == 0 || strcmp((char*)buf, GENERATE_KEY_NUM) == 0) {    // kss_key_store_generate_key
+                    //test_kss_key_store_generate_key();
+                }
                 else if (strcmp((char*)buf, RANDOM_GEN) == 0 || strcmp((char*)buf, RANDOM_GEN_NUM) == 0) {    // kss_kose_rng
                     LOGI(TAG, "Start %s", RANDOM_GEN);
                     uint8_t random_data[32] = {0}; 
@@ -542,7 +585,7 @@ void command_task(void *arg)
                     tsm_sdk_init();
                     init_se();
 
-                    char* se_id = SE_ID;
+                    
                     char* imei = IMEI_DUMMY_ISSUE_APPLET;
                     /*char* pushToken = IMEI_DUMMY_ISSUE_APPLET;
                     char* cplc = CPLC;
@@ -556,7 +599,8 @@ void command_task(void *arg)
                     char* mnoName = "MONA";*/
                     SeIdType seIdType = CARD_UNIQUE_DATA;
                     SeType seType = SIM;
-                    Push_Token_Type pushType = Xinjie;
+                    char* se_id = SE_ID;
+                    //Push_Token_Type pushType = Xinjie;
                     SeDetail seList[1] = {
                         {se_id, seIdType, seType, false},
                 };
@@ -568,7 +612,70 @@ void command_task(void *arg)
                             printf("error audit_se\n");
                         }
                     LOGI(TAG, "End %s", CHECK_SE);
-                }
+                }else if (strcmp((char*)buf, "register_device") == 0 || strcmp((char*)buf, "14.1") == 0) { 
+                    LOGI(TAG, "Start %s", REGISTER_DEVICE);
+                    tsm_sdk_init();
+                    init_se();
+
+                    char* imei = IMEI_DUMMY_ISSUE_APPLET;
+                    Push_Token_Type pushType = Xinjie;
+
+                    set_base_url(BASE_URL);
+
+                    if(!register_device_info(imei, pushType)){
+                        printf("error REGISTER_DEVICE\n");
+                    }
+
+                    LOGI(TAG, "End %s", REGISTER_DEVICE);
+
+
+                }else if (strcmp((char*)buf, "register_se") == 0 || strcmp((char*)buf, "15.1") == 0) { 
+                    LOGI(TAG, "Start %s", REGISTER_SE);
+                    tsm_sdk_init();
+                    init_se();
+
+                    //char* imei = IMEI_DUMMY_ISSUE_APPLET;
+                    //char* cplc = CPLC;
+                    SeType seType = SIM;
+                    SeIdType seIdType = CARD_UNIQUE_DATA;
+                    char* se_id = "4790D3218241907401020192568929995823";
+                    SeDetail seList[1] = {
+                        {se_id, seIdType, seType, false},
+                    };
+                    char* profileid = "2A831A8CE06864024100010101";
+                    char* profilever = "1.1.2";
+                    char* sep = "2A831A8CE068";
+                    char* sdm = "2A831A8CE068";
+                    char* sei = "2A831A8CE068";
+
+
+	                int seListSize = sizeof(seList) / sizeof(seList[0]);
+
+                    set_base_url(BASE_URL);
+
+                    if(!register_se(seList, seListSize, profileid, profilever, sep, sdm, sei)){
+                        printf("error REGISTER_SE\n");
+                    }
+                    LOGI(TAG, "End %s", REGISTER_SE);
+
+                }else if (strcmp((char*)buf, "issue_applet") == 0 || strcmp((char*)buf, "16.1") == 0) { 
+                    LOGI(TAG, "Start %s", ISSUE_APPLET);
+                    LOGI(TAG, "End %s", ISSUE_APPLET);
+
+                }else if (strcmp((char*)buf, "exchange_service_data") == 0 || strcmp((char*)buf, "17.1") == 0) { 
+                    LOGI(TAG, "Start %s", EXCHANGE_SERVICE_DATA);
+                    //exchange_service_data
+                    LOGI(TAG, "End %s", EXCHANGE_SERVICE_DATA);
+
+                }else if (strcmp((char*)buf, "delete_applet") == 0 || strcmp((char*)buf, "18.1") == 0) { 
+                    LOGI(TAG, "Start %s", DELETE_APPLET);
+                    LOGI(TAG, "End %s", DELETE_APPLET);
+
+                }else if (strcmp((char*)buf, "gsmcallbackresponse") == 0 || strcmp((char*)buf, "19.1") == 0) { 
+                    LOGI(TAG, "Start %s", GSMCALLBACKRESPONSE);
+                    LOGI(TAG, "End %s", GSMCALLBACKRESPONSE);
+
+            }
                 print_manu();
 
                 buf_index = 0;

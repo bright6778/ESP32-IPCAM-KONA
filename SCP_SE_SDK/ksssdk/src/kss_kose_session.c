@@ -91,7 +91,6 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
 
     uint8_t rcvbuf[256] = {0};
     size_t rcvlen;
-
     status = Kose_API_Select(koseSession, rcvbuf, &rcvlen);
     if (status == SM_OK) {
         session->subsystem = subsystem;

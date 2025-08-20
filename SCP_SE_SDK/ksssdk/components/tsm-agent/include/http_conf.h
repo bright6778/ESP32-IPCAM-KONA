@@ -17,10 +17,11 @@
 
 #define  URI_DEVICE_REGISTER_DEVICE_INFO 		"/device/registerdeviceinfo"
 #define  URI_DEVICE_CHECK_SE				 	"/device/checkse"
-#define  URI_DEVICE_REGISTER_SEID 				"/device/registerseid"
+#define  URI_DEVICE_REGISTER_SEID 				"/device/enrollmentseid"
 #define  URI_DEVICE_SEAUDIT 					"/device/seaudit"
 #define  URI_DEVICE_APPLET_LIFECYCLE 			"/device/appletlifecycle"
-#define  URI_DEVICE_ISSUE_APPLET 				"/device/issueapplet"
+#define  URI_DEVICE_ISSUE_APPLET 				"/device/issueappletwithpersodata"
+#define  URI_DEVICE_EXCHANGE_SERVICE_DATA 		"/device/exchangeservicedata "
 #define  URI_DEVICE_LOCK_UNLOCK_APPLET  		"/device/lockunlockapplet"
 #define  URI_DEVICE_DELETE_APPLET  				"/device/deleteapplet"
 #define  URI_DEVICE_UPDATE_APPLET  				"/device/exchangeservicedata"
