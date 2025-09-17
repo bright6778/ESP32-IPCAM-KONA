@@ -16,6 +16,7 @@
 /* ************************************************************************** */
 #include "sm_api.h"
 #include "kona_kss_api.h"
+#include "sm_types.h"
 
 /** @addtogroup KOSE_scp03
  *
@@ -240,7 +241,7 @@ typedef struct
     const char *portName;
 
     /** 12C address on embedded devices. */
-    //U32 i2cAddress;
+    int i2cAddress;
 
     /** UART */
     //kss_kose_uart_ctx_t conn_ctx;

@@ -250,6 +250,41 @@ int tlvDataSet_u8buf(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_
     return 0;
 }
 
+int tlvDataSet_u8buf_len2byte(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen)
+{
+    uint8_t *pBuf = *buf;
+
+    const size_t size_of_length = 2;
+    const size_t size_of_tlv    = size_of_length + cmdLen + 1;
+    
+    if ((UINT_MAX - (*bufLen)) < size_of_tlv) {
+        return 1;
+    }
+
+    if (((*bufLen) + size_of_tlv) > KOSE_TLV_BUF_SIZE_CMD) {
+        return 1;
+    }
+    *pBuf++ = (uint8_t)tag;
+    
+    if (cmdLen <= 0xFFFFu) {
+        *pBuf++ = (uint8_t)((cmdLen >> 1 * 8) & 0xFF);
+        *pBuf++ = (uint8_t)((cmdLen >> 0 * 8) & 0xFF);
+    }
+    else {
+        return 1;
+    }
+    if ((cmdLen > 0) && (cmd != NULL)) {
+        while (cmdLen-- > 0) {
+            *pBuf++ = *cmd++;
+        }
+    }
+
+    *buf = pBuf;
+    
+    *bufLen += size_of_tlv;
+    return 0;
+}
+
 int lvDataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdLen)
 {
     uint8_t *pBuf = *buf;
@@ -330,6 +365,9 @@ smStatus_t DoAPDUTx_s_Case3(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_t 
         apduStatus = SM_NOT_OK;
     }
     else {
+#ifdef CONNECT_SE_I2C //I2C의 경우 가변으로 최대 32byte까지 받아옴.
+        rxBufLen = 0;
+#endif
         apduStatus = pSessionCtx->fp_TXn(pSessionCtx, cmdBuf, cmdBufLen, rxBuf, &rxBufLen);
     }
     return apduStatus;
@@ -355,7 +393,6 @@ smStatus_t DoAPDUTxRx_s_Case2(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_
 smStatus_t DoAPDUTxRx_s_Case4(KoseSession_t *pSessionCtx, uint8_t *cmdBuf, size_t cmdBufLen, uint8_t *rspBuf, size_t *pRspBufLen)
 {
     smStatus_t apduStatus;
-
     if (pSessionCtx == NULL) {
         return SM_NOT_OK;
     }

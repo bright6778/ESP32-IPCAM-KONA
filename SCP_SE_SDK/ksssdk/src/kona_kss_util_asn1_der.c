@@ -1764,6 +1764,158 @@ exit:
     return retval;
 }
 
+static int asn1_get_len(const uint8_t *p, size_t rem, size_t *out_len, size_t *out_hdr)
+{
+    if (rem < 1) return ECDSA_ERR_LENGTH;
+    uint8_t b = p[0];
+    if ((b & 0x80) == 0) {
+        *out_len = b;
+        *out_hdr = 1;
+        return ECDSA_OK;
+    }
+    size_t nbytes = b & 0x7F;
+    if (nbytes == 0 || nbytes > 2) return ECDSA_ERR_FORMAT; // 길이-길이는 1~2바이트만 허용(안전)
+    if (rem < 1 + nbytes) return ECDSA_ERR_LENGTH;
+    size_t len = 0;
+    for (size_t i = 0; i < nbytes; i++) {
+        len = (len << 8) | p[1 + i];
+    }
+    *out_len = len;
+    *out_hdr = 1 + nbytes;
+    return ECDSA_OK;
+}
+
+/**
+ * DER ECDSA Signature (SEQUENCE of two INTEGERs) -> r||s (each 32 bytes)
+ * Return 0 on success, negative on error.
+ */
+int ecdsa_der_to_rs64(const uint8_t *der, size_t der_len, uint8_t out_rs64[64])
+{
+    if (!der || !out_rs64) return ECDSA_ERR_FORMAT;
+    const uint8_t *p = der;
+    size_t rem = der_len;
+
+    // SEQUENCE
+    if (rem < 2 || p[0] != 0x30) return ECDSA_ERR_FORMAT;
+    p++; rem--;
+    size_t seq_len=0, seq_len_hdr=0;
+    int rc = asn1_get_len(p, rem, &seq_len, &seq_len_hdr);
+    if (rc) return rc;
+    p += seq_len_hdr; rem -= seq_len_hdr;
+    if (seq_len > rem) return ECDSA_ERR_LENGTH;
+    const uint8_t *seq_end = p + seq_len;
+
+    // INTEGER r
+    if ((size_t)(seq_end - p) < 2 || p[0] != 0x02) return ECDSA_ERR_FORMAT;
+    p++;
+    size_t rlen=0, rlen_hdr=0;
+    rc = asn1_get_len(p, (size_t)(seq_end - p), &rlen, &rlen_hdr);
+    if (rc) return rc;
+    p += rlen_hdr;
+    if ((size_t)(seq_end - p) < rlen) return ECDSA_ERR_LENGTH;
+
+    const uint8_t *rptr = p; size_t rbytes = rlen;
+    // Strip leading sign byte (0x00) if present
+    if (rbytes > 0 && rptr[0] == 0x00) { rptr++; rbytes--; }
+    /*
+    if (rbytes > 32) {
+        // 리딩 0x00은 반드시 33바이트일 때만 strip
+        if (rbytes == 33 && rptr == 0x00) {
+            rptr++; rbytes--;
+        } else {
+            return ECDSA_ERR_RANGE;
+        }
+    }*/
+    if (rbytes == 0 || rbytes > 32) return ECDSA_ERR_RANGE;
+
+    // pad-left to 32
+    size_t rpad = 32 - rbytes;
+    memset(out_rs64, 0, rpad);
+    memcpy(out_rs64 + rpad, rptr, rbytes);
+
+    p += rlen;
+
+    // INTEGER s
+    if ((size_t)(seq_end - p) < 2 || p[0] != 0x02) return ECDSA_ERR_FORMAT;
+    p++;
+    size_t slen=0, slen_hdr=0;
+    rc = asn1_get_len(p, (size_t)(seq_end - p), &slen, &slen_hdr);
+    if (rc) return rc;
+    p += slen_hdr;
+    if ((size_t)(seq_end - p) < slen) return ECDSA_ERR_LENGTH;
+
+    const uint8_t *sptr = p; size_t sbytes = slen;
+    if (sbytes > 0 && sptr[0] == 0x00) { sptr++; sbytes--; }
+    if (sbytes == 0 || sbytes > 32) return ECDSA_ERR_RANGE;
+
+    size_t spad = 32 - sbytes;
+    memset(out_rs64 + 32, 0, spad);
+    memcpy(out_rs64 + 32 + spad, sptr, sbytes);
+
+    p += slen;
+
+    // Must end exactly at seq_end
+    if (p != seq_end) return ECDSA_ERR_FORMAT;
+    // And consume the whole DER (optional but useful)
+    if ((size_t)(der + der_len - seq_end) != 0) {
+        // 뒤에 쓰레기 바이트 있으면 형식 오류로 취급 (원하면 허용해도 됨)
+        return ECDSA_ERR_FORMAT;
+    }
+    return ECDSA_OK;
+}
+
+int rs64_to_der_minimal(const uint8_t rs[64], uint8_t der_out[72], size_t *der_len) {
+    if (!rs || !der_out || !der_len) return ECDSA_ERR_FORMAT;
+
+    const uint8_t *r = rs;
+    const uint8_t *s = rs + 32;
+
+    // r에서 의미 없는 leading zero 제거 (값이 전부 0이면 에러)
+    size_t r_off = 0;
+    while (r_off < 31 && r[r_off] == 0x00) r_off++;
+    if (r_off == 32) return ECDSA_ERR_RANGE; // r==0 금지
+    const uint8_t *r_val = r + r_off;
+    size_t r_len = 32 - r_off;
+
+    // s도 동일
+    size_t s_off = 0;
+    while (s_off < 31 && s[s_off] == 0x00) s_off++;
+    if (s_off == 32) return ECDSA_ERR_RANGE; // s==0 금지
+    const uint8_t *s_val = s + s_off;
+    size_t s_len = 32 - s_off;
+
+    // DER INTEGER는 최상위 비트가 1이면 0x00 한 바이트를 앞에 붙여 양수 강제
+    int add0_r = (r_val[0] & 0x80) ? 1 : 0;
+    int add0_s = (s_val[0] & 0x80) ? 1 : 0;
+
+    size_t ir_len = r_len + (size_t)add0_r; // INTEGER r의 내용 길이
+    size_t is_len = s_len + (size_t)add0_s; // INTEGER s의 내용 길이
+    if (ir_len == 0 || ir_len > 33 || is_len == 0 || is_len > 33) return ECDSA_ERR_RANGE;
+
+    // 전체 SEQUENCE 길이(짧은 길이로 충분: <= 0x7F)
+    size_t seq_len = 2 + 1 + ir_len + 2 + 1 + is_len; // 0x02 len r  + 0x02 len s
+    if (seq_len > 0x7F) return ECDSA_ERR_RANGE;        // P-256에선 보통 0x44~0x46
+
+    uint8_t *p = der_out;
+    *p++ = 0x30;                 // SEQUENCE
+    *p++ = (uint8_t)seq_len;     // short form length
+
+    // INTEGER r
+    *p++ = 0x02;
+    *p++ = (uint8_t)ir_len;
+    if (add0_r) *p++ = 0x00;
+    memcpy(p, r_val, r_len); p += r_len;
+
+    // INTEGER s
+    *p++ = 0x02;
+    *p++ = (uint8_t)is_len;
+    if (add0_s) *p++ = 0x00;
+    memcpy(p, s_val, s_len); p += s_len;
+
+    *der_len = (size_t)(p - der_out);
+    return ECDSA_OK;
+}
+
 #ifdef __cplusplus
 }
 #endif

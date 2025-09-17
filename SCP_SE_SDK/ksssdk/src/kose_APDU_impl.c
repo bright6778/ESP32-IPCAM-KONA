@@ -60,6 +60,7 @@ smStatus_t Kose_API_Select(pKoseSession_t session_ctx, uint8_t *fci, size_t *pfc
     const uint8_t cmdData[] = KOSE_APPLET_AID;
     lvDataSet_u8buf(&pLc, &cmdbufLen, cmdData, sizeof(cmdData));
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    rspbufLen = 0;    // I2C의 경우 0으로 전달 시 32byte까지 읽어옴.
 
     retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
     if (retStatus == SM_OK) {
@@ -294,12 +295,12 @@ smStatus_t Kose_API_ECDSASign(pKoseSession_t session_ctx,
     LOGD(TAG, "Kose_API_ECDSASign");
 
     smStatus_t retStatus = SM_NOT_OK;
-    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_SIGN_CDATA, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
+    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA), kKOSE_INS_SIGN_CDATA, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
     uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
-    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
+    size_t rspbufLen                       = 0;
     size_t rspIndex                        = 0;
 
     uint8_t *pLc = &pCmdbuf[4]; // lc pointer
@@ -343,6 +344,132 @@ smStatus_t Kose_API_ECDSAVerify(pKoseSession_t session_ctx,
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
     uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    size_t rspbufLen                       = 0;
+    
+    uint8_t *pLc = &pCmdbuf[4]; // lc pointer
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    uint8_t bufObjectID[2] = {0};
+    
+    uint8_t bufDerSignHeader1[4] = {0x30, 0x44, 0x02, 0x20};   // sign der buffer
+    uint8_t bufDerSignHeader2[2] = {0x02, 0x20};   // sign der buffer
+    uint8_t bufDerSign[72] = {0};   // sign der buffer
+    size_t bufDerSign_index = 4;
+    size_t bufDerSign_len = 70;
+
+    size_t totalSize = 0;
+
+    bool r_add_bit = false;
+    bool s_add_bit = false;
+
+    if(signature[0] > 0x7F) r_add_bit = true;   // r sign bit
+    if(signature[32] > 0x7F) s_add_bit = true;  // s sign bit
+
+    uint32_to_buffer(objectID, 2, bufObjectID);
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+
+    memcpy(bufDerSign, bufDerSignHeader1, sizeof(bufDerSignHeader1));
+    if(r_add_bit == true) bufDerSign[1] += 1;
+    if(s_add_bit == true) bufDerSign[1] += 1;
+
+    if(r_add_bit == true){
+        bufDerSign_len += 1;
+        bufDerSign[3] += 1;
+        bufDerSign[4] = 0x00;
+        bufDerSign_index += 1;
+    } 
+    
+    memcpy(bufDerSign+bufDerSign_index, signature, 32);
+    bufDerSign_index += 32;
+
+    memcpy(bufDerSign+bufDerSign_index, bufDerSignHeader2, sizeof(bufDerSignHeader2));
+    if(s_add_bit == true){
+        LOGD(TAG, "s_add_bit");
+        bufDerSign_len += 1;
+        bufDerSign[bufDerSign_index+1] += 1;
+        bufDerSign[bufDerSign_index+2] = 0x00;
+        bufDerSign_index += 1;
+    } 
+    memcpy(bufDerSign+bufDerSign_index+2, signature+32, 32);
+    
+    tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_KEYID, bufObjectID, 2); // Key ID
+    tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_SHA256, inputData, inputDataLen); // Hash Data(SHA256)
+    //tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_SIGNATURE, bufDerSign, sizeof(bufDerSign)); // Signature by Server Private Key
+    tlvDataSet_u8buf_len2byte(&pData, &totalSize, kKOSE_TAG_SIGNATURE, bufDerSign, bufDerSign_len); // Signature by Server Private Key
+    lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalSize);
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    
+    retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+    if (retStatus == SM_OK) {
+        *presult = kKOSE_Result_SUCCESS;
+    }
+    else{
+        *presult = kKOSE_Result_FAILURE;
+    }
+
+    return retStatus;
+}
+
+smStatus_t Kose_API_RSASign(pKoseSession_t session_ctx,
+    uint32_t objectID,
+    KOSE_RSASignatureAlgo_t rsaSignAlgo,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    uint8_t *signature,
+    size_t *psignatureLen)
+{
+    LOGD(TAG, "Kose_API_RSASign");
+
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_SIGN_CDATA, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
+    size_t rspIndex                        = 0;
+
+    uint8_t *pLc = &pCmdbuf[4]; // lc pointer
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    uint8_t bufObjectID[2] = {0}; 
+    
+    uint32_to_buffer(objectID, 2, bufObjectID);
+    
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    DataSet_u8buf(&pData, bufObjectID, sizeof(bufObjectID));
+    DataSet_u8buf(&pData, inputData, inputDataLen);
+    lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, inputDataLen + 2);
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+
+    retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+    if (retStatus == SM_OK) {
+        if(get_u8buf(rspbuf, &rspIndex, rspbufLen - 2, signature, psignatureLen) != 0)
+        {
+            *psignatureLen = 0;
+        }
+    }
+
+    return retStatus;
+}
+
+smStatus_t Kose_API_RSAVerify(pKoseSession_t session_ctx,
+    uint32_t objectID,
+    KOSE_RSASignatureAlgo_t rsaSignAlgo,
+    const uint8_t *inputData,
+    size_t inputDataLen,
+    const uint8_t *signature,
+    size_t signatureLen,
+    KOSE_Result_t *presult)
+{
+    LOGD(TAG, "Kose_API_RSAVerify");
+
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kKOSE_CLA, kKOSE_INS_VERIFY_SIGNATURE, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     
     uint8_t *pLc = &pCmdbuf[4]; // lc pointer
@@ -359,6 +486,7 @@ smStatus_t Kose_API_ECDSAVerify(pKoseSession_t session_ctx,
     uint32_to_buffer(objectID, 2, bufObjectID);
     memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
 
+    // objectID 범위 값 체크하는 로직 추가 필요할듯?(수행해야 되는 알고리즘이 ECC인지 RSA인지 판단 기준이 objectID밖에 없음.)
     memcpy(bufDerSign, bufDerSignHeader1, sizeof(bufDerSignHeader1));
     memcpy(bufDerSign+4, signature, 32);
     memcpy(bufDerSign+36, bufDerSignHeader2, sizeof(bufDerSignHeader2));
@@ -435,6 +563,94 @@ GetRes:
     return retStatus;
 }
 
+// Generate Key
+smStatus_t Kose_API_GenerateKey(pKoseSession_t session_ctx, uint8_t p1, uint8_t p2, uint32_t *objectID, uint32_t acl, uint8_t *publicKey, size_t *pPublicKeyLen)
+{
+    LOGD(TAG, "Kose_API_GenerateKey");
+
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr = {{kKOSE_CLA, kKOSE_INS_GENERATE_KEY, p1, p2}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    size_t rspbufLen                       = 0;
+    size_t rspIndex                        = 0;
+
+    uint8_t *pLc = &pCmdbuf[4]; // lc pointer
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    uint32_t cObjectId = *objectID;
+    uint8_t bufObjectID[KOSE_OBJECT_ID_LENGTH] = {0};
+    uint8_t bufDataLen[2] = {0};
+    uint8_t bufAcl[KOSE_ACL_LENGTH] = {0};
+
+    if(p1 != 0x01 && p1 != 0xD2){
+        goto cleanup;
+    }
+
+    if(p2 != 0x00 && p2 != 0x01){
+        goto cleanup;
+    }
+    
+    uint32_to_buffer(cObjectId, KOSE_OBJECT_ID_LENGTH, bufObjectID);
+    uint32_to_buffer(acl, KOSE_ACL_LENGTH, bufAcl);
+    uint32_to_buffer(KOSE_ACL_LENGTH + 32, 2, bufDataLen);    // ACL length(3) + OID length(32)
+    
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    DataSet_u8buf(&pData, bufObjectID, sizeof(bufObjectID));    //Object ID
+    DataSet_u8buf(&pData, bufDataLen, sizeof(bufDataLen));      //ACL length + Data length
+    DataSet_u8buf(&pData, bufAcl, sizeof(bufAcl));  //ACL
+    size_t totalDataLen = sizeof(bufObjectID) + sizeof(bufDataLen) + sizeof(bufAcl);
+    /*
+    if(p1 == 0x01 && p2 == 0x01){
+        DataSet_u8buf(&pData, hash, 32);  //Data(Hash)
+        totalDataLen += 32;
+    }
+    */
+    lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalDataLen);
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+
+    LOGD(TAG, "session_ctx->i2c_addr : %d", session_ctx->i2c_addr);
+    kss_debug_showframe(TAG, cmdbuf, cmdbufLen);
+    kss_debug_showframe(TAG, rspbuf, *pPublicKeyLen);
+    LOGD(TAG, "pPublicKeyLen : %d", *pPublicKeyLen);
+    
+    retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, pPublicKeyLen);
+    LOGD(TAG, "retStatus : %d", retStatus);
+    kss_debug_showframe(TAG, rspbuf, *pPublicKeyLen);
+    if (retStatus == SM_OK) {
+        if(p1 == 0x01){
+            if(*pPublicKeyLen > 2){
+                if(get_u8buf(rspbuf, &rspIndex, 0x41, publicKey, pPublicKeyLen) != 0) // public key length(0x41)
+                {
+                    *pPublicKeyLen = 0;
+                }
+            }
+            else
+            {
+                *pPublicKeyLen = 0;
+            }
+        }
+        else if(p1 == 0xD2){
+            if(get_u8buf(rspbuf, &rspIndex, rspbufLen - 2, bufObjectID, &rspbufLen) != 0)
+            {
+                memcpy(objectID, bufObjectID, KOSE_OBJECT_ID_LENGTH);
+            }
+        }
+    }
+cleanup:
+    return retStatus;
+}
+
+smStatus_t Kose_API_GenerateKey_OnlyGenKey(pKoseSession_t session_ctx, uint8_t p1, uint8_t p2, uint32_t *objectID, uint32_t acl)
+{
+    uint8_t publicKey[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    size_t pPublicKeyLen = 0;
+    LOGI(TAG, "Kose_API_GenerateKey_OnlyGenKey");
+    return Kose_API_GenerateKey(session_ctx, p1, p2, objectID, acl, publicKey, &pPublicKeyLen);
+}
+
 smStatus_t Kose_API_EncryptData(pKoseSession_t session_ctx,
     uint32_t objectID,
     kss_algorithm_t encryptionAlgo,
@@ -446,7 +662,7 @@ smStatus_t Kose_API_EncryptData(pKoseSession_t session_ctx,
     size_t *pencryptedDataLen)
 {
     smStatus_t retStatus = SM_NOT_OK;
-    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA | 0x04), kKOSE_INS_ENCRYPT_DECRYPT_CDATA, kKOSE_P1_ENCRYPT, kKOSE_P2_DEFAULT}};
+    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA), kKOSE_INS_ENCRYPT_DECRYPT_CDATA, kKOSE_P1_ENCRYPT, kKOSE_P2_DEFAULT}};
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
@@ -467,14 +683,16 @@ smStatus_t Kose_API_EncryptData(pKoseSession_t session_ctx,
     DataSet_u8buf(&pData, bufObjectID, sizeof(bufObjectID));    // Object ID
     DataSet_u8buf(&pData, bufDataLen, sizeof(bufDataLen));      // Data Length
     DataSet_u8buf(&pData, inputData, inputDataLen);             // Plain or Cipher Data
-    lvDataSet_u8buf(&pData, &ivLen, iv, ivLen);                 // IV Length + IV
-    size_t totalDataLen = inputDataLen + ivLen + sizeof(bufObjectID) + sizeof(bufDataLen) + 1;
+    DataSet_u8buf(&pData, (uint8_t*)"\x00", 1);                 // iv len
+    //lvDataSet_u8buf(&pData, &ivLen, iv, ivLen);                 // IV Length + IV 미적용
+    //size_t totalDataLen = inputDataLen + ivLen + sizeof(bufObjectID) + sizeof(bufDataLen) + 1;
+    size_t totalDataLen = inputDataLen + sizeof(bufObjectID) + sizeof(bufDataLen) + 1;
     lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalDataLen);
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
     
-    retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+    retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, pencryptedDataLen);
     if (retStatus == SM_OK) {
-        if(get_u8buf(rspbuf, &rspIndex, rspbufLen - 2, encryptedData, pencryptedDataLen) != 0)
+        if(get_u8buf(rspbuf, &rspIndex, *pencryptedDataLen - 2, encryptedData, pencryptedDataLen) != 0)
         {
             *pencryptedDataLen = 0;
         }
@@ -482,57 +700,57 @@ smStatus_t Kose_API_EncryptData(pKoseSession_t session_ctx,
 
     return retStatus;
 }
-#if 0 //Kose_API_DecryptData
+
 smStatus_t Kose_API_DecryptData(pKoseSession_t session_ctx,
     uint32_t objectID,
-    Kose_RSAEncryptionAlgo_t rsaEncryptionAlgo,
+    kss_algorithm_t encryptionAlgo,
+    const uint8_t *iv,
+    size_t ivLen,
     const uint8_t *inputData,
     size_t inputDataLen,
-    uint8_t *decryptedData,
-    size_t *pdecryptedDataLen)
+    uint8_t *encryptedData,
+    size_t *pencryptedDataLen)
 {
     smStatus_t retStatus = SM_NOT_OK;
-    tlvHeader_t hdr      = {{kKose_CLA, kKose_INS_CRYPTO, kKose_P1_RSA, kKose_P2_DECRYPT_ONESHOT}};
-    uint8_t cmdbuf[Kose_MAX_BUF_SIZE_CMD];
+    tlvHeader_t hdr      = {{(uint8_t)(kKOSE_CLA), kKOSE_INS_ENCRYPT_DECRYPT_CDATA, kKOSE_P1_DECRYPT, kKOSE_P2_DEFAULT}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
     size_t cmdbufLen                       = 0;
     uint8_t *pCmdbuf                       = &cmdbuf[0];
-    int tlvRet                             = 0;
-    uint8_t rspbuf[Kose_MAX_BUF_SIZE_RSP] = {0};
-    uint8_t *pRspbuf                       = &rspbuf[0];
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     size_t rspIndex                        = 0;
-#if VERBOSE_APDU_LOGS
-    NEWLINE();
-    nLog("APDU", NX_LEVEL_DEBUG, "RSADecrypt []");
-#endif /* VERBOSE_APDU_LOGS */
-    tlvRet = TLVSET_U32("objectID", &pCmdbuf, &cmdbufLen, kKose_TAG_1, objectID);
-    if (0 != tlvRet) {
-        goto cleanup;
-    }
-    tlvRet = TLVSET_RSAEncryptionAlgo("rsaEncryptionAlgo", &pCmdbuf, &cmdbufLen, kKose_TAG_2, rsaEncryptionAlgo);
-    if (0 != tlvRet) {
-        goto cleanup;
-    }
-    tlvRet = TLVSET_u8bufOptional("inputData", &pCmdbuf, &cmdbufLen, kKose_TAG_3, inputData, inputDataLen);
-    if (0 != tlvRet) {
-        goto cleanup;
-    }
-    retStatus = DoAPDUTxRx_s_Case4_ext(session_ctx, &hdr, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+
+    uint8_t *pLc = &pCmdbuf[4]; // lc pointer
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    uint8_t bufObjectID[2] = {0};
+    uint8_t bufDataLen[2] = {0}; 
+    
+    uint32_to_buffer(objectID, 2, bufObjectID);
+    uint32_to_buffer(inputDataLen, 2, bufDataLen);
+    
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    DataSet_u8buf(&pData, bufObjectID, sizeof(bufObjectID));    // Object ID
+    DataSet_u8buf(&pData, bufDataLen, sizeof(bufDataLen));      // Data Length
+    DataSet_u8buf(&pData, inputData, inputDataLen);             // Plain or Cipher Data
+    DataSet_u8buf(&pData, (uint8_t*)"\x00", 1);                 // iv len
+    //lvDataSet_u8buf(&pData, &ivLen, iv, ivLen);                 // IV Length + IV 미적용
+    //size_t totalDataLen = inputDataLen + ivLen + sizeof(bufObjectID) + sizeof(bufDataLen) + 1;
+    size_t totalDataLen = inputDataLen + sizeof(bufObjectID) + sizeof(bufDataLen) + 1;
+    lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalDataLen);
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    
+    retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, pencryptedDataLen);
     if (retStatus == SM_OK) {
-        retStatus = SM_NOT_OK;
-        tlvRet    = tlvGet_u8buf(pRspbuf, &rspIndex, rspbufLen, kKose_TAG_1, decryptedData, pdecryptedDataLen); /*  */
-        if (0 != tlvRet) {
-            goto cleanup;
-        }
-        if ((rspIndex + 2) == rspbufLen) {
-            retStatus = (smStatus_t)((pRspbuf[rspIndex] << 8) | (pRspbuf[rspIndex + 1]));
+        if(get_u8buf(rspbuf, &rspIndex, *pencryptedDataLen - 2, encryptedData, pencryptedDataLen) != 0)
+        {
+            *pencryptedDataLen = 0;
         }
     }
 
-cleanup:
     return retStatus;
 }
-#endif //Kose_API_DecryptData
+
 #ifdef __cplusplus
 }
 #endif

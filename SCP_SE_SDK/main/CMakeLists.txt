@@ -4,10 +4,10 @@ idf_component_register(
           "aws_iot_mbedtls_mqtt.c"
           "gen_csr.c"
           "kss_provisioning.c"
+          "kss_sdk_api_test.c"
      INCLUDE_DIRS 
           "."
           "${CMAKE_CURRENT_LIST_DIR}"
-
 )
 
 target_include_directories(${COMPONENT_LIB} PUBLIC

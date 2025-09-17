@@ -15,6 +15,7 @@ extern "C" {
 #include "kss_kose_rng.h"
 #include "kss_kose_session.h"
 #include "kss_kose_asymmetric.h"
+#include "kss_kose_symmetric.h"
 #include "kss_kose_keyobj.h"
 #include "kss_kose_keystore.h"
 #include "kona_kss_ftr_default.h"
@@ -140,6 +141,50 @@ void kss_asymmetric_context_free(kss_asymmetric_t *context)
         kss_kose_asymmetric_context_free(kose_context);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
+}
+
+/**************************************************************************************
+ * symmetric
+ **************************************************************************************/
+
+kss_status_t kss_symmetric_context_init(kss_symmetric_t *context,
+    kss_session_t *session,
+    kss_object_t *keyObject,
+    kss_algorithm_t algorithm)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT
+    if (KSS_SESSION_TYPE_IS_KOSE(session)) {
+        kss_kose_symmetric_t *kose_context = (kss_kose_symmetric_t *)context;
+        kss_kose_session_t *kose_session    = (kss_kose_session_t *)session;
+        kss_kose_object_t *kose_keyObject   = (kss_kose_object_t *)keyObject;
+        return kss_kose_symmetric_context_init(kose_context, kose_session, kose_keyObject, algorithm);
+    }
+#endif /* KSS_HAVE_APPLET_KOSE_IOT */
+    return kStatus_KSS_InvalidArgument;
+}
+
+kss_status_t kss_symmetric_encrypt(
+    kss_symmetric_t *context, const uint8_t *srcData, size_t srcLen, uint8_t *destData, size_t *destLen)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT
+    if (KSS_SYMMETRIC_TYPE_IS_KOSE(context)) {
+        kss_kose_symmetric_t *kose_context = (kss_kose_symmetric_t *)context;
+        return kss_kose_symmetric_encrypt(kose_context, srcData, srcLen, destData, destLen);
+    }
+#endif /* KSS_HAVE_APPLET_KOSE_IOT */
+    return kStatus_KSS_InvalidArgument;
+}
+
+kss_status_t kss_symmetric_decrypt(
+    kss_symmetric_t *context, const uint8_t *srcData, size_t srcLen, uint8_t *destData, size_t *destLen)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT
+    if (KSS_SYMMETRIC_TYPE_IS_KOSE(context)) {
+        kss_kose_symmetric_t *kose_context = (kss_kose_symmetric_t *)context;
+        return kss_kose_symmetric_decrypt(kose_context, srcData, srcLen, destData, destLen);
+    }
+#endif /* KSS_HAVE_APPLET_KOSE_IOT */
+    return kStatus_KSS_InvalidArgument;
 }
 
 /**************************************************************************************
@@ -296,6 +341,33 @@ kss_status_t kss_key_store_set_keyfile(kss_key_store_t *keyStore,
         kss_kose_object_t *kose_keyObject   = (kss_kose_object_t *)keyObject;
         return kss_kose_key_store_set_key(
             kose_keyStore, kose_keyObject, data, dataLen, keyBitLen, options, optionsLen);
+    }
+#endif /* KSS_HAVE_APPLET_KOSE_IOT */
+    return kStatus_KSS_InvalidArgument;
+}
+
+/*
+kss_status_t kss_key_store_generate_key(
+    kss_key_store_t *keyStore, kss_object_t *keyObject, size_t keyBitLen, size_t options)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT && KSSFTR_KOSE_KEY_SET
+    if (KSS_KEY_STORE_TYPE_IS_KOSE(keyStore)) {
+        kss_kose_key_store_t *kose_keyStore = (kss_kose_key_store_t *)keyStore;
+        kss_kose_object_t *kose_keyObject   = (kss_kose_object_t *)keyObject;
+        return kss_kose_key_store_generate_key(kose_keyStore, kose_keyObject, keyBitLen, options);
+    }
+#endif // KSS_HAVE_APPLET_KOSE_IOT
+    return kStatus_KSS_InvalidArgument;
+}*/
+
+kss_status_t kss_key_store_generate_key(
+    kss_key_store_t *keyStore, kss_object_t *keyObject, size_t keyBitLen, size_t options, uint8_t *publicKey, size_t *pPublicKeyLen)
+{
+#if KSS_HAVE_APPLET_KOSE_IOT && KSSFTR_KOSE_KEY_SET
+    if (KSS_KEY_STORE_TYPE_IS_KOSE(keyStore)) {
+        kss_kose_key_store_t *kose_keyStore = (kss_kose_key_store_t *)keyStore;
+        kss_kose_object_t *kose_keyObject   = (kss_kose_object_t *)keyObject;
+        return kss_kose_key_store_generate_key_getPublicKey(kose_keyStore, kose_keyObject, keyBitLen, options, publicKey, pPublicKeyLen);
     }
 #endif /* KSS_HAVE_APPLET_KOSE_IOT */
     return kStatus_KSS_InvalidArgument;

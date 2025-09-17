@@ -96,6 +96,9 @@ typedef struct mbedtls_pk_info_t{
 //extern const mbedtls_pk_info_t kose_pk_info;
 extern const mbedtls_pk_info_t kose_mbedtls_eckeypair_pk_info;
 extern const mbedtls_pk_info_t kose_mbedtls_ecpubkey_pk_info;
+extern const mbedtls_pk_info_t kose_mbedtls_rsakeypair_info;
+extern const mbedtls_pk_info_t kose_mbedtls_rsapubkey_info;
+
 /*
 static int kss_eckey_check_pair(const void *pub, const void *prv);
 static int kss_eckeypair_can_do(mbedtls_pk_type_t type);

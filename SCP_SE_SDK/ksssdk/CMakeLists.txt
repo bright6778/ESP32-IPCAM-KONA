@@ -32,8 +32,9 @@ else()  # 일반 CMake 환경이면
     cmake_minimum_required(VERSION 3.10)
     project(ksssdk)
     
+    file(GLOB SRC4 "components/interface/i2c_dq1/*.c")  #LGE I2C 사용할 경우 활성화
     set(
-        SRCS ${SRC1} ${SRC2} ${SRC3}
+        SRCS ${SRC1} ${SRC2} ${SRC3} ${SRC4}
     )    
     add_library(ksssdk STATIC ${SRCS})
     message(STATUS "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")

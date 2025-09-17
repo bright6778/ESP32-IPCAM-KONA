@@ -61,17 +61,44 @@ kss_status_t kss_kose_key_object_get_handle(kss_kose_object_t *keyObject, uint32
     kss_status_t retval = kStatus_KSS_Fail;
 #if KSSFTR_KOSE_KEY_GET
     keyObject->keyId = objectId;
-    keyObject->cipherType = kKSS_CipherType_EC_NIST_P;
-    keyObject->curve_id = kKOSE_ECCurve_NIST_P256;
     if(objectId >= ECC_KEYPAIR_PRIVATE_START && objectId <= ECC_KEYPAIR_PRIVATE_END)
     {
+        keyObject->cipherType = kKSS_CipherType_EC_NIST_P;
+        keyObject->curve_id = kKOSE_ECCurve_NIST_P256;
         keyObject->objectType = kKSS_KeyPart_Private;
     }
-    else if(objectId >= ECC_KEYPAIR_PUBLIC_START && objectId <= ECC_KEYPAIR_PUBLIC_END)
+    else if((objectId >= ECC_KEYPAIR_PUBLIC_START && objectId <= ECC_KEYPAIR_PUBLIC_END) || 
+        (objectId >= ECC_EXT_KEYPAIR_PUBLIC_START && objectId <= ECC_EXT_KEYPAIR_PUBLIC_END) )
     {
+        keyObject->cipherType = kKSS_CipherType_EC_NIST_P;
+        keyObject->curve_id = kKOSE_ECCurve_NIST_P256;
         keyObject->objectType = kKSS_KeyPart_Public;
     }
-
+    else if(objectId >= AES_KEY_START && objectId <= AES_KEY_END)
+    {
+        keyObject->cipherType = kKSS_CipherType_AES;
+        keyObject->objectType = kKSS_KeyPart_Default;
+    }
+    else if(objectId >= ECC_ENT_KEYPAIR_START && objectId <= ECC_ENT_KEYPAIR_END)
+    {
+        keyObject->cipherType = kKSS_CipherType_EC_NIST_P;
+        keyObject->curve_id = kKOSE_ECCurve_NIST_P256;
+    }
+    else if(objectId >= RSA_KEYPAIR_PUBLIC_START && objectId <= RSA_KEYPAIR_PUBLIC_END)
+    {
+        keyObject->cipherType = kKSS_CipherType_RSA;
+        keyObject->objectType = kKSS_KeyPart_Public;
+    }
+    else if(objectId >= RSA_KEYPAIR_PRIVATE_START && objectId <= RSA_KEYPAIR_PRIVATE_END)
+    {
+        keyObject->cipherType = kKSS_CipherType_RSA;
+        keyObject->objectType = kKSS_KeyPart_Private;
+    }
+    else
+    {
+        LOGD(TAG, "Errer");
+        return retval;
+    }
     retval = kStatus_KSS_Success;
 #endif // KSSFTR_KOSE_KEY_GET
     return retval;

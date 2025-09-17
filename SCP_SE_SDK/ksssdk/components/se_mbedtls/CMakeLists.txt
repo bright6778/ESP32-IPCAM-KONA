@@ -4,7 +4,7 @@ idf_component_register(
         "ecdsa_verify_alt.c"
         "keystore_cmn.c"
         "kss_kose_mbedtls.c"
-       
+        "kss_mbedtls_rsa.c"
     INCLUDE_DIRS 
         "../../include" 
         "."

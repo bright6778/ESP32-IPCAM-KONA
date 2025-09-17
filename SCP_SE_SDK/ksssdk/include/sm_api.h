@@ -10,7 +10,8 @@ extern "C" {
 typedef enum
 {
     kType_SE_Conn_Type_NONE = 0,
-    kType_SE_Conn_Type_UART = 1
+    kType_SE_Conn_Type_UART = 1,
+    kType_SE_Conn_Type_I2C = 2
 } KSS_Conn_Type_t;
 
 /**

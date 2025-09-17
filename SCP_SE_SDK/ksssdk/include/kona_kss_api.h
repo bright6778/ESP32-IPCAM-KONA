@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 
-/** Version of the SSS API */
+/** Version of the KSS API */
 #define KSS_API_VERSION (0x00000001u)
 
 /** Size of an AES Block, in bytes */
@@ -802,7 +802,7 @@ kss_status_t kss_session_create(kss_session_t *session,
  *
  *                Open virtual session between application (user context) and a
  *                security subsystem and function thereof. Pointer to session
- *                shall be supplied to all SSS APIs as argument. Low level SSS
+ *                shall be supplied to all KSS APIs as argument. Low level KSS
  *                functions can provide implementation specific behaviour based
  *                on the session argument.
  *                Note: kss_session_open() must not be called concurrently from
@@ -982,8 +982,12 @@ kss_status_t kss_key_store_set_key(kss_key_store_t *keyStore,
     size_t optionsLen);
 
 /** @brief This function generates key[] in the destination key store. */
+/*
 kss_status_t kss_key_store_generate_key(
-    kss_key_store_t *keyStore, kss_object_t *keyObject, size_t keyBitLen, void *options);
+    kss_key_store_t *keyStore, kss_object_t *keyObject, size_t keyBitLen, size_t options);
+*/
+kss_status_t kss_key_store_generate_key(
+    kss_key_store_t *keyStore, kss_object_t *keyObject, size_t keyBitLen, size_t options, uint8_t *publicKey, size_t *pPublicKeyLen);
 
 kss_status_t kss_key_store_get_data(
     kss_key_store_t *keyStore, kss_object_t *keyObject, uint8_t *data, size_t *dataLen);
@@ -1188,10 +1192,9 @@ void kss_key_object_free(kss_object_t *keyObject);
  *  The function initializes symmetric context with initial values.
  *
  * @param context Pointer to symmetric crypto context.
- * @param session Associate SSS session with symmetric context.
- * @param keyObject Associate SSS key object with symmetric context.
+ * @param session Associate KSS session with symmetric context.
+ * @param keyObject Associate KSS key object with symmetric context.
  * @param algorithm One of the symmetric algorithms defined by @ref kss_algorithm_t.
- * @param mode One of the modes defined by @ref kss_mode_t.
  *
  * @returns Status of the operation
  * @retval #kStatus_KSS_Success The operation has completed successfully.
@@ -1201,8 +1204,39 @@ void kss_key_object_free(kss_object_t *keyObject);
 kss_status_t kss_symmetric_context_init(kss_symmetric_t *context,
     kss_session_t *session,
     kss_object_t *keyObject,
-    kss_algorithm_t algorithm,
-    kss_mode_t mode);
+    kss_algorithm_t algorithm);
+
+/** @brief Symmetric encrypt
+ * The function uses symmetric algorithm to encrypt data.
+ *
+ * @param context Pointer to symmetric context.
+ * @param srcData Input buffer
+ * @param srcLen Length of the input in bytes
+ * @param destData Output buffer
+ * @param destLen Length of the output in bytes
+ *
+ * @returns Status of the operation
+ * @retval #kStatus_KSS_Success The operation has completed successfully.
+ * @retval #kStatus_KSS_Fail The operation has failed.
+ * @retval #kStatus_KSS_InvalidArgument One of the arguments is invalid for the function to execute.
+ */
+kss_status_t kss_symmetric_encrypt(kss_symmetric_t *context, const uint8_t *srcData, size_t srcLen, uint8_t *destData, size_t *destLen);
+
+/** @brief Symmetric decrypt
+ * The function uses symmetric algorithm to decrypt data.
+ *
+ * @param context Pointer to symmetric context.
+ * @param srcData Input buffer
+ * @param srcLen Length of the input in bytes
+ * @param destData Output buffer
+ * @param destLen Length of the output in bytes
+ *
+ * @returns Status of the operation
+ * @retval #kStatus_KSS_Success The operation has completed successfully.
+ * @retval #kStatus_KSS_Fail The operation has failed.
+ * @retval #kStatus_KSS_InvalidArgument One of the arguments is invalid for the function to execute.
+ */
+kss_status_t kss_symmetric_decrypt(kss_symmetric_t *context, const uint8_t *srcData, size_t srcLen, uint8_t *destData, size_t *destLen);
 
 /** @brief Symmetric cipher in one blocking function call.
  *  The function blocks current thread until the operation completes or an error occurs.
@@ -1336,8 +1370,8 @@ void kss_symmetric_context_free(kss_symmetric_t *context);
  *  The function initializes aead context with initial values.
  *
  * @param context Pointer to aead crypto context.
- * @param session Associate SSS session with aead context.
- * @param keyObject Associate SSS key object with aead context.
+ * @param session Associate KSS session with aead context.
+ * @param keyObject Associate KSS key object with aead context.
  * @param algorithm One of the aead algorithms defined by @ref kss_algorithm_t.
  * @param mode One of the modes defined by @ref kss_mode_t.
  *
@@ -1487,7 +1521,7 @@ void kss_aead_context_free(kss_aead_t *context);
  *  The function initializes digest context with initial values.
  *
  * @param context Pointer to digest context.
- * @param session Associate SSS session with digest context.
+ * @param session Associate KSS session with digest context.
  * @param algorithm One of the digest algorithms defined by @ref kss_algorithm_t.
  * @param mode One of the modes defined by @ref kss_mode_t.
  *
@@ -1573,8 +1607,8 @@ void kss_digest_context_free(kss_digest_t *context);
  *  The function initializes mac context with initial values.
  *
  * @param context Pointer to mac context.
- * @param session Associate SSS session with mac context.
- * @param keyObject Associate SSS key object with mac context.
+ * @param session Associate KSS session with mac context.
+ * @param keyObject Associate KSS key object with mac context.
  * @param algorithm One of the mac algorithms defined by @ref kss_algorithm_t.
  * @param mode One of the modes defined by @ref kss_mode_t.
  *
@@ -1659,8 +1693,8 @@ void kss_mac_context_free(kss_mac_t *context);
  *  The function initializes asymmetric context with initial values.
  *
  * @param context Pointer to asymmetric crypto context.
- * @param session Associate SSS session with asymmetric context.
- * @param keyObject Associate SSS key object with asymmetric context.
+ * @param session Associate KSS session with asymmetric context.
+ * @param keyObject Associate KSS key object with asymmetric context.
  * @param algorithm One of the asymmetric algorithms defined by @ref kss_algorithm_t.
  * @param mode One of the modes defined by @ref kss_mode_t.
  *
@@ -1765,8 +1799,8 @@ void kss_asymmetric_context_free(kss_asymmetric_t *context);
  *  The function initializes derive key context with initial values.
  *
  * @param context Pointer to derive key context.
- * @param session Associate SSS session with the derive key context.
- * @param keyObject Associate SSS key object with the derive key context.
+ * @param session Associate KSS session with the derive key context.
+ * @param keyObject Associate KSS key object with the derive key context.
  * @param algorithm One of the derive key algorithms defined by @ref kss_algorithm_t.
  * @param mode One of the modes defined by @ref kss_mode_t.
  *

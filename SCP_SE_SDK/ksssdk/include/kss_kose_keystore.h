@@ -24,8 +24,6 @@ kss_status_t kss_kose_key_store_allocate(kss_kose_key_store_t *keyStore, uint32_
 
 void kss_kose_key_store_context_free(kss_kose_key_store_t *keyStore);
 
-void kss_kose_set_kss_keystore(kss_key_store_t *ksskeystore);
-
 /** @copydoc kss_key_store_get_data
  *
  */
@@ -51,3 +49,13 @@ kss_status_t kss_kose_key_store_set_key(kss_kose_key_store_t *keyStore,
     size_t keyBitLen,
     void *options,
     size_t optionsLen);
+
+/** @copydoc kss_key_store_generate_key
+ *
+ */
+
+kss_status_t kss_kose_key_store_generate_key(
+    kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, size_t keyBitLen, KOSE_GenerateKey_Option_t options);
+
+kss_status_t kss_kose_key_store_generate_key_getPublicKey(
+    kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, size_t keyBitLen, KOSE_GenerateKey_Option_t options, uint8_t *publicKey, size_t *pPublicKeyLen);

@@ -28,6 +28,11 @@
 #define ASN_TAG_CNT_SPECIFIC_PRIMITIVE 0x80
 #define ASN_TAG_CRL_EXTENSIONS 0xA0
 
+#define ECDSA_OK            0
+#define ECDSA_ERR_FORMAT   -1
+#define ECDSA_ERR_RANGE    -2
+#define ECDSA_ERR_LENGTH   -3
+
 extern const uint8_t grsa1kPubHeader[];
 extern const uint8_t grsa1152PubHeader[];
 extern const uint8_t grsa2kPubHeader[];
@@ -164,5 +169,9 @@ kss_status_t kss_util_openssl_write_pkcs12(const char *pkcs12_cert,
     long ref_key_length,
     const char *cert,
     long cert_length);
+
+int ecdsa_der_to_rs64(const uint8_t *der, size_t der_len, uint8_t out_rs64[64]);
+
+int rs64_to_der_minimal(const uint8_t rs[64], uint8_t der_out[72], size_t *der_len);
 
 #endif

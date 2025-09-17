@@ -428,7 +428,6 @@ bool smartcard_apdu(uint8_t *sndbuf, int sndlen, uint8_t *rcvbuf, int *rcvlen)
 	// 61/6c
 	if (ret) {
 		if (*rcvlen == 2) {
-			LOGD(TAG, "Get Response");
 			if (rcvbuf[*rcvlen - 2] == 0x61) {
 				uint8_t sndbuf2[] = "\x00\xc0\x00\x00\x00";
 				sndbuf2[0] = sndbuf[0];

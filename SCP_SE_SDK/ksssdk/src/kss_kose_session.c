@@ -22,7 +22,9 @@ extern "C" {
 #ifdef ESP_PLATFORM
 #include "kss_kose_uart.h"
 #endif
-
+#ifdef _LINUX_I2C_H_
+#include "i2c_dq1.h"
+#endif
 
 static const char *TAG = "kss_kose_session.c";
 
@@ -88,6 +90,15 @@ kss_status_t kss_kose_session_open(kss_kose_session_t *session,
     koseSession->fp_TXn = koseSession->conn_ctx;
 #endif
     }
+    else if (pAuthCtx->connType == kType_SE_Conn_Type_I2C) {
+        koseSession->i2c_addr = pAuthCtx->i2cAddress;
+        koseSession->connType = pAuthCtx->connType;
+#ifdef _LINUX_I2C_H_
+        koseSession->fp_TXn = &i2c_transaction_apdu;
+#else
+        koseSession->fp_TXn = koseSession->conn_ctx;
+#endif
+    }
 
     uint8_t rcvbuf[256] = {0};
     size_t rcvlen;
@@ -116,6 +127,9 @@ void kss_kose_session_close(kss_kose_session_t *session){
    kss_kose_uart_close();
 #endif  // CONNECT_SE_UART
 #endif  // ESP_PLATFORM
+#ifdef CONNECT_SE_I2C
+   kss_kose_i2c_close(session);
+#endif  // CONNECT_SE_UART
    memset(session, 0, sizeof(*session));
 }
 

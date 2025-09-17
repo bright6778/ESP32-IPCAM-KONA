@@ -5,11 +5,12 @@
  * Modifications Copyright 2025 KONA I
  */
 
-#ifndef KSS_APIS_INC_FSL_KSS_FTR_H_
-#define KSS_APIS_INC_FSL_KSS_FTR_H_
+#ifndef KSS_APIS_INC_KONA_KSS_FTR_H_
+#define KSS_APIS_INC_KONA_KSS_FTR_H_
 
 /* Define ALT functions. */
 #define MBEDTLS_ECP_ALT
+#define MBEDTLS_RSA_ALT
 
 /* ************************************************************************** */
 /* Defines                                                                    */
@@ -395,6 +396,9 @@
 /** KOSE Secure Element : Authenticate via ECKey */
 #define KSSFTR_KOSE_AuthECKey 0
 
+/** KOSE Secure Element : Symmetric DES */
+#define KSSFTR_KOSE_DES 1
+
 /** KOSE Secure Element : Allow creation of user/authenticated session.
  *
  * If the intended deployment only uses Platform SCP
@@ -478,7 +482,7 @@
 #define KSS_HAVE_ECC 1
 
 /* RSA is available */
-#define KSS_HAVE_RSA 0
+#define KSS_HAVE_RSA 1
 
 /* Edwards Curve is enabled */
 #define KSS_HAVE_EC_ED 1
@@ -623,4 +627,4 @@
 
 /* clang-format on */
 
-#endif /* KSS_APIS_INC_FSL_KSS_FTR_H_ */
+#endif /* KSS_APIS_INC_KONA_KSS_FTR_H_ */

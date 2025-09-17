@@ -33,7 +33,7 @@
 #include "kona_kss_debug.h"
 #include "tsm_sdk.h"
 #include "menu_define.h"
-//#include "kss_sdk_api_test.h"
+#include "kss_sdk_api_test.h"
 //#include "kona_se.h"
 
 ///////////////////////////////////////////////////////////////
@@ -355,24 +355,7 @@ void command_task(void *arg)
                     LOGI(TAG, "End %s", APDU_EXTERNAL_AUTHENTICATE);
                 }
                 else if (strcmp((char*)buf, APDU_STORE_DATA) == 0 || strcmp((char*)buf, APDU_STORE_DATA_NUM) == 0) {    // SE Command - STORE DATA
-                    LOGI(TAG, "Start %s", APDU_STORE_DATA);
-                    uint8_t objectData[] = {0x30, 0x82, 0x02, 0xC2, 0x30, 0x82, 0x01, 0xAA, 0xA0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x14, 0x41,
-                                        0xF7, 0x79, 0xBA, 0xE7, 0x28, 0xE1, 0xC3, 0x88, 0xA7, 0xFC, 0x28, 0x16, 0xAD, 0x64, 0x46, 0xF9,
-                                        0xF1, 0x15, 0x0B, 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0B,
-                                        0x05, 0x00, 0x30, 0x4D, 0x31, 0x4B, 0x30, 0x49, 0x06, 0x03, 0x55, 0x04, 0x0B, 0x0C, 0x42, 0x41,
-                                        0x6D, 0x61, 0x7A, 0x6F, 0x6E, 0x20, 0x57, 0x65, 0x62, 0x20, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
-                                        0x65, 0x73, 0x20, 0x4F, 0x3D, 0x41, 0x6D, 0x61, 0x7A, 0x6F, 0x6E, 0x2E, 0x63, 0x6F, 0x6D, 0x20,
-                                        0x49, 0x6E, 0x63, 0x2E, 0x20, 0x4C, 0x3D, 0x53, 0x65, 0x61, 0x74, 0x74, 0x6C, 0x65, 0x20, 0x53,
-                                        0x54, 0x3D, 0x57, 0x61, 0x73, 0x68, 0x69, 0x6E, 0x67, 0x74, 0x6F, 0x6E, 0x20, 0x43, 0x3D, 0x55,
-                                        0x53, 0x30, 0x1E, 0x17, 0x0D, 0x32, 0x35, 0x30, 0x35, 0x32, 0x36, 0x30, 0x32, 0x34, 0x35, 0x31,
-                                        0x30, 0x5A, 0x17, 0x0D, 0x34, 0x39, 0x31, 0x32, 0x33, 0x31, 0x32, 0x33, 0x35, 0x39, 0x35, 0x39,
-                                        0x5A, 0x30, 0x52, 0x31, 0x0B, 0x30, 0x09, 0x06, 0x03, 0x55, 0x04, 0x06, 0x13, 0x02, 0x4B, 0x52,
-                                        0x31, 0x13, 0x30, 0x11, 0x06, 0x03, 0x55, 0x04, 0x08, 0x0C, 0x0A, 0x53, 0x6F, 0x6D, 0x65, 0x2D,
-                                        0x53, 0x74, 0x61, 0x74, 0x65, 0x31, 0x0E, 0x30, 0x0C, 0x06, 0x03, 0x55, 0x04, 0x0A, 0x0C, 0x05,
-                                        0x4B, 0x6F, 0x6E, 0x61, 0x69, 0x31, 0x0E, 0x30, 0x0C, 0x06, 0x03, 0x55, 0x04, 0x0B, 0x0C, 0x05,
-                                        0x4B, 0x6F, 0x6E, 0x61, 0x69, 0x31, 0x0E, 0x30, 0x0C, 0x06, 0x03, 0x55, 0x04, 0x03, 0x0C, 0x05};
-                    Kose_API_StoreData(&kose_session->s_ctx, 0x0700, 0x001032, sizeof(objectData), 0x80, 0x00, objectData, sizeof(objectData));
-                    LOGI(TAG, "End %s", APDU_STORE_DATA);
+                    test_KOSE_API_StoreData();
                 }
                 else if (strcmp((char*)buf, APDU_PUT_KEY) == 0 || strcmp((char*)buf, APDU_PUT_KEY_NUM) == 0) {    // SE Command - PUT KEY
                     LOGI(TAG, "Start %s", APDU_PUT_KEY);
@@ -385,6 +368,12 @@ void command_task(void *arg)
                     Kose_API_EncryptData(&kose_session->s_ctx, 0x7788, kAlgorithm_KSS_AES_CBC, 
                         (uint8_t *)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 16, 
                         (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16, resbuf, &recLen);
+                    kss_debug_showframe("Encrypt Data", resbuf, recLen);
+
+                    Kose_API_EncryptData(&kose_session->s_ctx, 0x7788, kAlgorithm_KSS_AES_CBC, 
+                        (uint8_t *)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 16, 
+                        resbuf, recLen, resbuf, &recLen);
+                    kss_debug_showframe("Decrypt Data", resbuf, recLen);
                     LOGI(TAG, "End %s", APDU_ENCRYPT_DECRYPT_CDATA_ENC);
                 }
                 else if (strcmp((char*)buf, KEY_STORE_GET_DATA) == 0 || strcmp((char*)buf, KEY_STORE_GET_DATA_NUM) == 0) {    // kss_key_store_get_data
@@ -544,7 +533,10 @@ void command_task(void *arg)
                     LOGI(TAG, "End %s", KEY_STORE_DATA);
                 }
                 else if (strcmp((char*)buf, GENERATE_KEY) == 0 || strcmp((char*)buf, GENERATE_KEY_NUM) == 0) {    // kss_key_store_generate_key
-                    //test_kss_key_store_generate_key();
+                    test_kss_key_store_generate_key();
+                }
+                else if (strcmp((char*)buf, API_KSS_SYMMETRIC_ENCRYPT) == 0 || strcmp((char*)buf, API_KSS_SYMMETRIC_ENCRYPT_NUM) == 0) {    // kss_symmetric_encrypt
+                    test_kss_symmetric_encrypt();
                 }
                 else if (strcmp((char*)buf, RANDOM_GEN) == 0 || strcmp((char*)buf, RANDOM_GEN_NUM) == 0) {    // kss_kose_rng
                     LOGI(TAG, "Start %s", RANDOM_GEN);

@@ -16,7 +16,9 @@ extern "C" {
 #include "ensure.h"
 #include "kona_kss_util_asn1_der.h"
 #include "kona_kss_policy.h"
+#if KSS_HAVE_HOSTCRYPTO_MBEDTLS
 #include "ecdsa_verify_alt.h"
+#endif
 #include "kss_kose_keystore.h"
 #include "kona_kss_debug.h"
 
@@ -80,6 +82,9 @@ static const char *TAG = "kss_kose_keystore.c";
 
 #define CONVERT_BYTE(x) ((x) / 8)
 #define CONVERT_BIT(x) ((x)*8)
+
+/* Used for KSS object init */
+static kss_key_store_t *ecdsa_verify_ksskeystore = NULL;
 
 void add_ecc_header(uint8_t *key, size_t *keylen, uint8_t **key_buf, size_t *key_buflen, uint32_t curve_id)
 {
@@ -268,10 +273,12 @@ kss_status_t kss_kose_key_store_allocate(kss_kose_key_store_t *keyStore, uint32_
     return kStatus_KSS_Success;
 }
 
+#if KSS_HAVE_HOSTCRYPTO_MBEDTLS
 void kss_kose_set_kss_keystore(kss_key_store_t *ksskeystore)
 {
     kss_mbedtls_set_kss_keystore(ksskeystore);
 }
+#endif  //KSS_HAVE_HOSTCRYPTO_MBEDTLS
 
 void kss_kose_key_store_context_free(kss_kose_key_store_t *keyStore)
 {
@@ -426,7 +433,222 @@ exit:
     return retval;
 }
 
+kss_status_t kss_kose_key_store_generate_key(
+    kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, size_t keyBitLen, KOSE_GenerateKey_Option_t options)
+{
+    kss_status_t retval     = kStatus_KSS_Fail;
+    smStatus_t status       = SM_NOT_OK;
+
+    uint8_t publicKey[65] = {0x00};
+    size_t pPublicKeyLen = 0;
+
+    switch (options) {
+#if KSSFTR_KOSE_ECC
+    case kKOSE_Generate_ECC_Keypair:
+    {
+        ENSURE_OR_GO_EXIT(keyBitLen == 256);
+        status = Kose_API_GenerateKey_OnlyGenKey(&keyStore->session->s_ctx, 0x01, 0x00, &keyObject->keyId, keyObject->acl);
+        if(status != SM_OK){
+            LOGE(TAG, "return : 0x%X", status);
+        }
+        break;
+    }
+        /*
+        status = Kose_API_GenerateKey(&kose_session->s_ctx, 0x01, 0x01, 0x0102, 0x001032, 
+            (uint8_t *)"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01",
+            sig, &sig_len, publickey, &pub_len, objectId, &objectId_len);
+
+        retval = kss_kose_key_store_generate_key(
+            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
+        if (kssStatus != kStatus_KSS_Success) {
+            retval = kssStatus;
+            goto exit;
+        }*/
+        // break;
+#endif // KSSFTR_KOSE_ECC
+#if KSSFTR_KOSE_AES
+    case kKOSE_Generate_AES_Symmetric:
+    {
+        LOGD(TAG, "kKOSE_Generate_AES_Symmetric");
+        ENSURE_OR_GO_EXIT(keyBitLen == 128);
+        status = Kose_API_GenerateKey_OnlyGenKey(&keyStore->session->s_ctx, 0xD2, 0x00, &keyObject->keyId, keyObject->acl);
+        if(status != SM_OK){
+            LOGE(TAG, "return : 0x%X", status);
+        }
+        break;
+    }
+#endif // KSSFTR_KOSE_AES
+#if KSSFTR_KOSE_DES
+    case kKOSE_Generate_DES_Symmetric:
+    {
+        LOGD(TAG, "kKOSE_Generate_DES_Symmetric");
+        ENSURE_OR_GO_EXIT(keyBitLen == 128);
+        status = Kose_API_GenerateKey_OnlyGenKey(&keyStore->session->s_ctx, 0xD2, 0x01, &keyObject->keyId, keyObject->acl);
+        if(status != SM_OK){
+            LOGE(TAG, "return : 0x%X", status);
+        }
+        break;
+    }
+#endif // KSSFTR_KOSE_DES           
+    default:
+        goto exit;
+    }
+
+    if (status == SM_ERR_APDU_THROUGHPUT) {
+        retval = kStatus_KSS_ApduThroughputError;
+        goto exit;
+    }
+    ENSURE_OR_GO_EXIT(status == SM_OK);
+
+    retval = kStatus_KSS_Success;
+
+exit:
+    return retval;
+}
+
+kss_status_t kss_kose_key_store_generate_key_getPublicKey(
+    kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, size_t keyBitLen, KOSE_GenerateKey_Option_t options, uint8_t *publicKey, size_t *pPublicKeyLen)
+{
+    kss_status_t retval     = kStatus_KSS_Fail;
+    smStatus_t status       = SM_NOT_OK;
+
+    switch (options) {
+#if KSSFTR_KOSE_ECC
+    case kKOSE_Generate_ECC_Keypair:
+    {
+        ENSURE_OR_GO_EXIT(keyBitLen == 256);
+        //status = Kose_API_GenerateKey_OnlyGenKey(&keyStore->session->s_ctx, 0x01, 0x00, &keyObject->keyId, keyObject->acl);
+        status = Kose_API_GenerateKey(&keyStore->session->s_ctx, 0x01, 0x00, &keyObject->keyId, keyObject->acl, publicKey, pPublicKeyLen);
+        if(status != SM_OK){
+            LOGE(TAG, "return : 0x%X", status);
+        }
+        break;
+    }
+        /*
+        status = Kose_API_GenerateKey(&kose_session->s_ctx, 0x01, 0x01, 0x0102, 0x001032, 
+            (uint8_t *)"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01",
+            sig, &sig_len, publickey, &pub_len, objectId, &objectId_len);
+
+        retval = kss_kose_key_store_generate_key(
+            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
+        if (kssStatus != kStatus_KSS_Success) {
+            retval = kssStatus;
+            goto exit;
+        }*/
+        // break;
+#endif // KSSFTR_KOSE_ECC
+/*
+#if KSSFTR_KOSE_AES
+    case kKOSE_Generate_AES_Symmetric:
+    {
+        LOGD(TAG, "kKOSE_Generate_AES_Symmetric");
+        ENSURE_OR_GO_EXIT(keyBitLen == 128);
+        status = Kose_API_GenerateKey_OnlyGenKey(&keyStore->session->s_ctx, 0xD2, 0x00, &keyObject->keyId, keyObject->acl);
+        if(status != SM_OK){
+            LOGE(TAG, "return : 0x%X", status);
+        }
+        break;
+    }
+#endif // KSSFTR_KOSE_AES
+#if KSSFTR_KOSE_DES
+    case kKOSE_Generate_DES_Symmetric:
+    {
+        LOGD(TAG, "kKOSE_Generate_DES_Symmetric");
+        ENSURE_OR_GO_EXIT(keyBitLen == 128);
+        status = Kose_API_GenerateKey_OnlyGenKey(&keyStore->session->s_ctx, 0xD2, 0x01, &keyObject->keyId, keyObject->acl);
+        if(status != SM_OK){
+            LOGE(TAG, "return : 0x%X", status);
+        }
+        break;
+    }
+#endif // KSSFTR_KOSE_DES           
+*/
+    default:
+        goto exit;
+    }
+
+    if (status == SM_ERR_APDU_THROUGHPUT) {
+        retval = kStatus_KSS_ApduThroughputError;
+        goto exit;
+    }
+    ENSURE_OR_GO_EXIT(status == SM_OK);
+
+    retval = kStatus_KSS_Success;
+
+exit:
+    return retval;
+}
+
+
 #if 0 
+kss_status_t kss_kose_key_generate(kss_kose_session_t *session,
+    kss_type_t subsystem,
+    uint32_t application_id,
+    kss_connection_type_t connection_type,
+    void *connectionData)
+{
+    LOGD(TAG, "kss_kose_key_generate start");
+    kss_status_t retval           = kStatus_KSS_Fail;
+    kss_cipher_type_t cipher_type = kKSS_CipherType_NONE;
+    smStatus_t status             = SM_NOT_OK;
+    uint8_t p1                    = 0x00;
+    uint8_t p2                    = 0x00;
+    size_t currentDataLen         = 0x00;
+    size_t maxBlock               = 0x00;
+    size_t dataOffset             = 0x00;
+    size_t totalDataLen           = dataLen;
+
+    ENSURE_OR_GO_EXIT(keyObject);
+    ENSURE_OR_GO_EXIT(data);
+    ENSURE_OR_GO_EXIT(dataLen);
+
+    ENSURE_OR_RETURN_ON_ERROR(session, kStatus_KSS_Fail);
+    koseSession = &session->s_ctx;
+    memset(session, 0, sizeof(*session));
+    
+    pAuthCtx = (SE_Connect_Ctx_t *)connectionData;
+    if (pAuthCtx->connType == kType_SE_Conn_Type_UART) {
+        koseSession->conn_ctx = pAuthCtx->conn_ctx;
+        koseSession->connType = pAuthCtx->connType;
+#ifdef ESP_PLATFORM
+        if(koseSession->conn_ctx == NULL){
+            LOGD(TAG, "conn_ctx == NULL");
+            koseSession->conn_ctx = calloc(1, sizeof(kss_kose_uart_ctx_t));
+            set_se_uart_init_default(koseSession->conn_ctx);
+        }
+        if(kss_kose_uart_init(koseSession->conn_ctx) == false){
+            retval = kStatus_KSS_Fail;
+            return retval;
+        }
+        koseSession->fp_TXn = &kss_kose_TXn;
+#else
+    koseSession->fp_TXn = koseSession->conn_ctx;
+#endif
+    }
+
+    uint8_t rcvbuf[256] = {0};
+    size_t rcvlen;
+
+    status = Kose_API_Select(koseSession, rcvbuf, &rcvlen);
+    if (status == SM_OK) {
+        session->subsystem = subsystem;
+        retval             = kStatus_KSS_Success;
+    }
+    else {
+        /* Retain the APDU throughput error. Any other error, pass generic kStatus_KSS_Fail */
+        if (retval != kStatus_KSS_ApduThroughputError) {
+            retval = kStatus_KSS_Fail;
+        }
+    }
+
+    if (retval != kStatus_KSS_Success) {
+        memset(koseSession, 0x00, sizeof(*koseSession));
+    }
+
+    return retval;
+}
+
+
 static kss_status_t kss_kose_key_store_set_ecc_public_key(kss_kose_key_store_t *keyStore,
     kss_kose_object_t *keyObject,
     const uint8_t *key,
@@ -658,8 +880,39 @@ static kss_status_t kss_kose_key_store_set_ecc_key(kss_kose_key_store_t *keyStor
     kss_status_t retval     = kStatus_KSS_Fail;
     smStatus_t status       = SM_NOT_OK;
 
+    LOGD(TAG, "keyBitLen : %zu", keyBitLen);
+    ENSURE_OR_GO_EXIT(keyBitLen == 256 || keyBitLen == 512);
+
     status = Kose_API_PutKey(&keyStore->session->s_ctx, keyObject->keyId, keyObject->acl, key, keyLen);
 
+    if (status == SM_ERR_APDU_THROUGHPUT) {
+        retval = kStatus_KSS_ApduThroughputError;
+        goto exit;
+    }
+    ENSURE_OR_GO_EXIT(status == SM_OK);
+
+    retval = kStatus_KSS_Success;
+
+exit:
+    return retval;
+}
+
+static kss_status_t kss_kose_key_store_set_symmetric_key(kss_kose_key_store_t *keyStore,
+    kss_kose_object_t *keyObject,
+    const uint8_t *key,
+    size_t keyLen,
+    size_t keyBitLen,
+    void *policy_buff,
+    size_t policy_buff_len)
+{
+    kss_status_t retval     = kStatus_KSS_Fail;
+    smStatus_t status       = SM_NOT_OK;
+
+    LOGD(TAG, "keyBitLen : %zu", keyBitLen);
+    ENSURE_OR_GO_EXIT(keyBitLen == 128 || keyBitLen == 256);
+
+    status = Kose_API_PutKey(&keyStore->session->s_ctx, keyObject->keyId, keyObject->acl, key, keyLen);
+    
     if (status == SM_ERR_APDU_THROUGHPUT) {
         retval = kStatus_KSS_ApduThroughputError;
         goto exit;
@@ -700,9 +953,6 @@ kss_status_t kss_kose_key_store_set_key(kss_kose_key_store_t *keyStore,
     cipher_type = (kss_cipher_type_t)keyObject->cipherType;
     ppolicySet = NULL;
 
-    LOGD(TAG, "keyBitLen : %zu", keyBitLen);
-    ENSURE_OR_GO_EXIT(keyBitLen == 256);
-
     switch (cipher_type) {
 #if KSSFTR_KOSE_ECC
     case kKSS_CipherType_EC_NIST_P:
@@ -726,6 +976,16 @@ kss_status_t kss_kose_key_store_set_key(kss_kose_key_store_t *keyStore,
         }
         break;
 #endif // KSSFTR_KOSE_ECC
+#if KSSFTR_KOSE_AES
+    case kKSS_CipherType_AES:
+        kssStatus = kss_kose_key_store_set_symmetric_key(
+            keyStore, keyObject, key, keyLen, keyBitLen, ppolicySet, valid_policy_buff_len);
+        if (kssStatus != kStatus_KSS_Success) {
+            retval = kssStatus;
+            goto exit;
+        }
+        break;
+#endif
     default:
         goto exit;
     }
@@ -734,6 +994,8 @@ exit:
 #endif /* KSSFTR_KOSE_KEY_SET */
     return retval;
 }
+
+
 
 #ifdef __cplusplus
 }

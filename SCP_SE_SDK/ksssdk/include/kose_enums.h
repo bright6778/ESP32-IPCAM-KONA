@@ -39,38 +39,6 @@ typedef enum
     kKOSE_INS_ENCRYPT_DECRYPT_CDATA = 0xB0,
     /** INS Generate Key */
     kKOSE_INS_GENERATE_KEY = 0x46,
-    // 여기 아래는 삭제할지 고민중 - uc.nam
-    /** INS Read Binary */
-    kKOSE_INS_READ_BINARY = 0xB0,
-    /** INS Update Binary */
-    kKOSE_INS_UPDATE_BINARY = 0xD6,
-    /** INS Configure access control */
-    kKOSE_INS_CONFIGURE_ACCESS_CTRL = 0x41,
-    /** INS Manage read counter */
-    kKOSE_INS_MANAGE_READ_CTR = 0x42,
-
-    /** 3 MSBit for instruction characteristics. */
-    kKOSE_INS_MASK_INS_CHAR = 0xE0,
-    /** 5 LSBit for instruction */
-    kKOSE_INS_MASK_INSTRUCTION = 0x1F,
-
-    /** Mask for transient object creation, can only be combined with INS_WRITE. */
-    kKOSE_INS_TRANSIENT = 0x80,
-    /** Mask for authentication object creation, can only be combined with INS_WRITE */
-    kKOSE_INS_AUTH_OBJECT = 0x40,
-    /** Mask for getting attestation data. */
-    kKOSE_INS_ATTEST = 0x20,
-
-    /** Write or create a persistent object. */
-    kKOSE_INS_WRITE = 0x01,
-    /** Read the object */
-    kKOSE_INS_READ = 0x02,
-    /** Perform Security Operation */
-    kKOSE_INS_CRYPTO = 0x03,
-    /** General operation */
-    kKOSE_INS_MGMT = 0x04,
-    /** Process session command */
-    kKOSE_INS_PROCESS = 0x05,
 } KOSE_INS_t;
 
 /** Values for P1 in ISO7816 APDU */
@@ -100,9 +68,8 @@ typedef enum
 
     /** Encrypt/Decrypt CDATA P1 */
     kKOSE_P1_ENCRYPT = 0x01,
-
-
-
+    kKOSE_P1_DECRYPT = 0x02,
+    
     /** Key pair (private key + public key) */
     kKOSE_P1_KEY_PAIR = 0x60,
     /** Private key */
@@ -224,6 +191,12 @@ typedef enum
     kKOSE_P2_ECPM = 0x62
 #endif
 } KOSE_P2_t;
+
+/* Object ID length */
+#define KOSE_OBJECT_ID_LENGTH 2
+
+/* Access Control List length */
+#define KOSE_ACL_LENGTH 3
 
 #if 1
 //#include <Applet_SE050_Ver.h>
@@ -1153,7 +1126,6 @@ typedef enum
 typedef enum
 {
     kKOSE_TransientType_Persistent = 0,
-    kKOSE_TransientType_Transient = kKOSE_INS_TRANSIENT,
 } KOSE_TransientType_t;
 
 /** Part of the asymmetric key */
@@ -1342,6 +1314,17 @@ typedef uint16_t KOSE_MaxAttemps_t;
 #define KOSE_RSA_NO_pubMod /* Skip */ NULL, 0
 #endif // __DOXYGEN__
 
+/** Crypto object identifiers */
+typedef enum
+{
+    /** Invalid */
+    kKOSE_Generate_ECC_Keypair = 0,
+    kKOSE_Generate_RSA_Keypair,
+    kKOSE_Generate_ECC_Keypair_Sign,
+    kKOSE_Generate_RSA_Keypair_Sign,
+    kKOSE_Generate_AES_Symmetric,
+    kKOSE_Generate_DES_Symmetric,
+} KOSE_GenerateKey_Option_t;
 
 /*!
 *@}

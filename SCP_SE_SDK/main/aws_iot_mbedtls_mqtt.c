@@ -44,12 +44,17 @@ const int sdk_recommended_ciphersuites[] = {
 /*The size of the client certificate should be checked when script is used to store it in GP storage and updated here */
 #define SIZE_CLIENT_CERTIFICATE 2048
 #ifdef ESP_PLATFORM
+#ifdef AWS_CA_CERT_ECC
 extern const char root_cert_auth_ecc_start[]   asm("_binary_root_cert_auth_ecc_crt_start");
 extern const char root_cert_auth_ecc_end[]   asm("_binary_root_cert_auth_ecc_crt_end");
 #else
+extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
+extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
+#endif  //AWS_CA_CERT_ECC
+#else
 unsigned char *root_cert_auth_ecc_start = NULL;
 unsigned char *root_cert_auth_ecc_end   = NULL;
-#endif
+#endif  //ESP_PLATFORM
 extern void *se_key_object;                        // SE 핸들
 
 void my_debug(void *ctx, int level,
@@ -208,13 +213,20 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     mbedtls_pk_init(&client_key);
 
     // mbedtls debug setting
-    //mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
-    //mbedtls_debug_set_threshold(4);
+    mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
+    mbedtls_debug_set_threshold(4);
 #ifndef ESP_PLATFORM
+#ifdef AWS_CA_CERT_ECC
     if(load_cert_to_buffer("./certs/root_cert_auth_ecc.crt", &root_cert_auth_ecc_start, &root_cert_auth_ecc_end) != 0){
         printf("load_cert_to_buffer failed\n");
         return;
     }
+#else
+    if(load_cert_to_buffer("./certs/root_cert_auth.crt", &root_cert_auth_start, &root_cert_auth_end) != 0){
+        printf("load_cert_to_buffer failed\n");
+        return;
+    }
+#endif //AWS_CA_CERT_ECC
     null_size = 1;
 #endif
 #ifndef MBEDTLS_RANDOM_USE_SE
@@ -358,15 +370,11 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         LOGE(TAG, "kss_mbedtls_verify_sign failed");
         return;
     }
-    #ifdef MBEDTLS_ALLOW_PRIVATE_ACCESS
-        LOGD(TAG, "MBEDTLS_ALLOW_PRIVATE_ACCESS 상태 체크 ===");    
-    #endif
-
+    
     // SE 서명 기능
     if(kss_mbedtls_sign(&client_key, &dev_priv) != 0){    // kss_mbedtls_sign
         LOGE(TAG, "kss_mbedtls_sign failed");
     }
-
 #endif
    
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);

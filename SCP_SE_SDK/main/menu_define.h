@@ -33,6 +33,8 @@
 #define EXCHANGE_SERVICE_DATA       "exchange_service_data"
 #define DELETE_APPLET               "delete_applet"
 #define GSMCALLBACKRESPONSE         "gsmcallbackresponse"
+#define API_KSS_SYMMETRIC_ENCRYPT   "kss_symmetric_encrypt"
+#define API_KSS_SYMMETRIC_DECRYPT   "kss_symmetric_decrypt"
 
 /** Select number of menu */
 #define REBOOT_NUM                          "0.0"
@@ -55,6 +57,8 @@
 #define KEY_STORE_SET_KEY_NUM               "4.2"
 #define KEY_STORE_DATA_NUM                  "4.3"
 #define GENERATE_KEY_NUM                    "4.4"
+#define API_KSS_SYMMETRIC_ENCRYPT_NUM       "4.5"
+#define API_KSS_SYMMETRIC_DECRYPT_NUM       "4.6"
 #define RANDOM_GEN_NUM                      "5.1"
 #define MBEDTLS_VERIFY_SIGN_NUM             "9.1"
 #define SE_PROVISIONING_NUM                 "10.1"
