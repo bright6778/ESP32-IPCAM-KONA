@@ -25,6 +25,8 @@ set(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/ksssdk"
     target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/root_cert_auth_ecc.crt" TEXT)
     target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/client.crt" TEXT)
     target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/client.key" TEXT)
+    target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/client_rsa.crt" TEXT)
+    target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/client_rsa.key" TEXT)
 else()  # 일반 CMake 환경이면
     message(STATUS "일반 CMake 환경으로 인식됨")
 

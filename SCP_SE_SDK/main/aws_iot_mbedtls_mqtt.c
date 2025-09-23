@@ -23,6 +23,7 @@
 //#define ONLY_MBEDTLS_TEST         // no use SE keypair
 #define AWS_CA_CERT_ECC
 #define MBEDTLS_RANDOM_USE_SE       // SE에서 Random을 생성.
+#define DEVICE_KEY_ALG_ECC          // Device 인증서 알고리즘이 ECC일 경우 활성화.
 
 #define AWS_IOT_PORT     "8883"
 
@@ -45,15 +46,30 @@ const int sdk_recommended_ciphersuites[] = {
 #define SIZE_CLIENT_CERTIFICATE 2048
 #ifdef ESP_PLATFORM
 #ifdef AWS_CA_CERT_ECC
-extern const char root_cert_auth_ecc_start[]   asm("_binary_root_cert_auth_ecc_crt_start");
-extern const char root_cert_auth_ecc_end[]   asm("_binary_root_cert_auth_ecc_crt_end");
-#else
-extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
-extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
+extern const unsigned char root_cert_auth_ecc_start[]   asm("_binary_root_cert_auth_ecc_crt_start");
+extern const unsigned char root_cert_auth_ecc_end[]   asm("_binary_root_cert_auth_ecc_crt_end");
+#else   // AWS_CA_CERT_ECC
+extern const unsigned char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
+extern const unsigned char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
 #endif  //AWS_CA_CERT_ECC
-#else
-unsigned char *root_cert_auth_ecc_start = NULL;
-unsigned char *root_cert_auth_ecc_end   = NULL;
+#ifdef DEVICE_KEY_ALG_ECC
+extern const unsigned char client_cert_start[]   asm("_binary_client_crt_start");
+extern const unsigned char client_cert_end[]   asm("_binary_client_crt_end");
+extern const unsigned char client_key_start[]   asm("_binary_client_key_start");
+extern const unsigned char client_key_end[]   asm("_binary_client_key_end");
+#else   // DEVICE_KEY_ALG_ECC
+extern const unsigned char client_cert_start[]   asm("_binary_client_rsa_crt_start");
+extern const unsigned char client_cert_end[]   asm("_binary_client_rsa_crt_end");
+extern const unsigned char client_key_start[]   asm("_binary_client_rsa_key_start");
+extern const unsigned char client_key_end[]   asm("_binary_client_rsa_key_end");
+#endif  // DEVICE_KEY_ALG_ECC
+#else   // ESP_PLATFORM
+extern unsigned char *root_cert_auth_ecc_start = NULL;
+extern unsigned char *root_cert_auth_ecc_end   = NULL;
+extern unsigned char *client_cert_start = NULL;
+extern unsigned char *client_cert_end   = NULL;
+extern unsigned char *client_key_start = NULL;
+extern unsigned char *client_key_end   = NULL;
 #endif  //ESP_PLATFORM
 extern void *se_key_object;                        // SE 핸들
 
@@ -132,7 +148,7 @@ int mqtt_send_publish(mbedtls_ssl_context *ssl, const char *topic, const char *p
 
     return mbedtls_ssl_write(ssl, buf, len);
 }
-
+/*
 int mqtt_read_response(mbedtls_ssl_context *ssl)
 {
     unsigned char buf[512];
@@ -148,6 +164,31 @@ int mqtt_read_response(mbedtls_ssl_context *ssl)
                 LOGI(TAG, "[MQTT] CONNACK: Connection Accepted");
             } else {
                 LOGE(TAG, "[MQTT] CONNACK: Connection Refused Reason Code: 0x%02X\n", buf[3]);
+            }
+        }
+
+        return ret;
+    } else if (ret == 0) {
+        LOGI(TAG, "[MQTT] Connection closed by broker.");
+    } else {
+        char err_buf[128];
+        mbedtls_strerror(ret, err_buf, sizeof(err_buf));
+        LOGE(TAG, "[MQTT] Read error: -0x%04X - %s\n", -ret, err_buf);
+    }
+
+    return ret;
+}
+*/
+int mqtt_read_response(mbedtls_ssl_context *ssl, unsigned char* rstbuf, size_t maxLen)
+{
+    int ret = mbedtls_ssl_read(ssl, rstbuf, maxLen);
+
+    if (ret > 0) {
+        if (rstbuf[0] == 0x20 && ret >= 4) {
+            if (rstbuf[3] == 0x00) {
+                LOGI(TAG, "[MQTT] CONNACK: Connection Accepted");
+            } else {
+                LOGE(TAG, "[MQTT] CONNACK: Connection Refused Reason Code: 0x%02X\n", rstbuf[3]);
             }
         }
 
@@ -215,6 +256,15 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     // mbedtls debug setting
     mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
     mbedtls_debug_set_threshold(4);
+
+    uint32_t device_privkey_id = 0;
+
+#ifdef DEVICE_KEY_ALG_ECC
+    device_privkey_id = 0x0100;
+#else
+    device_privkey_id = 0x0B00;
+#endif  // DEVICE_KEY_ALG_ECC
+
 #ifndef ESP_PLATFORM
 #ifdef AWS_CA_CERT_ECC
     if(load_cert_to_buffer("./certs/root_cert_auth_ecc.crt", &root_cert_auth_ecc_start, &root_cert_auth_ecc_end) != 0){
@@ -272,17 +322,19 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
-    kss_status = kss_key_object_get_handle(&dev_priv, 0x0100);
+    kss_status = kss_key_object_get_handle(&dev_priv, device_privkey_id);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
         return;
     }
 #ifdef ONLY_MBEDTLS_TEST
-#ifdef ONLY_MBEDTLS_TEST_CERTFILE
-    //only test
+#ifndef MBEDTLS_RANDOM_USE_SE
     ret = mbedtls_pk_parse_key(&client_key, (const unsigned char *)client_key_start, client_key_end - client_key_start, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
-#endif // ONLY_MBEDTLS_TEST_CERTFILE
+#else   // MBEDTLS_RANDOM_USE_SE
+    ret = mbedtls_pk_parse_key(&client_key, (const unsigned char *)client_key_start, client_key_end - client_key_start, NULL, 0, kss_mbedtls_se_random, &rng_ctx);
+#endif  // MBEDTLS_RANDOM_USE_SE
 #endif // ONLY_MBEDTLS_TEST
+
     ////////////////////////////////////////////////////////////////////////
     //////////////////// device public key handle //////////////////////////
     ////////////////////////////////////////////////////////////////////////
@@ -301,8 +353,15 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 
     
 #ifdef ONLY_MBEDTLS_TEST_CERTFILE
+#ifdef ESP_PLATFORM
     ret = mbedtls_x509_crt_parse(&client_cert, (const unsigned char *)client_cert_start, (client_cert_end - client_cert_start));    //저장된 cert 사용 시
-#else
+#else   // ESP_PLATFORM
+    if(load_cert_to_buffer("./certs/client.crt", &client_cert_start, &client_cert_end) != 0){
+        printf("load_cert_to_buffer failed\n");
+        return;
+    }
+#endif  // ESP_PLATFORM
+#else   // ONLY_MBEDTLS_TEST_CERTFILE
     ////////////////////////////////////////////////////////////////////////
     //////////////////////// device cert handle ////////////////////////////
     ////////////////////////////////////////////////////////////////////////
@@ -313,7 +372,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
-    kss_status = kss_key_object_get_handle(&dev_cert, 0x0700);
+    kss_status = kss_key_object_get_handle(&dev_cert, 0x0701);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
         return;
@@ -423,11 +482,14 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         LOGI(TAG, "mqtt_send_connect success! Wrote %d bytes\n", ret);
     }
 
-    ret = mqtt_read_response(&ssl);
+    //ret = mqtt_read_response(&ssl);
+    unsigned char rst_buf[256] ={0,};
+    ret = mqtt_read_response(&ssl, rst_buf, sizeof(rst_buf));
     if (ret < 0) {
         mbedtls_strerror(ret, err_buf, sizeof(err_buf));
         LOGE(TAG, "mqtt_read_response failed: -0x%04X - %s\n", -ret, err_buf);
     } else {
+        kss_debug_showframe(TAG, rst_buf, ret);
         LOGI(TAG, "mqtt_read_response success! Wrote %d bytes\n", ret);
     }
     
