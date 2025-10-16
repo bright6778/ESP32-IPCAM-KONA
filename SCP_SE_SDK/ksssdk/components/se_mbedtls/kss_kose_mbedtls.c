@@ -297,34 +297,13 @@ int kss_mbedtls_verify_sign(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
             LOGE(TAG, "Memory allocation for pax_ctx failed");
             goto cleanup;
         }
-
+        
+        ((mbedtls_rsa_context *)pax_ctx)->pKSSObject = pkeyObject;
+        
         if (pax_ctx == NULL) {
             return 1;
         }
-
-        if (status != kStatus_KSS_Success) {
-            //status = kss_key_store_get_key(pkeyObject->keyStore, pkeyObject, pbKey, &pbKeyBytetLen, &pbKeyBitLen);
-            goto cleanup;
-        }
-
-        //status = kss_util_asn1_rsa_parse_public(pbKey, pbKeyBytetLen, &modulus, &modlen, &pubExp, &pubExplen);
-        if (modulus != NULL) {
-            free(modulus);
-            modulus = NULL;
-        }
-        if (pubExp != NULL) {
-            free(pubExp);
-            pubExp = NULL;
-        }
-        if (status != kStatus_KSS_Success) {
-            goto cleanup;
-        }
-
-        if ((SIZE_MAX / 8) < modlen) {
-            goto cleanup;
-        }
-            
-        ((mbedtls_rsa_context *)pax_ctx)->len = (modlen * 8);
+        ((mbedtls_rsa_context *)pax_ctx)->len = 2048;
     }
     else {
         goto cleanup;
@@ -401,6 +380,30 @@ int kss_mbedtls_sign(mbedtls_pk_context *pkey, kss_object_t *pkeyObject)
         }
 
     }
+#ifdef MBEDTLS_RSA_ALT
+    else if (pkeyObject->cipherType == kKSS_CipherType_RSA || pkeyObject->cipherType == kKSS_CipherType_RSA_CRT) {
+        uint8_t pbKey[1024]  = {0};
+        size_t pbKeyBitLen   = 0;
+        size_t pbKeyBytetLen = sizeof(pbKey);
+        uint8_t *modulus     = NULL;
+        size_t modlen        = 0;
+        uint8_t *pubExp      = NULL;
+        size_t pubExplen     = 0;
+
+        pkey->pk_info = &kose_mbedtls_rsakeypair_info;
+        if (pkey->pk_ctx == NULL) {
+            pax_ctx = (mbedtls_rsa_context *)mbedtls_calloc(1, sizeof(mbedtls_rsa_context));
+        }
+        else {
+            pax_ctx = pkey->pk_ctx;
+        }
+        if (pax_ctx == NULL) {
+            LOGE(TAG, "Memory allocation for pax_ctx failed");
+            goto cleanup;
+        }
+        ((mbedtls_rsa_context *)pax_ctx)->pKSSObject = pkeyObject;
+    }
+#endif /* MBEDTLS_RSA_ALT */
     else {
         goto cleanup;
     }

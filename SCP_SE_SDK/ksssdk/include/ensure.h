@@ -40,6 +40,7 @@
  */
 #ifndef NX_ENSURE_DO_LOG_MESSAGE
 #define NX_ENSURE_DO_LOG_MESSAGE 1
+#include "kona_kss_debug.h"
 #endif /* NX_ENSURE_DO_LOG_MESSAGE */
 
 /**

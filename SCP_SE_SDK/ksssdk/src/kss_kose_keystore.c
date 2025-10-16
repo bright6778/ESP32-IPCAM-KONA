@@ -310,6 +310,10 @@ kss_status_t kss_kose_key_store_get_data(
 #if KSS_HAVE_EC_ED
     case kKSS_CipherType_EC_TWISTED_ED:
 #endif
+#if KSS_HAVE_RSA
+    case kKSS_CipherType_RSA_CRT:
+    case kKSS_CipherType_RSA:
+#endif
     {
         /* Return the Key length including the ECC DER Header */
         /*

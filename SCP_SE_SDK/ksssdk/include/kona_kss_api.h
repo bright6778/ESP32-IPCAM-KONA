@@ -17,7 +17,10 @@
 #include <stdio.h>
 
 /** Version of the KSS API */
-#define KSS_API_VERSION (0x00000001u)
+#define KOSE_SDK_VERSION_MAJOR    1
+#define KOSE_SDK_VERSION_MINOR    1
+#define KOSE_SDK_VERSION_PATCH    0
+#define KOSE_SDK_VERSION_STRING   STR(KOSE_SDK_VERSION_MAJOR) "." STR(KOSE_SDK_VERSION_MINOR) "." STR(KOSE_SDK_VERSION_PATCH)
 
 /** Size of an AES Block, in bytes */
 #define KSS_AES_BLOCK_SIZE (16u)

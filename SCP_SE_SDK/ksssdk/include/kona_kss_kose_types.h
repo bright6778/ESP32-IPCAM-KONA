@@ -16,7 +16,7 @@
 #include "kona_kss_api.h"
 #include "kose_enums.h"
 
-#include "scp03_Types.h"
+#include "koScp_Types.h"
 #include "kose_const.h"
 #include "sm_api.h"
 

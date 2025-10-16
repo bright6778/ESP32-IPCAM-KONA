@@ -16,7 +16,7 @@ extern "C" {
 #include "kose_tlv.h"
 #include "ensure.h"
 #include "kona_kss_debug.h"
-#include "scp03_Types.h"
+#include "koScp_Types.h"
 #include "kona_kss_ftr_default.h"
 #include "kss_kose_session.h"
 #ifdef ESP_PLATFORM

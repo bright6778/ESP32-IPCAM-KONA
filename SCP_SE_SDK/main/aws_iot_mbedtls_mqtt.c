@@ -20,10 +20,10 @@
 #endif
 
 //#define ONLY_MBEDTLS_TEST_CERTFILE  // device keypair & CA Cert in file
-//#define ONLY_MBEDTLS_TEST         // no use SE keypair
-#define AWS_CA_CERT_ECC
+//#define ONLY_MBEDTLS_TEST           // no use SE keypair
+//#define AWS_CA_CERT_ECC             // CA Cert Algorithm used ECC(default : RSA)  
 #define MBEDTLS_RANDOM_USE_SE       // SE에서 Random을 생성.
-#define DEVICE_KEY_ALG_ECC          // Device 인증서 알고리즘이 ECC일 경우 활성화.
+//#define DEVICE_KEY_ALG_ECC          // Device 인증서 알고리즘이 ECC일 경우 활성화.(default : RSA)
 
 #define AWS_IOT_PORT     "8883"
 
@@ -35,10 +35,13 @@
 static const char *TAG = "aws_iot_mbedtls_mqtt.c";
 
 const int sdk_recommended_ciphersuites[] = {
+#ifdef AWS_CA_CERT_ECC
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-#ifndef AWS_CA_CERT_ECC
+    MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
+#else   // AWS_CA_CERT_ECC
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-#endif
+    MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+#endif  // AWS_CA_CERT_ECC
     0
 };
 
@@ -255,14 +258,25 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
 
     // mbedtls debug setting
     mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
-    mbedtls_debug_set_threshold(4);
+    //mbedtls_debug_set_threshold(4);
 
+    uint32_t ca_public_id = 0;
     uint32_t device_privkey_id = 0;
+    uint32_t device_cert_id = 0;
+    size_t dataSize = 0;
+
+#ifdef AWS_CA_CERT_ECC
+    ca_public_id = 0x0200;
+#else   // AWS_CA_CERT_ECC
+    ca_public_id = 0x0B00;
+#endif  // AWS_CA_CERT_ECC
 
 #ifdef DEVICE_KEY_ALG_ECC
     device_privkey_id = 0x0100;
+    device_cert_id = 0x0700;
 #else
-    device_privkey_id = 0x0B00;
+    device_privkey_id = 0x0A00;
+    device_cert_id = 0x0701;
 #endif  // DEVICE_KEY_ALG_ECC
 
 #ifndef ESP_PLATFORM
@@ -301,7 +315,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     kss_object_t dev_priv;  // device private key object
     kss_object_t dev_pub;   // device public key object
     kss_object_t dev_cert;  // device cert object
-    kss_object_t pub_obj;   // CA cert object
+    kss_object_t pub_obj;   // CA public key object
     
     kss_key_store_t keystore;
     kss_status_t kss_status;
@@ -372,13 +386,13 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
-    kss_status = kss_key_object_get_handle(&dev_cert, 0x0701);
+    kss_status = kss_key_object_get_handle(&dev_cert, device_cert_id);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
         return;
     }
 
-    size_t dataSize = 0;
+    dataSize = 0;
     uint8_t aclient_cer[SIZE_CLIENT_CERTIFICATE];
 
     kss_status = kss_key_store_get_data(&keystore, &dev_cert, aclient_cer, &dataSize);
@@ -404,7 +418,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
-    kss_status = kss_key_object_get_handle(&pub_obj, 0x0900);   //SE에서 0x0900 objectID로 CA public key를 처리 중
+    kss_status = kss_key_object_get_handle(&pub_obj, ca_public_id);
     if(kss_status != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_get_handle failed res : %d", kss_status);
         return;
@@ -413,12 +427,40 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
     ////////////////////////////////////////////////////////////////////////
     //////////////////////// Load the trusted CA////////////////////////////
     ////////////////////////////////////////////////////////////////////////
+#ifndef ONLY_MBEDTLS_TEST_CERTFILE
+#ifdef ESP_PLATFORM
 #ifdef AWS_CA_CERT_ECC
     ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_ecc_start, (root_cert_auth_ecc_end - root_cert_auth_ecc_start) + null_size); 
-#else
+#else   // AWS_CA_CERT_ECC
     ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)root_cert_auth_start, (root_cert_auth_end - root_cert_auth_start) + null_size); 
+#endif  // AWS_CA_CERT_ECC
+#else   // ESP_PLATFORM
+#ifdef AWS_CA_CERT_ECC
+    if(load_cert_to_buffer("./certs/root_cert_auth_ecc.crt", &root_cert_auth_start, &root_cert_auth_end) != 0){
+        printf("load_cert_to_buffer failed\n");
+        return;
+    }
+#else   // AWS_CA_CERT_ECC
+    if(load_cert_to_buffer("./certs/root_cert_auth.crt", &root_cert_auth_start, &root_cert_auth_end) != 0){
+        printf("load_cert_to_buffer failed\n");
+        return;
+    }
+#endif  // AWS_CA_CERT_ECC
+#endif  // ESP_PLATFORM
+#else   // ONLY_MBEDTLS_TEST_CERTFILE
+    dataSize = 0;
+    uint8_t aCA_cer[SIZE_CLIENT_CERTIFICATE];
+
+    LOGD(TAG, "CA Cert Get Data");
+    kss_status = kss_key_store_get_data(&keystore, &pub_obj, aCA_cer, &dataSize);
+    if(kss_status != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_store_get_data failed res : %d", kss_status);
+        return;
+    }
+
+    ret = mbedtls_x509_crt_parse_der(&cacert, (const unsigned char *)aCA_cer, sizeof(aCA_cer));
 #endif
-    if(ret != 0){
+     if (ret < 0) {
         LOGE(TAG, " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", (unsigned int) -ret);
         return;
     }
@@ -471,7 +513,7 @@ void aws_iot_mbedtls_mqtt_test(kss_session_t *session)
         return;
     }
 
-    LOGI(TAG, "TLS handshake success");
+    LOGI(TAG, "TLS handshake success\n");
 
     // MQTT 연결 및 메시지 전송
     ret = mqtt_send_connect(&ssl, MQTT_CLIENT_ID);

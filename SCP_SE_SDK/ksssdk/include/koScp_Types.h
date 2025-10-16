@@ -5,8 +5,8 @@
 * Modifications Copyright 2025 KONA I
 */
 
-#ifndef SCP03_TYPES_H_
-#define SCP03_TYPES_H_
+#ifndef KOSCP_TYPES_H_
+#define KOSCP_TYPES_H_
 
 /* ************************************************************************** */
 /* Defines                                                                    */
@@ -18,31 +18,34 @@
 #include "kona_kss_api.h"
 #include "sm_types.h"
 
-/** @addtogroup KOSE_scp03
- *
- * @{ */
-
 /** Defining authentication types in KOSE
 */
 typedef enum
 {
     /** No authentication */
     kKSS_AuthType_None = 0,
-    /** Global platform SCP03 */
-    kKSS_AuthType_SCP03 = 1,
+    /** Global platform SCP */
+    kKSS_AuthType_SCP02 = 1,
+    kKSS_AuthType_SCP03 = 2,
+
     /** (e.g. KOSE) UserID based connection */
-    kKSS_AuthType_ID = 2,
+    kKSS_AuthType_ID = 3,
 
     /** (e.g. KOSE) Use AESKey for user authentication
      *
-     *  Earlier this was called  kKSS_AuthType_AppletSCP03
+     *  Earlier this was called  kKSS_AuthType_AppletSCP02
      */
-    kKSS_AuthType_AESKey = 3,
+    kKSS_AuthType_DESKey = 4,
+    /** (e.g. KOSE) Use AESKey for user authentication
+     *
+     *  Earlier this was called  kKSS_AuthType_AppletSCP
+     */
+    kKSS_AuthType_AESKey = 5,
     /** (e.g. KOSE) Use ECKey for user authentication
      *
      *  Earlier this was called  kKSS_AuthType_FastSCP
      */
-    kKSS_AuthType_ECKey = 4,
+    kKSS_AuthType_ECKey = 6,
 
     /* ================ Internal ======================= */
     /* Not to be selected by end user... directly */
@@ -58,22 +61,17 @@ typedef enum
     kKSS_SIZE = 0x7FFFFFFF,
 } SE_AuthType_t;
 
-/** @} */
-
 #define kKSS_AuthType_INT_FastSCP_Counter kKSS_AuthType_INT_ECKey_Counter
 #define kKSS_AuthType_FastSCP_Counter kKSS_AuthType_INT_ECKey_Counter
 #define kKSS_AuthType_FastSCP         kKSS_AuthType_ECKey
+#define kKSS_AuthType_AppletSCP02     kKSS_AuthType_DESKey
 #define kKSS_AuthType_AppletSCP03     kKSS_AuthType_AESKey
 
-/** @addtogroup Kose_scp03
- *
- * @{ */
-
 /**
- * Dynamic SCP03 Context.
+ * Dynamic SCP02 Context.
  *
  * This structure is filled **after** establishing
- * an SCP03 session.
+ * an SCP02 session.
  */
 typedef struct
 {
@@ -86,13 +84,13 @@ typedef struct
 
     /** Handle differnt types of auth.. PlatformSCP / AppletSCP */
     SE_AuthType_t authType;
-} SCP03_DynCtx_t;
+} KOSCP02_DynCtx_t;
 
 /**
- * Static SCP03 Context.
+ * Static SCP02 Context.
  *
  * This structure is filled **before** establishing
- * an SCP03 session.
+ * an SCP02 session.
  *
  * Depending on system, these objects may point to keys
  * inside other security system.
@@ -100,13 +98,13 @@ typedef struct
 typedef struct
 {
     /** Key version no to use for chanel
-        authentication in SCP03     */
+        authentication in SCP02     */
     uint8_t keyVerNo;
     /** Encryption key object */
     kss_object_t Enc;
     kss_object_t Mac; //!< static secure channel authentication key obj
     kss_object_t Dek; //!< data encryption key obj
-} SCP03_StaticCtx_t;
+} KOSCP02_StaticCtx_t;
 
 /**
 * Static and  Dynamic Context in one Context.
@@ -117,9 +115,65 @@ typedef struct
 */
 typedef struct
 {
-    SCP03_StaticCtx_t *pStatic_ctx; //!< .static keys data
-    SCP03_DynCtx_t *pDyn_ctx;       //!<  session keys data
-} SCP03_AuthCtx_t;
+    KOSCP02_StaticCtx_t *pStatic_ctx; //!< .static keys data
+    KOSCP02_DynCtx_t *pDyn_ctx;       //!<  session keys data
+} KOSCP02_AuthCtx_t;
+
+/** @addtogroup Kose_scp03
+ *
+ * @{ */
+
+/**
+ * Dynamic SCP Context.
+ *
+ * This structure is filled **after** establishing
+ * an SCP session.
+ */
+typedef struct
+{
+    kss_object_t Enc;  //!< session channel encryption key
+    kss_object_t Mac;  //!< session command authentication key
+    kss_object_t Rmac; //!< session response authentication key
+    uint8_t MCV[16];        //!<  MAC chaining value
+    uint8_t cCounter[16];   //!<  command counter
+    uint8_t SecurityLevel;  //!< security level set
+
+    /** Handle differnt types of auth.. PlatformSCP / AppletSCP */
+    SE_AuthType_t authType;
+} SCP_DynCtx_t;
+
+/**
+ * Static SCP Context.
+ *
+ * This structure is filled **before** establishing
+ * an SCP session.
+ *
+ * Depending on system, these objects may point to keys
+ * inside other security system.
+ */
+typedef struct
+{
+    /** Key version no to use for chanel
+        authentication in SCP     */
+    uint8_t keyVerNo;
+    /** Encryption key object */
+    kss_object_t Enc;
+    kss_object_t Mac; //!< static secure channel authentication key obj
+    kss_object_t Dek; //!< data encryption key obj
+} SCP_StaticCtx_t;
+
+/**
+* Static and  Dynamic Context in one Context.
+*
+*
+* Depending on system, these objects may point to keys
+* inside other security system.
+*/
+typedef struct
+{
+    SCP_StaticCtx_t *pStatic_ctx; //!< .static keys data
+    SCP_DynCtx_t *pDyn_ctx;       //!<  session keys data
+} SCP_AuthCtx_t;
 
 /** Static part of keys for FAST SCP */
 typedef struct
@@ -147,7 +201,7 @@ typedef struct
      * We derive/compute the session keys based on the
      * ``pStatic_ctx``.
      */
-    SCP03_DynCtx_t  *pDyn_ctx;   // session keys data
+    SCP_DynCtx_t  *pDyn_ctx;   // session keys data
 } KOSE_AuthCtx_ECKey_t;
 
 /** UseID / PIN baed authentication object
@@ -167,7 +221,7 @@ typedef struct
     kss_object_t pKeyEnc; //!< SSS AES Enc Key object
     kss_object_t pKeyMac; //!< SSS AES Mac Key object
     kss_object_t pKeyDek; //!< SSS AES Dek Key object
-} SM_SECURE_SCP03_KEYOBJ;
+} SM_SECURE_SCP_KEYOBJ;
 
 /** Authentication mechanims */
 typedef struct _SE_AuthCtx
@@ -194,7 +248,7 @@ typedef struct _SE_AuthCtx
         /** For PlatformSCP / Applet SCP.
          *
          * Same SCP context will be used for platform and applet scp03 */
-        SCP03_AuthCtx_t scp03;
+        SCP_AuthCtx_t scp03;
 
         /** For ECKey  */
         KOSE_AuthCtx_ECKey_t eckey;
@@ -203,7 +257,7 @@ typedef struct _SE_AuthCtx
         KOSE_AuthCtx_ID_t idobj;
 
         /** Legacy, only for A71CH with Host Crypto */
-        SM_SECURE_SCP03_KEYOBJ a71chAuthKeys;
+        SM_SECURE_SCP_KEYOBJ a71chAuthKeys;
 
         /** Reserved memory for implementation specific extension */
         struct
@@ -300,12 +354,13 @@ typedef struct
 #define KOSE_AuthCtx_t SE_AuthCtx_t
 
 #define kKOSE_AuthType_None kKSS_AuthType_None
-#define kKOSE_AuthType_SCP03 kKSS_AuthType_SCP03
+#define kKOSE_AuthType_SCP kKSS_AuthType_SCP
 #define kKOSE_AuthType_UserID kKSS_AuthType_ID
+#define kKOSE_AuthType_DESKey kKSS_AuthType_DESKey
 #define kKOSE_AuthType_AESKey kKSS_AuthType_AESKey
 #define kKOSE_AuthType_ECKey kKSS_AuthType_ECKey
 
 /* For backwards compatibility */
 #define KOSE_AuthType_t SE_AuthType_t
 
-#endif /* SCP03_TYPES_H_ */
+#endif /* KOSCP_TYPES_H_ */

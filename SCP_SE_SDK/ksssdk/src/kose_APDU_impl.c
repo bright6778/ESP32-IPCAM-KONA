@@ -463,7 +463,7 @@ smStatus_t Kose_API_RSAVerify(pKoseSession_t session_ctx,
     KOSE_Result_t *presult)
 {
     LOGD(TAG, "Kose_API_RSAVerify");
-
+/*
     smStatus_t retStatus = SM_NOT_OK;
     tlvHeader_t hdr      = {{kKOSE_CLA, kKOSE_INS_VERIFY_SIGNATURE, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
     uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
@@ -501,6 +501,111 @@ smStatus_t Kose_API_RSAVerify(pKoseSession_t session_ctx,
     retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
     if (retStatus == SM_OK) {
         *presult = kKOSE_Result_SUCCESS;
+    }
+    else{
+        *presult = kKOSE_Result_FAILURE;
+    }
+
+    return retStatus;
+    */
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr      = {{kKOSE_CLA, kKOSE_INS_VERIFY_SIGNATURE, kKOSE_P1_VERIFY_SIGN_RSA, kKOSE_P2_DEFAULT}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    uint8_t rspbuf[KOSE_MAX_BUF_SIZE_RSP] = {0};
+    size_t rspbufLen                       = 0;
+    
+    uint8_t *pLc = &pCmdbuf[4]; // lc pointer
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    uint8_t bufObjectID[2] = {0};
+
+    uint8_t bufSign[128] = {0};   // sign buffer
+    size_t bufDerSign_len = signatureLen;
+    size_t sign_half_size = 0x80;
+
+    uint8_t test_signature[256] = {0,};
+    memcpy(test_signature, signature, signatureLen);
+    kss_debug_showframe("CA signature", test_signature, signatureLen);
+
+    /*
+    uint8_t bufDerSignHeader1[4] = {0x30, 0x44, 0x02, 0x20};   // sign der buffer
+    uint8_t bufDerSignHeader2[2] = {0x02, 0x20};   // sign der buffer
+    size_t bufDerSign_index = 4;
+    size_t bufDerSign_len = signatureLen;
+    */
+    size_t totalSize = 0;
+
+    bool r_add_bit = false;
+    bool s_add_bit = false;
+
+    //if(signature[0] > 0x7F) r_add_bit = true;   // r sign bit
+    //if(signature[32] > 0x7F) s_add_bit = true;  // s sign bit
+
+    uint32_to_buffer(objectID, 2, bufObjectID);
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    pCmdbuf[3] = 0x01;  // first data
+    /*
+    memcpy(bufDerSign, bufDerSignHeader1, sizeof(bufDerSignHeader1));
+    if(r_add_bit == true) bufDerSign[1] += 1;
+    if(s_add_bit == true) bufDerSign[1] += 1;
+
+    if(r_add_bit == true){
+        bufDerSign_len += 1;
+        bufDerSign[3] += 1;
+        bufDerSign[4] = 0x00;
+        bufDerSign_index += 1;
+    } 
+    
+    memcpy(bufDerSign+bufDerSign_index, signature, 32);
+    bufDerSign_index += 32;
+
+    memcpy(bufDerSign+bufDerSign_index, bufDerSignHeader2, sizeof(bufDerSignHeader2));
+    if(s_add_bit == true){
+        LOGD(TAG, "s_add_bit");
+        bufDerSign_len += 1;
+        bufDerSign[bufDerSign_index+1] += 1;
+        bufDerSign[bufDerSign_index+2] = 0x00;
+        bufDerSign_index += 1;
+    } 
+    memcpy(bufDerSign+bufDerSign_index+2, signature+32, 32);
+    */
+    //memcpy(pData, signature, sign_half_size);
+    memcpy(pData, test_signature, sign_half_size);
+    totalSize = sign_half_size;
+    lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalSize);
+    bufDerSign_len -= sign_half_size;
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    
+    retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+    if (retStatus == SM_OK) {
+        totalSize = 0;
+        cmdbufLen = 0;
+        pLc = &pCmdbuf[4];
+        pData = &pCmdbuf[5];
+        memset(cmdbuf, 0, sizeof(cmdbuf));
+        memset(bufSign, 0, sizeof(bufSign));
+        
+        //memcpy(bufSign, signature + bufDerSign_len, bufDerSign_len);
+        memcpy(bufSign, test_signature + bufDerSign_len, bufDerSign_len);
+        memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+        pCmdbuf[3] = 0x02;  // second data
+        
+        tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_KEYID, bufObjectID, 2); // Key ID
+        tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_SHA256, inputData, inputDataLen); // Hash Data(SHA256)
+        //tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_SIGNATURE, bufDerSign, sizeof(bufDerSign)); // Signature by Server Private Key
+        tlvDataSet_u8buf_len2byte_setLen(&pData, &totalSize, kKOSE_TAG_SIGNATURE, bufSign, bufDerSign_len, signatureLen); // Signature by Server Private Key
+        lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalSize);
+        cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+        
+        retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, &rspbufLen);
+        if (retStatus == SM_OK) {
+            *presult = kKOSE_Result_SUCCESS;
+        }
+        else{
+            *presult = kKOSE_Result_FAILURE;
+        }
     }
     else{
         *presult = kKOSE_Result_FAILURE;

@@ -27,7 +27,7 @@
 #include <mbedtls/pk.h>
 #include "kss_kose_mbedtls.h"
 #include <esp_spiffs.h>
-#include <scp03_Types.h>
+#include <koScp_Types.h>
 
 #include "kss_kose_uart.h"
 #include "kona_kss_debug.h"

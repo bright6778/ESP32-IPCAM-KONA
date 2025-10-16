@@ -125,6 +125,7 @@ kss_status_t kss_asymmetric_verify_digest(
     kss_asymmetric_t *context, uint8_t *digest, size_t digestLen, uint8_t *signature, size_t signatureLen)
 {
 #if KSS_HAVE_APPLET_KOSE_IOT
+LOGD(TAG, "kss_asymmetric_verify_digest start");
     if (KSS_ASYMMETRIC_TYPE_IS_KOSE(context)) {
         kss_kose_asymmetric_t *kose_context = (kss_kose_asymmetric_t *)context;
         return kss_kose_asymmetric_verify_digest(kose_context, digest, digestLen, signature, signatureLen);

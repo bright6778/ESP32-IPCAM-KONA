@@ -54,6 +54,46 @@ static KOSE_ECSignatureAlgo_t kose_get_ec_sign_hash_mode(kss_algorithm_t algorit
     return mode;
 }
 
+static KOSE_RSASignatureAlgo_t kose_get_rsa_sign_hash_mode(kss_algorithm_t algorithm)
+{
+    KOSE_RSASignatureAlgo_t mode;
+    switch (algorithm) {
+    case kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA1:
+        mode = kKOSE_RSASignatureAlgo_SHA1_PKCS1;
+        break;
+    case kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA224:
+        mode = kKOSE_RSASignatureAlgo_SHA_224_PKCS1;
+        break;
+    case kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA256:
+        mode = kKOSE_RSASignatureAlgo_SHA_256_PKCS1;
+        break;
+    case kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA384:
+        mode = kKOSE_RSASignatureAlgo_SHA_384_PKCS1;
+        break;
+    case kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA512:
+        mode = kKOSE_RSASignatureAlgo_SHA_512_PKCS1;
+        break;
+    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA1:
+        mode = kKOSE_RSASignatureAlgo_SHA1_PKCS1_PSS;
+        break;
+    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA224:
+        mode = kKOSE_RSASignatureAlgo_SHA224_PKCS1_PSS;
+        break;
+    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA256:
+        mode = kKOSE_RSASignatureAlgo_SHA256_PKCS1_PSS;
+        break;
+    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA384:
+        mode = kKOSE_RSASignatureAlgo_SHA384_PKCS1_PSS;
+        break;
+    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA512:
+        mode = kKOSE_RSASignatureAlgo_SHA512_PKCS1_PSS;
+        break;
+    default:
+        mode = kKOSE_RSASignatureAlgo_NA;
+    }
+    return mode;
+}
+
 #if KSS_HAVE_HOSTCRYPTO_MBEDTLS
 static int parse_ecdsa_der_signature_to_rs64(const unsigned char *der_sig, size_t der_sig_len,
                                       unsigned char *rs64)
@@ -186,7 +226,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             }
         }
 #endif // kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1 End
-#if 0 // kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA512 Start 구현 예정
+#if 1 // kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA512 Start 구현 예정
         if ((context->algorithm <= kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA512) &&
                  (context->algorithm >= kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA1)) {
             uint8_t encode_ret = 0;
@@ -196,7 +236,7 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             size_t encode_data_len = sizeof(pkcs1v15_encode_data);
             
             /* clang-format on */
-            encode_ret = pkcs1_v15_encode(context, digest, digestLen, pkcs1v15_encode_data, &encode_data_len);
+            encode_ret = pkcs1_v15_encode(context, digest, digestLen, pkcs1v15_encode_data, &encode_data_len, 256);
             if (0 != encode_ret) {
                 if (encode_ret == 2) {
                     return kStatus_KSS_ApduThroughputError;
@@ -209,8 +249,8 @@ kss_status_t kss_kose_asymmetric_sign_digest(
             status = Kose_API_RSASign(&context->session->s_ctx,
                 context->keyObject->keyId,
                 kKOSE_RSAEncryptionAlgo_NO_PAD,
-                pkcs1v15_encode_data,
-                encode_data_len,
+                digest,
+                digestLen,
                 signature,
                 signatureLen);
             if (status == SM_ERR_APDU_THROUGHPUT) {
@@ -312,7 +352,7 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
     KOSE_Result_t result = kKOSE_Result_FAILURE;
     uint8_t signature_rs[64] ;
     
-
+LOGD(TAG, "kss_kose_asymmetric_verify_digest start");
 #if KSSFTR_KOSE_ECC
 #if KSS_HAVE_HOSTCRYPTO_MBEDTLS
     parse_ecdsa_der_signature_to_rs64(signature, signatureLen, signature_rs);
@@ -341,6 +381,59 @@ kss_status_t kss_kose_asymmetric_verify_digest(kss_kose_asymmetric_t *context,
     } break;
 
 #endif // KSSFTR_KOSE_ECC
+#if KSSFTR_KOSE_RSA
+    case kKSS_CipherType_RSA :
+    {
+        LOGD(TAG, "context->algorithm : %d", context->algorithm);
+        if ((context->algorithm <= kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA512) &&
+                (context->algorithm >= kAlgorithm_KSS_RSASSA_PKCS1_V1_5_SHA1)) {
+            #if 0
+            /* clang-format off */
+            uint8_t dec_data[512] = { 0, }; /* MAX - SHA512*/
+            size_t dec_len = sizeof(dec_data);
+            uint8_t pkcs1v15_encode_data[512] = { 0, }; /* MAX - SHA512*/
+            size_t encode_data_len = sizeof(pkcs1v15_encode_data);
+            /* clang-format on */
+
+            status = Kose_API_RSAEncrypt(&context->session->s_ctx,
+                context->keyObject->keyId,
+                kKOSE_RSAEncryptionAlgo_NO_PAD,
+                signature,
+                signatureLen,
+                dec_data,
+                &dec_len);
+            if (status == SM_OK) {
+                uint8_t encode_ret = 0;
+                if (0 != encode_ret) {
+                    encode_ret = pkcs1_v15_encode(context, digest, digestLen, pkcs1v15_encode_data, &encode_data_len, 256);
+                    if (encode_ret == 2) {
+                        return kStatus_KSS_ApduThroughputError;
+                    }
+                    else {
+                        return kStatus_KSS_Fail;
+                    }
+                }
+
+                if (memcmp(dec_data, pkcs1v15_encode_data, encode_data_len) == 0) {
+                    result = kKOSE_Result_SUCCESS;
+                }
+            }
+            #endif
+            KOSE_RSASignatureAlgo_t rsaSigningAlgo = kose_get_rsa_sign_hash_mode(context->algorithm);
+            uint16_t key_size_bytes                 = 0;
+
+            status = Kose_API_RSAVerify(&context->session->s_ctx,
+                context->keyObject->keyId,
+                rsaSigningAlgo,
+                digest,
+                digestLen,
+                signature,
+                signatureLen,
+                &result);
+            break;
+        }
+    }
+#endif // KSSFTR_KOSE_RSA
     default:
         break;
     }

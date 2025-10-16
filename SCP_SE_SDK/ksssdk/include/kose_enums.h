@@ -77,6 +77,9 @@ typedef enum
     /** Public key */
     kKOSE_P1_PUBLIC = 0x20,
 
+    /** Verify Signature P1 */
+    kKOSE_P1_VERIFY_SIGN_RSA = 0xD2,
+
     kKOSE_P1_DEFAULT = 0x00,
     kKOSE_P1_EC = 0x01,
     kKOSE_P1_RSA = 0x02,

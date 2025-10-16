@@ -74,8 +74,8 @@ static int kss_rsapubkey_can_do(mbedtls_pk_type_t type);
 static void kss_rsakeypair_free_func(void *ctx);
 static void kss_rsapubkey_free_func(void *ctx);
 
-//extern const mbedtls_pk_info_t kose_mbedtls_rsakeypair_info;
-//extern const mbedtls_pk_info_t kose_mbedtls_rsapubkey_info;
+extern const mbedtls_pk_info_t kose_mbedtls_rsakeypair_info;
+extern const mbedtls_pk_info_t kose_mbedtls_rsapubkey_info;
 
 int (*sign_func)(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
                      const unsigned char *hash, size_t hash_len,
@@ -126,11 +126,13 @@ static int kss_rsakey_verify(void *ctx,
     const unsigned char *sig,
     size_t sig_len)
 {
+    LOGD(TAG, "kss_rsakey_verify start");
     kss_status_t status = kStatus_KSS_Success;
     kss_asymmetric_t asymVerifyCtx;
     kss_object_t *kssObject = NULL;
     kss_algorithm_t algorithm;
     mbedtls_rsa_context *pax_ctx = (mbedtls_rsa_context *)ctx;
+    mbedtls_pk_context *pcheck_ctx = (mbedtls_pk_context *)ctx;
 
     switch (md_alg) {
     case MBEDTLS_MD_SHA1:
@@ -151,10 +153,20 @@ static int kss_rsakey_verify(void *ctx,
     default:
         return 1;
     }
+
+    if (pcheck_ctx->pk_info->name == kose_mbedtls_rsapubkey_info.name &&
+        pcheck_ctx->pk_ctx != NULL &&
+        pcheck_ctx->pk_ctx != ctx)
+    {
+        LOGD(TAG, "[WARN] ctx is pk_context*, fixing...");
+        LOGD(TAG, "[WARN] pk_info->name of ctx : %s", pcheck_ctx->pk_info->name);
+        ctx = pcheck_ctx->pk_ctx;
+        pax_ctx = (mbedtls_rsa_context *)ctx;
+    }
+
     kssObject = (kss_object_t *)pax_ctx->pKSSObject;
 
     //LOG_I("%s: Verify using key '0x%08lX'", __FUNCTION__, pax_ctx->pKSSObject->keyId);
-
     status = kss_asymmetric_context_init(
         &asymVerifyCtx, kssObject->keyStore->session, kssObject, algorithm, kMode_KSS_Verify);
     if (status != kStatus_KSS_Success) {
@@ -187,8 +199,20 @@ static int kss_rsakey_sign(void *ctx,
     kss_object_t *kssObject      = NULL;
     mbedtls_rsa_context *pax_ctx = NULL;
     kss_algorithm_t algorithm;
+    mbedtls_pk_context *pcheck_ctx = (mbedtls_pk_context *)ctx;
 
     pax_ctx   = (mbedtls_rsa_context *)ctx;
+
+    if (pcheck_ctx->pk_info->name == kose_mbedtls_rsakeypair_info.name &&
+        pcheck_ctx->pk_ctx != NULL &&
+        pcheck_ctx->pk_ctx != ctx)
+    {
+        LOGD(TAG, "[WARN] ctx is pk_context*, fixing...");
+        LOGD(TAG, "[WARN] pk_info->name of ctx : %s", pcheck_ctx->pk_info->name);
+        ctx = pcheck_ctx->pk_ctx;
+        pax_ctx = (mbedtls_rsa_context *)ctx;
+    }
+
     kssObject = (kss_object_t *)pax_ctx->pKSSObject;
     
     switch (md_alg) {

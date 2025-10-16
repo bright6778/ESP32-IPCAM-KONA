@@ -12,7 +12,7 @@
 #include <limits.h>
 #include "sm_api.h"
 #include "kose_enums.h"
-#include "scp03_Types.h"
+#include "koScp_Types.h"
 
 #define AX_UNUSED_ARG(x) (void)(x)
 
@@ -325,6 +325,7 @@ int tlvSet_U64_size(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint64_t valu
 int tlvGet_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint8_t *rsp, size_t *pRspLen);
 int tlvDataSet_u8buf(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
 int tlvDataSet_u8buf_len2byte(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
+int tlvDataSet_u8buf_len2byte_setLen(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen, size_t setDataLen);
 int lvDataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdLen);
 int DataSet_u8buf(uint8_t **buf, const uint8_t *data, size_t dataLen);
 int get_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, uint8_t *rsp, size_t *pRspLen);
