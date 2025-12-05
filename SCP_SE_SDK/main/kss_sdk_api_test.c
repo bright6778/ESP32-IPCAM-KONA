@@ -76,9 +76,7 @@ void test_kss_key_store_generate_key()
 {
     LOGI(TAG, "Start " GENERATE_KEY);
     kss_object_t keyobject_ecc;
-    kss_object_t keyobject_aes;
-    kss_object_t keyobject_des;
-
+    
     uint8_t rst_data[256] = {0};
     size_t rst_data_len = 0;
 
@@ -110,69 +108,13 @@ void test_kss_key_store_generate_key()
     }
 
     LOGI(TAG, "Start kss_key_object_allocate_handle");
-    kStatus = kss_key_object_allocate_handle(&keyobject_ecc, keyId, kKSS_KeyPart_Public, kKSS_CipherType_EC_NIST_P, dataSize, acl, kKeyObject_Mode_Persistent);
+    kStatus = kss_key_object_allocate_handle(&keyobject_ecc, keyId, kKSS_KeyPart_Private, kKSS_CipherType_EC_NIST_P, dataSize, acl, kKeyObject_Mode_Persistent);
     if (kStatus != kStatus_KSS_Success) {
         LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kStatus);
         return;
     }
     
     kStatus = kss_key_store_generate_key(&keystore, &keyobject_ecc, 256, kKOSE_Generate_ECC_Keypair, rst_data, &rst_data_len);
-    if (kStatus != kStatus_KSS_Success) {
-        LOGE(TAG, "kss_key_store_generate_key failed res : %d", kStatus);
-        return;
-    }
-    if(rst_data_len > 0){
-        kss_debug_showframe(TAG, rst_data, rst_data_len);
-    }
-
-    /** Generate Key for AES */
-    keyId = 0x0400;
-    dataSize = 16;
-
-    LOGI(TAG, "Generate Key for AES");
-    LOGI(TAG, "Start kss_key_object_init");
-    kStatus = kss_key_object_init(&keyobject_aes, &keystore);
-    if (kStatus != kStatus_KSS_Success) {
-        LOGE(TAG, "kss_key_object_init res : %d", kStatus);
-        return;
-    }
-
-    LOGI(TAG, "Start kss_key_object_allocate_handle");
-    kStatus = kss_key_object_allocate_handle(&keyobject_aes, keyId, kKSS_KeyPart_Default, kKSS_CipherType_AES, dataSize, acl, kKeyObject_Mode_Persistent);
-    if (kStatus != kStatus_KSS_Success) {
-        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kStatus);
-        return;
-    }
-    
-    kStatus = kss_key_store_generate_key(&keystore, &keyobject_aes, 128, kKOSE_Generate_AES_Symmetric, rst_data, &rst_data_len);
-    if (kStatus != kStatus_KSS_Success) {
-        LOGE(TAG, "kss_key_store_generate_key failed res : %d", kStatus);
-        return;
-    }
-    if(rst_data_len > 0){
-        kss_debug_showframe(TAG, rst_data, rst_data_len);
-    }
-
-    /** Generate Key for DES */
-    keyId = 0x0300;
-    dataSize = 16;
-
-    LOGI(TAG, "Generate Key for DES");
-    LOGI(TAG, "Start kss_key_object_init");
-    kStatus = kss_key_object_init(&keyobject_des, &keystore);
-    if (kStatus != kStatus_KSS_Success) {
-        LOGE(TAG, "kss_key_object_init res : %d", kStatus);
-        return;
-    }
-
-    LOGI(TAG, "Start kss_key_object_allocate_handle");
-    kStatus = kss_key_object_allocate_handle(&keyobject_des, keyId, kKSS_KeyPart_Default, kKSS_CipherType_DES, dataSize, acl, kKeyObject_Mode_Persistent);
-    if (kStatus != kStatus_KSS_Success) {
-        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kStatus);
-        return;
-    }
-    
-    kStatus = kss_key_store_generate_key(&keystore, &keyobject_des, 128, kKOSE_Generate_DES_Symmetric, rst_data, &rst_data_len);
     if (kStatus != kStatus_KSS_Success) {
         LOGE(TAG, "kss_key_store_generate_key failed res : %d", kStatus);
         return;
@@ -252,7 +194,7 @@ void test_kss_symmetric_encrypt(){
     }
 
     // Allocate AES Key object handle
-    kStatus = kss_key_object_allocate_handle(&AES_object, 0x0401, kKSS_KeyPart_Default, kKSS_CipherType_AES, sizeof(AES_Key_TestKeyVector), 0x000000, kKeyObject_Mode_Persistent);
+    kStatus = kss_key_object_allocate_handle(&AES_object, 0x0400, kKSS_KeyPart_Default, kKSS_CipherType_AES, sizeof(AES_Key_TestKeyVector), 0x000000, kKeyObject_Mode_Persistent);
     if(kStatus != kStatus_KSS_Success){
         LOGE(TAG, "kss_key_object_allocate_handle return : 0x%X", kStatus);
         goto ErrorExit;
@@ -334,4 +276,230 @@ void test_kss_symmetric_decrypt(){
 ErrorExit :
     LOGI(TAG, "End " API_KSS_SYMMETRIC_DECRYPT " - AES Part");
     kss_session_close(&session);
+}
+
+void test_kss_key_store_erase_key()
+{
+    LOGI(TAG, "Start " API_ERASE_KEY);
+    kss_object_t keyobject_aes;
+    
+    kss_status_t kStatus = kStatus_KSS_Fail;
+    smStatus_t status   = SM_NOT_OK;
+
+    size_t dataSize = 16;
+    uint32_t keyId = 0x0400;
+    uint32_t acl = 0x000000;
+    
+    test_kss_session_open();
+
+    memset(&keystore, 0, sizeof(kss_key_store_t));
+
+    LOGI(TAG, "Start kss_key_store_context_init");
+    kStatus = kss_key_store_context_init(&keystore, &session);
+    if(kStatus != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_store_context_init failed res : %d", kStatus);
+        goto ErrorExit;
+    }
+
+    LOGI(TAG, "Start kss_key_object_init - AES");
+    kStatus = kss_key_object_init(&keyobject_aes, &keystore);
+    if (kStatus != kStatus_KSS_Success) {
+        LOGE(TAG, "kss_key_object_init res : %d", kStatus);
+        goto ErrorExit;
+    }
+
+    LOGI(TAG, "Start kss_key_object_allocate_handle - AES");
+    kStatus = kss_key_object_allocate_handle(&keyobject_aes, keyId, kKSS_KeyPart_Default, kKSS_CipherType_AES, dataSize, acl, kKeyObject_Mode_Persistent);
+    if (kStatus != kStatus_KSS_Success) {
+        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kStatus);
+        goto ErrorExit;
+    }
+
+    LOGI(TAG, "Start kss_key_store_set_key - AES");
+    kStatus = kss_key_store_set_key(&keystore, &keyobject_aes, AES_Key_TestKeyVector, sizeof(AES_Key_TestKeyVector), 128, NULL, 0);
+    if(kStatus != kStatus_KSS_Success){
+        printf("kss_key_store_set_key failed res : %d\n", kStatus);
+        goto ErrorExit;
+    }
+
+    /** Erase Key for AES */
+    LOGI(TAG, "Start kss_key_store_erase_key - Key Type of Object ID / Physically delete");
+    kStatus = kss_key_store_erase_key(&keystore, &keyobject_aes, 0x00);
+    if (kStatus != kStatus_KSS_Success) {
+        LOGE(TAG, "kss_key_store_erase_key failed res : %d", kStatus);
+        goto ErrorExit;
+    }
+    
+    /** Put Key for AES */
+    LOGI(TAG, "Start kss_key_store_set_key - AES");
+    kStatus = kss_key_store_set_key(&keystore, &keyobject_aes, AES_Key_TestKeyVector, sizeof(AES_Key_TestKeyVector), 128, NULL, 0);
+    if(kStatus != kStatus_KSS_Success){
+        printf("kss_key_store_set_key failed res : %d\n", kStatus);
+        goto ErrorExit;
+    }
+
+    LOGI(TAG, "Start kss_key_store_erase_key - Key Type of Object ID / Logically delete");
+    kStatus = kss_key_store_erase_key(&keystore, &keyobject_aes, 0x01);
+    if (kStatus != kStatus_KSS_Success) {
+        LOGE(TAG, "kss_key_store_erase_key failed res : %d", kStatus);
+        goto ErrorExit;
+    }
+
+    /** Put Key for AES */
+    LOGI(TAG, "Start kss_key_store_set_key - AES");
+    kStatus = kss_key_store_set_key(&keystore, &keyobject_aes, AES_Key_TestKeyVector, sizeof(AES_Key_TestKeyVector), 128, NULL, 0);
+    if(kStatus != kStatus_KSS_Success){
+        printf("kss_key_store_set_key failed res : %d\n", kStatus);
+        goto ErrorExit;
+    }
+
+    LOGI(TAG, "Start kss_key_store_erase_key - Object ID / Physically delete");
+    kStatus = kss_key_store_erase_key(&keystore, &keyobject_aes, 0x00);
+    if (kStatus != kStatus_KSS_Success) {
+        LOGE(TAG, "kss_key_store_erase_key failed res : %d", kStatus);
+        goto ErrorExit;
+    }
+
+    /** Put Key for AES */
+    LOGI(TAG, "Start kss_key_store_set_key - AES");
+    kStatus = kss_key_store_set_key(&keystore, &keyobject_aes, AES_Key_TestKeyVector, sizeof(AES_Key_TestKeyVector), 128, NULL, 0);
+    if(kStatus != kStatus_KSS_Success){
+        printf("kss_key_store_set_key failed res : %d\n", kStatus);
+        goto ErrorExit;
+    }
+
+    LOGI(TAG, "Start kss_key_store_erase_key - Object ID / Logically delete");
+    kStatus = kss_key_store_erase_key(&keystore, &keyobject_aes, 0x01);
+    if (kStatus != kStatus_KSS_Success) {
+        LOGE(TAG, "kss_key_store_erase_key failed res : %d", kStatus);
+        goto ErrorExit;
+    }
+
+ErrorExit :
+    LOGI(TAG, "End " API_ERASE_KEY " - AES Part");
+    kss_session_close(&session);
+    return;
+}
+
+void test_kss_key_store_get_key()
+{
+    LOGI(TAG, "Start " API_GET_KEY);
+    kss_object_t keyobject_aes;
+    kss_object_t keyobject_ecc;
+    
+    kss_status_t kStatus = kStatus_KSS_Fail;
+    smStatus_t status   = SM_NOT_OK;
+
+    size_t dataSize = 16;
+    uint32_t keyId = 0x0400;
+    uint32_t acl = 0xFF0000;
+
+    uint8_t bufData[DATA_BUF_SIZE];
+    size_t  key_length = 0;
+    
+    test_kss_session_open();
+
+    memset(&keystore, 0, sizeof(kss_key_store_t));
+
+    LOGI(TAG, "Start kss_key_store_context_init");
+    kStatus = kss_key_store_context_init(&keystore, &session);
+    if(kStatus != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_store_context_init failed res : %d", kStatus);
+        goto ErrorExit;
+    }
+
+    LOGI(TAG, "Start kss_key_object_init - AES");
+    kStatus = kss_key_object_init(&keyobject_aes, &keystore);
+    if (kStatus != kStatus_KSS_Success) {
+        LOGE(TAG, "kss_key_object_init res : %d", kStatus);
+        goto ErrorExit;
+    }
+
+    LOGI(TAG, "Start kss_key_object_allocate_handle - AES");
+    kStatus = kss_key_object_allocate_handle(&keyobject_aes, keyId, kKSS_KeyPart_Default, kKSS_CipherType_AES, dataSize, acl, kKeyObject_Mode_Persistent);
+    if (kStatus != kStatus_KSS_Success) {
+        LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kStatus);
+        goto ErrorExit;
+    }
+
+    LOGI(TAG, "Start kss_key_store_set_key - AES");
+    kStatus = kss_key_store_set_key(&keystore, &keyobject_aes, AES_Key_TestKeyVector, sizeof(AES_Key_TestKeyVector), 128, NULL, 0);
+    if(kStatus != kStatus_KSS_Success){
+        LOGE(TAG, "kss_key_store_set_key failed res : %d", kStatus);
+        goto ErrorExit;
+    }
+
+    /** Get Key - AES */
+    LOGI(TAG, "Start kss_key_store_get_key - AES");
+    kStatus = kss_key_store_get_key(&keystore, &keyobject_aes, bufData, &key_length);
+    if (kStatus != kStatus_KSS_Success) {
+        LOGE(TAG, "kss_key_store_get_key failed res : %d", kStatus);
+        goto ErrorExit;
+    }
+    if(memcmp(AES_Key_TestKeyVector, bufData, key_length) != 0){
+        LOGE(TAG, "kss_key_store_get_key wrong data! - AES");
+        goto ErrorExit;
+    }
+    else{
+        LOGI(TAG, "kss_key_store_get_key data - AES");
+        kss_showframe(TAG, bufData, key_length);
+    }
+
+    ////////////////// ECC Key /////////////////////////
+    // keyId = 0x0200;
+
+    // LOGI(TAG, "Start kss_key_object_init - ECC");
+    // kStatus = kss_key_object_init(&keyobject_ecc, &keystore);
+    // if (kStatus != kStatus_KSS_Success) {
+    //     LOGE(TAG, "kss_key_object_init res : %d", kStatus);
+    //     goto ErrorExit;
+    // }
+
+    // LOGI(TAG, "Start kss_key_object_allocate_handle - ECC");
+    // kStatus = kss_key_object_allocate_handle(&keyobject_ecc, keyId, kKSS_KeyPart_Public, kKSS_CipherType_EC_NIST_P, dataSize, acl, kKeyObject_Mode_Persistent);
+    // if (kStatus != kStatus_KSS_Success) {
+    //     LOGE(TAG, "kss_key_object_allocate_handle failed res : %d", kStatus);
+    //     goto ErrorExit;
+    // }
+
+    // LOGI(TAG, "Start kss_key_store_set_key - ECC");
+    // kStatus = kss_key_store_set_key(&keystore, &keyobject_ecc, ECC_PublicKey_TestVector, sizeof(ECC_PublicKey_TestVector), 512, NULL, 0);
+    // if(kStatus != kStatus_KSS_Success){
+    //     printf("kss_key_store_set_key failed res : %d\n", kStatus);
+    //     goto ErrorExit;
+    // }
+
+    // /** Get Key - ECC */
+    // LOGI(TAG, "Start kss_key_store_get_key - ECC Public Key");
+    // kStatus = kss_key_store_get_key(&keystore, &keyobject_ecc, bufData, &key_length);
+    // if (kStatus != kStatus_KSS_Success) {
+    //     LOGE(TAG, "kss_key_store_get_key failed res : %d", kStatus);
+    //     goto ErrorExit;
+    // }
+    // if(memcmp(ECC_PublicKey_TestVector, bufData, key_length) != 0){
+    //     LOGE(TAG, "kss_key_store_get_key wrong data! - ECC Public Key");
+    //     goto ErrorExit;
+    // }
+    // else{
+    //     LOGI(TAG, "kss_key_store_get_key data - ECC Public Key");
+    //     kss_showframe(TAG, bufData, key_length);
+    // }
+
+    LOGI(TAG, "Start kss_key_store_get_key_list");
+    kStatus = kss_key_store_get_key_list(&keystore, bufData, &key_length);
+    if (kStatus != kStatus_KSS_Success) {
+        LOGE(TAG, "kss_key_store_get_key_list failed res : %d", kStatus);
+        goto ErrorExit;
+    }
+    else{
+        LOGI(TAG, "kss_key_store_get_key_list");
+        kss_showframe(TAG, bufData, key_length);
+    }
+
+ErrorExit :
+    LOGI(TAG, "Start kss_key_store_erase_key - Object ID / Physically delete");
+    kStatus = kss_key_store_erase_key(&keystore, &keyobject_aes, 0x00);
+    
+    kss_session_close(&session);
+    return;
 }

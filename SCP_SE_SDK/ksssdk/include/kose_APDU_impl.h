@@ -99,3 +99,7 @@ smStatus_t Kose_API_DecryptData(pKoseSession_t session_ctx,
     size_t inputDataLen,
     uint8_t *encryptedData,
     size_t *pencryptedDataLen);
+
+smStatus_t Kose_API_DeleteSecureObject(pKoseSession_t session_ctx, uint32_t objectID, uint8_t deleteType);
+
+smStatus_t Kose_API_GetKey(pKoseSession_t session_ctx, uint32_t objectID, uint8_t *data, size_t *pdataLen);

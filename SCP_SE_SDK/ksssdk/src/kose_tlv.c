@@ -250,6 +250,35 @@ int tlvDataSet_u8buf(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_
     return 0;
 }
 
+int tlvDataSet_u8buf_setLength(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen)
+{
+    uint8_t *pBuf = *buf;
+
+    const size_t size_of_length = 1;
+    const size_t size_of_tlv    = size_of_length + cmdLen + 1;
+    
+    if ((UINT_MAX - (*bufLen)) < size_of_tlv) {
+        return 1;
+    }
+
+    if (((*bufLen) + size_of_tlv) > KOSE_TLV_BUF_SIZE_CMD) {
+        return 1;
+    }
+    *pBuf++ = (uint8_t)tag;
+    *pBuf++ = (uint8_t)cmdLen;
+    
+    if ((cmdLen > 0) && (cmd != NULL)) {
+        while (cmdLen-- > 0) {
+            *pBuf++ = *cmd++;
+        }
+    }
+
+    *buf = pBuf;
+    
+    *bufLen += size_of_tlv;
+    return 0;
+}
+
 int tlvDataSet_u8buf_len2byte(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen)
 {
     uint8_t *pBuf = *buf;

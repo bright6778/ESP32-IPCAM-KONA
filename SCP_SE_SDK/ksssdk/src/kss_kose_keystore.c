@@ -298,6 +298,8 @@ kss_status_t kss_kose_key_store_get_data(
 
     switch (cipher_type) {
     case kKSS_CipherType_EC_NIST_P:
+    case kKSS_CipherType_Certificate:
+    case kKSS_CipherType_Binary:
 #if KSS_HAVE_EC_NIST_K
     case kKSS_CipherType_EC_NIST_K:
 #endif
@@ -884,7 +886,6 @@ static kss_status_t kss_kose_key_store_set_ecc_key(kss_kose_key_store_t *keyStor
     kss_status_t retval     = kStatus_KSS_Fail;
     smStatus_t status       = SM_NOT_OK;
 
-    LOGD(TAG, "keyBitLen : %zu", keyBitLen);
     ENSURE_OR_GO_EXIT(keyBitLen == 256 || keyBitLen == 512);
 
     status = Kose_API_PutKey(&keyStore->session->s_ctx, keyObject->keyId, keyObject->acl, key, keyLen);
@@ -912,7 +913,6 @@ static kss_status_t kss_kose_key_store_set_symmetric_key(kss_kose_key_store_t *k
     kss_status_t retval     = kStatus_KSS_Fail;
     smStatus_t status       = SM_NOT_OK;
 
-    LOGD(TAG, "keyBitLen : %zu", keyBitLen);
     ENSURE_OR_GO_EXIT(keyBitLen == 128 || keyBitLen == 256);
 
     status = Kose_API_PutKey(&keyStore->session->s_ctx, keyObject->keyId, keyObject->acl, key, keyLen);
@@ -999,7 +999,109 @@ exit:
     return retval;
 }
 
+kss_status_t kss_kose_key_store_erase_key(kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, uint8_t deleteType)
+{
+    kss_status_t retval = kStatus_KSS_Fail;
+    smStatus_t status   = SM_NOT_OK;
+    ENSURE_OR_GO_EXIT(keyStore);
+    ENSURE_OR_GO_EXIT(keyObject);
 
+    status = Kose_API_DeleteSecureObject(&keyStore->session->s_ctx, keyObject->keyId, deleteType);
+    if (SM_OK == status) {
+        LOGD(__FILE__, "Erased Key id 0x%08" PRIX32, keyObject->keyId);
+        retval = kStatus_KSS_Success;
+    }
+    else {
+        LOGE(__FILE__,"Could not delete Key id 0x%08" PRIX32, keyObject->keyId);
+        if (status == SM_ERR_APDU_THROUGHPUT) {
+            retval = kStatus_KSS_ApduThroughputError;
+            goto exit;
+        }
+    }
+exit:
+    return retval;
+}
+
+kss_status_t kss_kose_key_store_get_key(
+    kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, uint8_t *key, size_t *keylen)
+{
+    kss_status_t retval           = kStatus_KSS_Fail;
+    kss_cipher_type_t cipher_type = kKSS_CipherType_NONE;
+    smStatus_t status             = SM_NOT_OK;
+    uint16_t size                 = 0;
+    ENSURE_OR_GO_EXIT(keyObject);
+    ENSURE_OR_GO_EXIT(key);
+    ENSURE_OR_GO_EXIT(keylen);
+    
+    cipher_type = (kss_cipher_type_t)keyObject->cipherType;
+
+    switch (cipher_type) {
+    case kKSS_CipherType_EC_NIST_P:
+#if KSS_HAVE_EC_NIST_K
+    case kKSS_CipherType_EC_NIST_K:
+#endif
+#if KSS_HAVE_EC_BP
+    case kKSS_CipherType_EC_BRAINPOOL:
+#endif
+#if KSS_HAVE_EC_MONT
+    case kKSS_CipherType_EC_MONTGOMERY:
+#endif
+#if KSS_HAVE_EC_ED
+    case kKSS_CipherType_EC_TWISTED_ED:
+#endif
+#if KSSFTR_KOSE_RSA && KSS_HAVE_RSA
+    case kKSS_CipherType_RSA:
+    case kKSS_CipherType_RSA_CRT:
+#endif // KSSFTR_KOSE_RSA && && KSS_HAVE_RSA
+    case kKSS_CipherType_AES:
+    case kKSS_CipherType_DES:
+    {
+        uint8_t *key_buf  = NULL;
+        size_t key_buflen = 0;
+
+        status = Kose_API_GetKey(&keyStore->session->s_ctx, keyObject->keyId, key, keylen);
+        if (status == SM_ERR_INCORRECT_DATA_OBJECT) {
+            retval = kStatus_KSS_InvalidArgument;
+            goto exit;
+        }
+        ENSURE_OR_GO_EXIT(status == SM_OK);
+
+        break;
+    }
+    default:
+        goto exit;
+    }
+
+    retval = kStatus_KSS_Success;
+exit:
+    return retval;
+}
+
+kss_status_t kss_kose_key_store_get_key_list(
+    kss_kose_key_store_t *keyStore, uint8_t *objectIdList, size_t *objectIdListLen)
+{
+    kss_status_t retval           = kStatus_KSS_Fail;
+    kss_cipher_type_t cipher_type = kKSS_CipherType_NONE;
+    smStatus_t status             = SM_NOT_OK;
+    uint16_t size                 = 0;
+    ENSURE_OR_GO_EXIT(objectIdList);
+    ENSURE_OR_GO_EXIT(objectIdListLen);
+
+    kss_kose_object_t keyObject;
+    memset(&keyObject, 0, sizeof(kss_kose_object_t));
+    keyObject.keyId = 0x0000;
+
+    status = Kose_API_GetKey(&keyStore->session->s_ctx, keyObject.keyId, objectIdList, objectIdListLen);
+    if (status == SM_ERR_INCORRECT_DATA_OBJECT) {
+        retval = kStatus_KSS_InvalidArgument;
+        goto exit;
+    }
+    ENSURE_OR_GO_EXIT(status == SM_OK);
+
+    retval = kStatus_KSS_Success;
+exit:
+    return retval;
+}
 
 #ifdef __cplusplus
 }

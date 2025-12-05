@@ -39,6 +39,10 @@ typedef enum
     kKOSE_INS_ENCRYPT_DECRYPT_CDATA = 0xB0,
     /** INS Generate Key */
     kKOSE_INS_GENERATE_KEY = 0x46,
+    /** INS Delete Key */
+    kKOSE_INS_DELETE_KEY = 0xF4,
+    /** INS Get Key */
+    kKOSE_INS_GET_KEY = 0xCB,
 } KOSE_INS_t;
 
 /** Values for P1 in ISO7816 APDU */

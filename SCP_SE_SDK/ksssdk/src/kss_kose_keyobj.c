@@ -43,7 +43,40 @@ kss_status_t kss_kose_key_object_allocate_handle(kss_kose_object_t *keyObject,
     uint32_t acl,
     uint32_t options)
 {
-    kss_status_t retval = kStatus_KSS_Success;
+    kss_status_t retval = kStatus_KSS_InvalidArgument;
+
+    if(keyId >= ECC_KEYPAIR_PRIVATE_START && keyId <= ECC_KEYPAIR_PRIVATE_END){
+        if(keyPart != kKSS_KeyPart_Private)
+            goto exit;
+    }   // ECC Private Key
+    else if(keyId >= ECC_KEYPAIR_PUBLIC_START && keyId <= ECC_KEYPAIR_PUBLIC_END){
+        if(keyPart != kKSS_KeyPart_Public)
+            goto exit;
+    }   // ECC Public Key
+    else if(keyId >= AES_KEY_START && keyId <= AES_KEY_END){
+        if(keyPart != kKSS_KeyPart_Default)
+            goto exit;
+    }   // AES Key
+    else if(keyId >= ECC_ENT_KEYPAIR_START && keyId <= ECC_ENT_KEYPAIR_END){
+        if(keyPart != kKSS_KeyPart_Default)
+            goto exit;
+    }   // Entity Certificate Object. X.509 / DER /PEM certificates (device)
+    else if(keyId >= RSA_KEYPAIR_PRIVATE_START && keyId <= RSA_KEYPAIR_PRIVATE_END)
+    {
+        if(keyPart != kKSS_KeyPart_Private || cipherType != kKSS_CipherType_RSA)
+            goto exit;
+    }   // RSA Private Key
+    else if(keyId >= RSA_KEYPAIR_PUBLIC_START && keyId <= RSA_KEYPAIR_PUBLIC_END)
+    {
+        if(keyPart != kKSS_KeyPart_Public || cipherType != kKSS_CipherType_RSA)
+            goto exit;
+    }   // RSA Public Key
+    else
+    {
+        LOGD(TAG, "Errer");
+        return retval;
+    }
+
     keyObject->objectType = keyPart;
     keyObject->cipherType = cipherType;
     keyObject->keyId      = keyId;
@@ -52,7 +85,9 @@ kss_status_t kss_kose_key_object_allocate_handle(kss_kose_object_t *keyObject,
         keyObject->isPersistant = 1;
     }
 
+    retval = kStatus_KSS_Success;
     AX_UNUSED_ARG(keyByteLenMax);
+exit:
     return retval;
 }
 
@@ -67,8 +102,7 @@ kss_status_t kss_kose_key_object_get_handle(kss_kose_object_t *keyObject, uint32
         keyObject->curve_id = kKOSE_ECCurve_NIST_P256;
         keyObject->objectType = kKSS_KeyPart_Private;
     }
-    else if((objectId >= ECC_KEYPAIR_PUBLIC_START && objectId <= ECC_KEYPAIR_PUBLIC_END) || 
-        (objectId >= ECC_EXT_KEYPAIR_PUBLIC_START && objectId <= ECC_EXT_KEYPAIR_PUBLIC_END) )
+    else if(objectId >= ECC_KEYPAIR_PUBLIC_START && objectId <= ECC_KEYPAIR_PUBLIC_END)
     {
         keyObject->cipherType = kKSS_CipherType_EC_NIST_P;
         keyObject->curve_id = kKOSE_ECCurve_NIST_P256;

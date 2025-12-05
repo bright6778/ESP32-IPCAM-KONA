@@ -59,3 +59,20 @@ kss_status_t kss_kose_key_store_generate_key(
 
 kss_status_t kss_kose_key_store_generate_key_getPublicKey(
     kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, size_t keyBitLen, KOSE_GenerateKey_Option_t options, uint8_t *publicKey, size_t *pPublicKeyLen);
+
+/** @copydoc kss_key_store_erase_key
+ *
+ */
+kss_status_t kss_kose_key_store_erase_key(kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, uint8_t deleteType);
+
+/** @copydoc kss_key_store_get_key
+ *
+ */
+kss_status_t kss_kose_key_store_get_key(
+    kss_kose_key_store_t *keyStore, kss_kose_object_t *keyObject, uint8_t *data, size_t *dataLen);
+
+/** @copydoc kss_kose_key_store_get_key_list
+ *
+ */
+kss_status_t kss_kose_key_store_get_key_list(
+    kss_kose_key_store_t *keyStore, uint8_t *objectIdList, size_t *objectIdListLen);

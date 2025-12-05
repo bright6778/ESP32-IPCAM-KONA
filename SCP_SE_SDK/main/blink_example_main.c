@@ -28,7 +28,6 @@
 #include "kss_kose_mbedtls.h"
 #include <esp_spiffs.h>
 #include <koScp_Types.h>
-
 #include "kss_kose_uart.h"
 #include "kona_kss_debug.h"
 #include "tsm_sdk.h"
@@ -171,6 +170,7 @@ int buf_index = 0;
 
 void print_manu(){
     printf(ANSI_COLOR_RESET);
+    printf("KSS SDK Version : %s", KOSE_SDK_VERSION_STRING);
     printf("//////////////////////////////////////////////////////////////////////////////////\n");
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " REBOOT " or " REBOOT_NUM, REBOOT);
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " UART_INIT " or " UART_INIT_NUM, UART_INIT);
@@ -190,6 +190,10 @@ void print_manu(){
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " KEY_STORE_SET_KEY " or " KEY_STORE_SET_KEY_NUM, KEY_STORE_SET_KEY);
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " KEY_STORE_DATA " or " KEY_STORE_DATA_NUM, KEY_STORE_DATA);
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " GENERATE_KEY " or " GENERATE_KEY_NUM, GENERATE_KEY);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " API_KSS_SYMMETRIC_ENCRYPT " or " API_KSS_SYMMETRIC_ENCRYPT_NUM, API_KSS_SYMMETRIC_ENCRYPT);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " API_KSS_SYMMETRIC_DECRYPT " or " API_KSS_SYMMETRIC_DECRYPT_NUM, API_KSS_SYMMETRIC_DECRYPT);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " API_ERASE_KEY " or " API_ERASE_KEY_NUM, API_ERASE_KEY);
+    printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " API_GET_KEY " or " API_GET_KEY_NUM, API_GET_KEY);
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " RANDOM_GEN " or " RANDOM_GEN_NUM, RANDOM_GEN);
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " MBEDTLS_VERIFY_SIGN " or " MBEDTLS_VERIFY_SIGN_NUM, MBEDTLS_VERIFY_SIGN);
     printf("%-*s - %s\n", MENU_TEXT_SIZE, "CMD : " AWS_IOT_DEMO " or " AWS_IOT_DEMO_NUM, AWS_IOT_DEMO);
@@ -359,7 +363,10 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, APDU_PUT_KEY) == 0 || strcmp((char*)buf, APDU_PUT_KEY_NUM) == 0) {    // SE Command - PUT KEY
                     LOGI(TAG, "Start %s", APDU_PUT_KEY);
-                    Kose_API_PutKey(&kose_session->s_ctx, 0x0400, 0x003200, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
+                    kStatus = Kose_API_PutKey(&kose_session->s_ctx, 0x0400, 0x003200, (uint8_t *)"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F", 16);
+                    if(kStatus != kStatus_KSS_Success){
+                        LOGE(TAG, "Kose_API_PutKey failed res : %d", kStatus);
+                    }
                     LOGI(TAG, "End %s", APDU_PUT_KEY);
                 }
                 else if (strcmp((char*)buf, APDU_ENCRYPT_DECRYPT_CDATA_ENC) == 0 || strcmp((char*)buf, APDU_ENCRYPT_DECRYPT_CDATA_ENC_NUM) == 0) {    // SE Command - ENCRYPT/DECRYPT CDATA
@@ -538,6 +545,15 @@ void command_task(void *arg)
                 else if (strcmp((char*)buf, API_KSS_SYMMETRIC_ENCRYPT) == 0 || strcmp((char*)buf, API_KSS_SYMMETRIC_ENCRYPT_NUM) == 0) {    // kss_symmetric_encrypt
                     test_kss_symmetric_encrypt();
                 }
+                else if (strcmp((char*)buf, API_KSS_SYMMETRIC_DECRYPT) == 0 || strcmp((char*)buf, API_KSS_SYMMETRIC_DECRYPT_NUM) == 0) {    // kss_symmetric_encrypt
+                    test_kss_symmetric_decrypt();
+                }
+                else if (strcmp((char*)buf, API_ERASE_KEY) == 0 || strcmp((char*)buf, API_ERASE_KEY_NUM) == 0) {    // kss_key_store_erase_key
+                    test_kss_key_store_erase_key();
+                }
+                else if (strcmp((char*)buf, API_GET_KEY) == 0 || strcmp((char*)buf, API_GET_KEY_NUM) == 0) {    // kss_key_store_get_key
+                    test_kss_key_store_get_key();
+                }
                 else if (strcmp((char*)buf, RANDOM_GEN) == 0 || strcmp((char*)buf, RANDOM_GEN_NUM) == 0) {    // kss_kose_rng
                     LOGI(TAG, "Start %s", RANDOM_GEN);
                     uint8_t random_data[32] = {0}; 
@@ -564,7 +580,6 @@ void command_task(void *arg)
                 }
                 else if (strcmp((char*)buf, AWS_IOT_DEMO) == 0 || strcmp((char*)buf, AWS_IOT_DEMO_NUM) == 0) {    // aws_iot_demo_main
                     LOGI(TAG, "Start %s", AWS_IOT_DEMO);
-                    //aws_iot_demo_main(0,NULL);    // AWS IoT Device Embedded C SDK
                     aws_iot_mbedtls_mqtt_test(&session);    // mbedTLS MQTT
                     LOGI(TAG, "End %s", AWS_IOT_DEMO);
                 }

@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-//#define KSS_DEBUG
+#define KSS_DEBUG
 
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 /////////////////////////////////////////////////////////////////////////////
 // Defines
@@ -34,3 +35,4 @@
 
 void kss_debug_printf(const char *format, ...);
 void kss_debug_showframe(const char *title, const uint8_t *buf, int len);
+void kss_showframe(const char *title, const uint8_t *buf, int len);

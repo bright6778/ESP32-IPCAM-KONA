@@ -29,6 +29,7 @@ typedef enum
     SM_ERR_SECURITY_STATUS = 0x6982,            // Security status not satisfied
     SM_ERR_WRONG_DATA = 0x6A80,                 // Wrong data provided
     SM_ERR_DATA_INVALID = 0x6984,               // Data invalid - policy set invalid for the given object
+    SM_ERR_INCORRECT_DATA_OBJECT = 0x6988,      // Incorrect messaging DOs
     SM_ERR_FILE_FULL = 0x6A84,                  // Not enough memory space available (either transient or persistent memory)
     SM_ERR_APDU_THROUGHPUT = 0x66A6,            // APDU Throughput error
     SM_WRN_RESPONSE_DATA_INCOMPLETE = 0x6100,   // Response data incomplete, 'xx' more bytes available
@@ -324,6 +325,7 @@ int tlvSet_U64_size(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, uint64_t valu
 
 int tlvGet_u8buf(uint8_t *buf, size_t *pBufIndex, const size_t bufLen, KOSE_TAG_t tag, uint8_t *rsp, size_t *pRspLen);
 int tlvDataSet_u8buf(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
+int tlvDataSet_u8buf_setLength(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
 int tlvDataSet_u8buf_len2byte(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen);
 int tlvDataSet_u8buf_len2byte_setLen(uint8_t **buf, size_t *bufLen, KOSE_TAG_t tag, const uint8_t *cmd, size_t cmdLen, size_t setDataLen);
 int lvDataSet_u8buf(uint8_t **buf, size_t *bufLen, const uint8_t *cmd, size_t cmdLen);

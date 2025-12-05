@@ -40,12 +40,6 @@
 /** KOSE (Super set of A + B) */
 #define KSS_HAVE_APPLET_KOSE_C 1
 
-/** SE051UWB (Similar to SE05x) */
-#define KSS_HAVE_APPLET_SE051_UWB 0
-
-/** SE051 with SPAKE Support */
-#define KSS_HAVE_APPLET_SE051_H 0
-
 /** AUTH */
 #define KSS_HAVE_APPLET_AUTH 0
 
@@ -60,8 +54,6 @@
     + KSS_HAVE_APPLET_KOSE_A        \
     + KSS_HAVE_APPLET_KOSE_B        \
     + KSS_HAVE_APPLET_KOSE_C        \
-    + KSS_HAVE_APPLET_SE051_UWB      \
-    + KSS_HAVE_APPLET_SE051_H        \
     + KSS_HAVE_APPLET_AUTH           \
     + KSS_HAVE_APPLET_KOSE_E        \
     + KSS_HAVE_APPLET_LOOPBACK       \
@@ -75,8 +67,6 @@
     + KSS_HAVE_APPLET_KOSE_A        \
     + KSS_HAVE_APPLET_KOSE_B        \
     + KSS_HAVE_APPLET_KOSE_C        \
-    + KSS_HAVE_APPLET_SE051_UWB      \
-    + KSS_HAVE_APPLET_SE051_H        \
     + KSS_HAVE_APPLET_AUTH           \
     + KSS_HAVE_APPLET_KOSE_E        \
     + KSS_HAVE_APPLET_LOOPBACK       \
@@ -96,7 +86,7 @@
 
 #define KOSE_APPLET_VERSION_MAJOR    1
 #define KOSE_APPLET_VERSION_MINOR    0
-#define KOSE_APPLET_VERSION_PATCH    0
+#define KOSE_APPLET_VERSION_PATCH    1
 #define KOSE_APPLET_VERSION_STRING   STR(KOSE_APPLET_VERSION_MAJOR) "." STR(KOSE_APPLET_VERSION_MINOR) "." STR(KOSE_APPLET_VERSION_PATCH)
 
 /** PTMW_HostCrypto : Counterpart Crypto on Host
@@ -189,10 +179,10 @@
  */
 
 /**  */
-#define KSS_HAVE_SCP_NONE 0
+#define KSS_HAVE_SCP_NONE 1
 
 /** Use KSS Layer for SCP.  Used for KOSE family. */
-#define KSS_HAVE_SCP_SCP03_KSS 1
+#define KSS_HAVE_SCP_SCP03_KSS 0
 
 #if (( 0                             \
     + KSS_HAVE_SCP_NONE              \

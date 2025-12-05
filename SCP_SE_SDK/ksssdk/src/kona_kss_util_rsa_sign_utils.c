@@ -261,401 +261,401 @@ uint8_t pkcs1_v15_encode_no_hash(
     return 0;
 }
 
-uint8_t kss_mgf_mask_func(uint8_t *dst, size_t dlen, uint8_t *src, size_t slen, kss_algorithm_t sha_algorithm)
-{
-    uint8_t mask[64] = {
-        0,
-    }; /* MAX - SHA512*/
-    uint8_t counter[4] = {
-        0,
-    };
-    uint8_t *p = NULL;
-    size_t i, use_len;
-    uint8_t ret         = 1;
-    kss_status_t status = kStatus_KSS_Fail;
-    kss_digest_t digest = {
-        0,
-    };
-    size_t digestLen           = 512; /* MAX - SHA512*/
-    size_t hashlength          = slen;
-    kss_session_t host_session = {0};
-#if KSS_HAVE_HOSTCRYPTO_MBEDTLS
-    const kss_type_t host_crypto = kType_KSS_mbedTLS;
-#elif KSS_HAVE_HOSTCRYPTO_OPENSSL
-    const kss_type_t host_crypto = kType_KSS_OpenSSL;
-#else
-    const kss_type_t host_crypto = kType_KSS_SubSystem_NONE;
-#endif
-
-    memset(mask, 0, 64);
-    memset(counter, 0, 4);
-
-    status = kss_session_open(&host_session, host_crypto, 0, kKSS_ConnectionType_Plain, NULL);
-    if (kStatus_KSS_Success != status) {
-        goto exit;
-    }
-
-    /* Generate and apply dbMask */
-    p = dst;
-
-    while (dlen > 0) {
-        use_len = hashlength;
-        if (dlen < hashlength) {
-            use_len = dlen;
-        }
-
-        status = kss_digest_context_init(&digest, &host_session, sha_algorithm, kMode_KSS_Digest);
-        if (status != kStatus_KSS_Success) {
-            goto exit;
-        }
-
-        status = kss_digest_init(&digest);
-        if (status != kStatus_KSS_Success) {
-            goto exit;
-        }
-
-        status = kss_digest_update(&digest, src, slen);
-        if (status != kStatus_KSS_Success) {
-            goto exit;
-        }
-
-        status = kss_digest_update(&digest, counter, 4);
-        if (status != kStatus_KSS_Success) {
-            goto exit;
-        }
-
-        status = kss_digest_finish(&digest, mask, &digestLen);
-        if (status != kStatus_KSS_Success) {
-            goto exit;
-        }
-
-        kss_digest_context_free(&digest);
-
-        for (i = 0; i < use_len; ++i) {
-            *p++ ^= mask[i];
-        }
-
-        counter[3]++;
-
-        dlen -= use_len;
-    }
-
-    ret = 0;
-
-exit:
-    if (digest.session != NULL) {
-        kss_digest_context_free(&digest);
-    }
-    kss_session_close(&host_session);
-
-    return ret;
-}
-
-// Note-1: This function does not implement the full EMSA-PSS Encoding Operation operation
-//         (refer to RFC 8017 Section 9.1 Figure 2), the caller MUST pass 'mHash' (= Hash(M)) as input
-//         via function argument(s) hash / haslen.
-//
-// Note-2: Any hash value passed as input that does not match (in byte length)
-//         the hash requested for the signature (kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHAxxx)
-//         will be rejected.
-//
-//Return:  0-Success, 1-Error, 2-ThroughPut error
-uint8_t emsa_encode(kss_kose_asymmetric_t *context, const uint8_t *hash, size_t hashlen, uint8_t *out, size_t *outLen, uint16_t key_size_bytes)
-{
-    size_t outlength = 0;
-    uint8_t *p       = out;
-    uint8_t salt[64] = {
-        0,
-    };
-    uint32_t saltlength = 0;
-    uint32_t hashlength = 0;
-    uint32_t offset     = 0;
-    uint8_t ret         = 1;
-    size_t msb;
-    kss_rng_context_t rng;
-    kss_digest_t digest;
-    kss_algorithm_t sha_algorithm = kAlgorithm_None;
-    size_t digestLen              = 512; /* MAX - SHA512*/
-    kss_status_t status           = kStatus_KSS_Fail;
-    //uint16_t key_size_bytes       = 0;
-    smStatus_t ret_val            = SM_NOT_OK;
-    kss_session_t host_session    = {0};
-#if KSS_HAVE_HOSTCRYPTO_MBEDTLS
-    const kss_type_t host_crypto = kType_KSS_mbedTLS;
-#elif KSS_HAVE_HOSTCRYPTO_OPENSSL
-    const kss_type_t host_crypto = kType_KSS_OpenSSL;
-#else
-    const kss_type_t host_crypto = kType_KSS_SubSystem_NONE;
-#endif
-
-    status = kss_session_open(&host_session, host_crypto, 0, kKSS_ConnectionType_Plain, NULL);
-    if (kStatus_KSS_Success != status) {
-        goto exit;
-    }
-/*
-    ret_val = Kose_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &key_size_bytes);
-    if (ret_val != SM_OK) {
-        if (ret_val == SM_ERR_APDU_THROUGHPUT) {
-            ret = 2;
-        }
-        goto exit;
-    }
-*/
-    outlength = key_size_bytes;
-    ENSURE_OR_GO_EXIT(*outLen >= outlength);
-
-    switch (context->algorithm) {
-    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA1:
-        hashlength    = 20;
-        sha_algorithm = kAlgorithm_KSS_SHA1;
-        break;
-    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA224:
-        hashlength    = 28;
-        sha_algorithm = kAlgorithm_KSS_SHA224;
-        break;
-    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA256:
-        if (key_size_bytes <= 64) { /* RSA Key size = 512 */
-            LOGE(TAG, "SHA256 not supported with this RSA key");
-            goto exit;
-        }
-        hashlength    = 32;
-        sha_algorithm = kAlgorithm_KSS_SHA256;
-        break;
-    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA384:
-        if (key_size_bytes <= 64) { /* RSA Key size = 512 */
-            LOGE(TAG, "SHA384 not supported with this RSA key");
-            goto exit;
-        }
-        hashlength    = 48;
-        sha_algorithm = kAlgorithm_KSS_SHA384;
-        break;
-    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA512:
-        if (key_size_bytes <= 128) { /* RSA Key size = 1024 and 512 */
-            LOGE(TAG, "SHA512 not supported with this RSA key");
-            goto exit;
-        }
-        hashlength    = 64;
-        sha_algorithm = kAlgorithm_KSS_SHA512;
-        break;
-    default:
-        goto exit;
-    }
-
-    if (hashlength != hashlen) {
-        ret_val = SM_NOT_OK;
-        goto exit;
-    }
-
-    saltlength = hashlength;
-    *outLen    = outlength;
-
-    /* Generate salt of length saltlength */
-    status = kss_rng_context_init(&rng, &host_session /* session */);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    status = kss_rng_get_random(&rng, salt, saltlength);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    msb = (outlength * 8) - 1;
-    p += outlength - hashlength * 2 - 2;
-    *p++ = 0x01;
-    memcpy(p, salt, saltlength);
-    p += saltlength;
-
-    status = kss_digest_context_init(&digest, &host_session, sha_algorithm, kMode_KSS_Digest);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    status = kss_digest_init(&digest);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    status = kss_digest_update(&digest, p, 8);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    status = kss_digest_update(&digest, hash, hashlen);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    status = kss_digest_update(&digest, salt, saltlength);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    status = kss_digest_finish(&digest, p, &digestLen);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    kss_digest_context_free(&digest);
-
-    if (msb % 8 == 0) {
-        offset = 1;
-    }
-
-    /* Apply MGF Mask */
-    if (0 != kss_mgf_mask_func(out + offset, outlength - hashlength - 1 - offset, p, hashlength, sha_algorithm)) {
-        goto exit;
-    }
-
-    out[0] &= 0xFF >> (outlength * 8 - msb);
-
-    p += hashlength;
-    *p++ = 0xBC;
-
-    ret = 0;
-
-exit:
-    kss_session_close(&host_session);
-    return ret;
-}
-
-uint8_t emsa_decode_and_compare(
-    kss_kose_asymmetric_t *context, uint8_t *sig, size_t siglen, const uint8_t *hash, size_t hashlen)
-{
-    uint8_t *p;
-    uint8_t *hash_start;
-    uint8_t result[512] = {0};
-    uint8_t ret         = 1;
-    uint32_t hlen;
-    uint8_t zeros[8];
-    uint32_t observed_salt_len, msb;
-    uint8_t buf[1024];
-    kss_algorithm_t sha_algorithm = kAlgorithm_None;
-    kss_digest_t digest;
-    size_t digestLen           = 512; /* MAX - SHA512*/
-    kss_status_t status        = kStatus_KSS_Fail;
-    kss_session_t host_session = {0};
-#if KSS_HAVE_HOSTCRYPTO_MBEDTLS
-    const kss_type_t host_crypto = kType_KSS_mbedTLS;
-#elif KSS_HAVE_HOSTCRYPTO_OPENSSL
-    const kss_type_t host_crypto = kType_KSS_OpenSSL;
-#else
-    const kss_type_t host_crypto = kType_KSS_SubSystem_NONE;
-#endif
-
-    ENSURE_OR_GO_EXIT(sig != NULL);
-    ENSURE_OR_GO_EXIT(siglen > 0);
-    ENSURE_OR_GO_EXIT(hash != NULL);
-
-    memcpy(buf, sig, siglen);
-
-    status = kss_session_open(&host_session, host_crypto, 0, kKSS_ConnectionType_Plain, NULL);
-    if (kStatus_KSS_Success != status) {
-        goto exit;
-    }
-
-    switch (context->algorithm) {
-    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA1:
-        hlen          = 20;
-        sha_algorithm = kAlgorithm_KSS_SHA1;
-        break;
-    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA224:
-        hlen          = 28;
-        sha_algorithm = kAlgorithm_KSS_SHA224;
-        break;
-    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA256:
-        hlen          = 32;
-        sha_algorithm = kAlgorithm_KSS_SHA256;
-        break;
-    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA384:
-        hlen          = 48;
-        sha_algorithm = kAlgorithm_KSS_SHA384;
-        break;
-    case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA512:
-        hlen          = 64;
-        sha_algorithm = kAlgorithm_KSS_SHA512;
-        break;
-    default:
-        goto exit;
-    }
-
-    p = buf;
-
-    ENSURE_OR_GO_EXIT(siglen <= sizeof(buf));
-    if (buf[siglen - 1] != 0xBC) {
-        goto exit;
-    }
-
-    memset(zeros, 0, 8);
-
-    msb = (siglen * 8) - 1;
-
-    if (buf[0] >> (8 - siglen * 8 + msb)) {
-        goto exit;
-    }
-
-    if (siglen < hlen + 2) {
-        goto exit;
-    }
-    hash_start = p + siglen - hlen - 1;
-
-    if (0 != kss_mgf_mask_func(p, siglen - hlen - 1, hash_start, hlen, sha_algorithm)) {
-        goto exit;
-    }
-
-    buf[0] &= 0xFF >> ((siglen * 8 - msb) % 8);
-
-    while (p < hash_start - 1 && *p == 0)
-        p++;
-
-    if (*p++ != 0x01) {
-        goto exit;
-    }
-
-    observed_salt_len = hash_start - p;
-
-    status = kss_digest_context_init(&digest, &host_session, sha_algorithm, kMode_KSS_Digest);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    status = kss_digest_init(&digest);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    status = kss_digest_update(&digest, zeros, 8);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    status = kss_digest_update(&digest, hash, hashlen);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    status = kss_digest_update(&digest, p, observed_salt_len);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    status = kss_digest_finish(&digest, result, &digestLen);
-    if (status != kStatus_KSS_Success) {
-        goto exit;
-    }
-
-    kss_digest_context_free(&digest);
-
-    if (memcmp(hash_start, result, hlen) != 0) {
-        goto exit;
-    }
-
-    ret = 0;
-
-exit:
-    kss_session_close(&host_session);
-
-    return ret;
-}
+// uint8_t kss_mgf_mask_func(uint8_t *dst, size_t dlen, uint8_t *src, size_t slen, kss_algorithm_t sha_algorithm)
+// {
+//     uint8_t mask[64] = {
+//         0,
+//     }; /* MAX - SHA512*/
+//     uint8_t counter[4] = {
+//         0,
+//     };
+//     uint8_t *p = NULL;
+//     size_t i, use_len;
+//     uint8_t ret         = 1;
+//     kss_status_t status = kStatus_KSS_Fail;
+//     kss_digest_t digest = {
+//         0,
+//     };
+//     size_t digestLen           = 512; /* MAX - SHA512*/
+//     size_t hashlength          = slen;
+//     kss_session_t host_session = {0};
+// #if KSS_HAVE_HOSTCRYPTO_MBEDTLS
+//     const kss_type_t host_crypto = kType_KSS_mbedTLS;
+// #elif KSS_HAVE_HOSTCRYPTO_OPENSSL
+//     const kss_type_t host_crypto = kType_KSS_OpenSSL;
+// #else
+//     const kss_type_t host_crypto = kType_KSS_SubSystem_NONE;
+// #endif
+
+//     memset(mask, 0, 64);
+//     memset(counter, 0, 4);
+
+//     status = kss_session_open(&host_session, host_crypto, 0, kKSS_ConnectionType_Plain, NULL);
+//     if (kStatus_KSS_Success != status) {
+//         goto exit;
+//     }
+
+//     /* Generate and apply dbMask */
+//     p = dst;
+
+//     while (dlen > 0) {
+//         use_len = hashlength;
+//         if (dlen < hashlength) {
+//             use_len = dlen;
+//         }
+
+//         status = kss_digest_context_init(&digest, &host_session, sha_algorithm, kMode_KSS_Digest);
+//         if (status != kStatus_KSS_Success) {
+//             goto exit;
+//         }
+
+//         status = kss_digest_init(&digest);
+//         if (status != kStatus_KSS_Success) {
+//             goto exit;
+//         }
+
+//         status = kss_digest_update(&digest, src, slen);
+//         if (status != kStatus_KSS_Success) {
+//             goto exit;
+//         }
+
+//         status = kss_digest_update(&digest, counter, 4);
+//         if (status != kStatus_KSS_Success) {
+//             goto exit;
+//         }
+
+//         status = kss_digest_finish(&digest, mask, &digestLen);
+//         if (status != kStatus_KSS_Success) {
+//             goto exit;
+//         }
+
+//         kss_digest_context_free(&digest);
+
+//         for (i = 0; i < use_len; ++i) {
+//             *p++ ^= mask[i];
+//         }
+
+//         counter[3]++;
+
+//         dlen -= use_len;
+//     }
+
+//     ret = 0;
+
+// exit:
+//     if (digest.session != NULL) {
+//         kss_digest_context_free(&digest);
+//     }
+//     kss_session_close(&host_session);
+
+//     return ret;
+// }
+
+// // Note-1: This function does not implement the full EMSA-PSS Encoding Operation operation
+// //         (refer to RFC 8017 Section 9.1 Figure 2), the caller MUST pass 'mHash' (= Hash(M)) as input
+// //         via function argument(s) hash / haslen.
+// //
+// // Note-2: Any hash value passed as input that does not match (in byte length)
+// //         the hash requested for the signature (kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHAxxx)
+// //         will be rejected.
+// //
+// //Return:  0-Success, 1-Error, 2-ThroughPut error
+// uint8_t emsa_encode(kss_kose_asymmetric_t *context, const uint8_t *hash, size_t hashlen, uint8_t *out, size_t *outLen, uint16_t key_size_bytes)
+// {
+//     size_t outlength = 0;
+//     uint8_t *p       = out;
+//     uint8_t salt[64] = {
+//         0,
+//     };
+//     uint32_t saltlength = 0;
+//     uint32_t hashlength = 0;
+//     uint32_t offset     = 0;
+//     uint8_t ret         = 1;
+//     size_t msb;
+//     kss_rng_context_t rng;
+//     kss_digest_t digest;
+//     kss_algorithm_t sha_algorithm = kAlgorithm_None;
+//     size_t digestLen              = 512; /* MAX - SHA512*/
+//     kss_status_t status           = kStatus_KSS_Fail;
+//     //uint16_t key_size_bytes       = 0;
+//     smStatus_t ret_val            = SM_NOT_OK;
+//     kss_session_t host_session    = {0};
+// #if KSS_HAVE_HOSTCRYPTO_MBEDTLS
+//     const kss_type_t host_crypto = kType_KSS_mbedTLS;
+// #elif KSS_HAVE_HOSTCRYPTO_OPENSSL
+//     const kss_type_t host_crypto = kType_KSS_OpenSSL;
+// #else
+//     const kss_type_t host_crypto = kType_KSS_SubSystem_NONE;
+// #endif
+
+//     status = kss_session_open(&host_session, host_crypto, 0, kKSS_ConnectionType_Plain, NULL);
+//     if (kStatus_KSS_Success != status) {
+//         goto exit;
+//     }
+// /*
+//     ret_val = Kose_API_ReadSize(&context->session->s_ctx, context->keyObject->keyId, &key_size_bytes);
+//     if (ret_val != SM_OK) {
+//         if (ret_val == SM_ERR_APDU_THROUGHPUT) {
+//             ret = 2;
+//         }
+//         goto exit;
+//     }
+// */
+//     outlength = key_size_bytes;
+//     ENSURE_OR_GO_EXIT(*outLen >= outlength);
+
+//     switch (context->algorithm) {
+//     case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA1:
+//         hashlength    = 20;
+//         sha_algorithm = kAlgorithm_KSS_SHA1;
+//         break;
+//     case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA224:
+//         hashlength    = 28;
+//         sha_algorithm = kAlgorithm_KSS_SHA224;
+//         break;
+//     case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA256:
+//         if (key_size_bytes <= 64) { /* RSA Key size = 512 */
+//             LOGE(TAG, "SHA256 not supported with this RSA key");
+//             goto exit;
+//         }
+//         hashlength    = 32;
+//         sha_algorithm = kAlgorithm_KSS_SHA256;
+//         break;
+//     case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA384:
+//         if (key_size_bytes <= 64) { /* RSA Key size = 512 */
+//             LOGE(TAG, "SHA384 not supported with this RSA key");
+//             goto exit;
+//         }
+//         hashlength    = 48;
+//         sha_algorithm = kAlgorithm_KSS_SHA384;
+//         break;
+//     case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA512:
+//         if (key_size_bytes <= 128) { /* RSA Key size = 1024 and 512 */
+//             LOGE(TAG, "SHA512 not supported with this RSA key");
+//             goto exit;
+//         }
+//         hashlength    = 64;
+//         sha_algorithm = kAlgorithm_KSS_SHA512;
+//         break;
+//     default:
+//         goto exit;
+//     }
+
+//     if (hashlength != hashlen) {
+//         ret_val = SM_NOT_OK;
+//         goto exit;
+//     }
+
+//     saltlength = hashlength;
+//     *outLen    = outlength;
+
+//     /* Generate salt of length saltlength */
+//     status = kss_rng_context_init(&rng, &host_session /* session */);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     status = kss_rng_get_random(&rng, salt, saltlength);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     msb = (outlength * 8) - 1;
+//     p += outlength - hashlength * 2 - 2;
+//     *p++ = 0x01;
+//     memcpy(p, salt, saltlength);
+//     p += saltlength;
+
+//     status = kss_digest_context_init(&digest, &host_session, sha_algorithm, kMode_KSS_Digest);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     status = kss_digest_init(&digest);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     status = kss_digest_update(&digest, p, 8);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     status = kss_digest_update(&digest, hash, hashlen);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     status = kss_digest_update(&digest, salt, saltlength);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     status = kss_digest_finish(&digest, p, &digestLen);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     kss_digest_context_free(&digest);
+
+//     if (msb % 8 == 0) {
+//         offset = 1;
+//     }
+
+//     /* Apply MGF Mask */
+//     if (0 != kss_mgf_mask_func(out + offset, outlength - hashlength - 1 - offset, p, hashlength, sha_algorithm)) {
+//         goto exit;
+//     }
+
+//     out[0] &= 0xFF >> (outlength * 8 - msb);
+
+//     p += hashlength;
+//     *p++ = 0xBC;
+
+//     ret = 0;
+
+// exit:
+//     kss_session_close(&host_session);
+//     return ret;
+// }
+
+// uint8_t emsa_decode_and_compare(
+//     kss_kose_asymmetric_t *context, uint8_t *sig, size_t siglen, const uint8_t *hash, size_t hashlen)
+// {
+//     uint8_t *p;
+//     uint8_t *hash_start;
+//     uint8_t result[512] = {0};
+//     uint8_t ret         = 1;
+//     uint32_t hlen;
+//     uint8_t zeros[8];
+//     uint32_t observed_salt_len, msb;
+//     uint8_t buf[1024];
+//     kss_algorithm_t sha_algorithm = kAlgorithm_None;
+//     kss_digest_t digest;
+//     size_t digestLen           = 512; /* MAX - SHA512*/
+//     kss_status_t status        = kStatus_KSS_Fail;
+//     kss_session_t host_session = {0};
+// #if KSS_HAVE_HOSTCRYPTO_MBEDTLS
+//     const kss_type_t host_crypto = kType_KSS_mbedTLS;
+// #elif KSS_HAVE_HOSTCRYPTO_OPENSSL
+//     const kss_type_t host_crypto = kType_KSS_OpenSSL;
+// #else
+//     const kss_type_t host_crypto = kType_KSS_SubSystem_NONE;
+// #endif
+
+//     ENSURE_OR_GO_EXIT(sig != NULL);
+//     ENSURE_OR_GO_EXIT(siglen > 0);
+//     ENSURE_OR_GO_EXIT(hash != NULL);
+
+//     memcpy(buf, sig, siglen);
+
+//     status = kss_session_open(&host_session, host_crypto, 0, kKSS_ConnectionType_Plain, NULL);
+//     if (kStatus_KSS_Success != status) {
+//         goto exit;
+//     }
+
+//     switch (context->algorithm) {
+//     case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA1:
+//         hlen          = 20;
+//         sha_algorithm = kAlgorithm_KSS_SHA1;
+//         break;
+//     case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA224:
+//         hlen          = 28;
+//         sha_algorithm = kAlgorithm_KSS_SHA224;
+//         break;
+//     case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA256:
+//         hlen          = 32;
+//         sha_algorithm = kAlgorithm_KSS_SHA256;
+//         break;
+//     case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA384:
+//         hlen          = 48;
+//         sha_algorithm = kAlgorithm_KSS_SHA384;
+//         break;
+//     case kAlgorithm_KSS_RSASSA_PKCS1_PSS_MGF1_SHA512:
+//         hlen          = 64;
+//         sha_algorithm = kAlgorithm_KSS_SHA512;
+//         break;
+//     default:
+//         goto exit;
+//     }
+
+//     p = buf;
+
+//     ENSURE_OR_GO_EXIT(siglen <= sizeof(buf));
+//     if (buf[siglen - 1] != 0xBC) {
+//         goto exit;
+//     }
+
+//     memset(zeros, 0, 8);
+
+//     msb = (siglen * 8) - 1;
+
+//     if (buf[0] >> (8 - siglen * 8 + msb)) {
+//         goto exit;
+//     }
+
+//     if (siglen < hlen + 2) {
+//         goto exit;
+//     }
+//     hash_start = p + siglen - hlen - 1;
+
+//     if (0 != kss_mgf_mask_func(p, siglen - hlen - 1, hash_start, hlen, sha_algorithm)) {
+//         goto exit;
+//     }
+
+//     buf[0] &= 0xFF >> ((siglen * 8 - msb) % 8);
+
+//     while (p < hash_start - 1 && *p == 0)
+//         p++;
+
+//     if (*p++ != 0x01) {
+//         goto exit;
+//     }
+
+//     observed_salt_len = hash_start - p;
+
+//     status = kss_digest_context_init(&digest, &host_session, sha_algorithm, kMode_KSS_Digest);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     status = kss_digest_init(&digest);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     status = kss_digest_update(&digest, zeros, 8);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     status = kss_digest_update(&digest, hash, hashlen);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     status = kss_digest_update(&digest, p, observed_salt_len);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     status = kss_digest_finish(&digest, result, &digestLen);
+//     if (status != kStatus_KSS_Success) {
+//         goto exit;
+//     }
+
+//     kss_digest_context_free(&digest);
+
+//     if (memcmp(hash_start, result, hlen) != 0) {
+//         goto exit;
+//     }
+
+//     ret = 0;
+
+// exit:
+//     kss_session_close(&host_session);
+
+//     return ret;
+// }
 
 #endif // KSS_HAVE_APPLET_KOSE_IOT && KSSFTR_RSA

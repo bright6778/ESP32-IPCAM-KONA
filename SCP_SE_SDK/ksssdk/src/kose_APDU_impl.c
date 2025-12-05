@@ -249,7 +249,6 @@ smStatus_t Kose_API_PutKey(
     uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
     uint8_t *pData = &pCmdbuf[5];   // total data pointer
     size_t totalSize = 0;
-    
     DataSet_u8buf(&pData, bufObjectID, sizeof(bufObjectID));  //Object ID
     DataSet_u8buf(&pData, bufAclKeyLen, sizeof(bufAclKeyLen));  //ACL + key length
     DataSet_u8buf(&pData, bufAcl, sizeof(bufAcl));  //ACL
@@ -257,7 +256,6 @@ smStatus_t Kose_API_PutKey(
     totalSize += (sizeof(bufObjectID) + sizeof(bufAclKeyLen) + sizeof(bufAcl) + objectDataLen);
     lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalSize);
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
-    
     retStatus = DoAPDUTx_s_Case3(session_ctx, cmdbuf, cmdbufLen);
 
     return retStatus;
@@ -594,8 +592,8 @@ smStatus_t Kose_API_RSAVerify(pKoseSession_t session_ctx,
         
         tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_KEYID, bufObjectID, 2); // Key ID
         tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_SHA256, inputData, inputDataLen); // Hash Data(SHA256)
-        //tlvDataSet_u8buf(&pData, &totalSize, kKOSE_TAG_SIGNATURE, bufDerSign, sizeof(bufDerSign)); // Signature by Server Private Key
-        tlvDataSet_u8buf_len2byte_setLen(&pData, &totalSize, kKOSE_TAG_SIGNATURE, bufSign, bufDerSign_len, signatureLen); // Signature by Server Private Key
+        tlvDataSet_u8buf_setLength(&pData, &totalSize, kKOSE_TAG_SIGNATURE, bufSign, bufDerSign_len); // Signature by Server Private Key
+        //tlvDataSet_u8buf_len2byte_setLen(&pData, &totalSize, kKOSE_TAG_SIGNATURE, bufSign, bufDerSign_len, signatureLen); // Signature by Server Private Key
         lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalSize);
         cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
         
@@ -716,14 +714,7 @@ smStatus_t Kose_API_GenerateKey(pKoseSession_t session_ctx, uint8_t p1, uint8_t 
     lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, totalDataLen);
     cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
 
-    LOGD(TAG, "session_ctx->i2c_addr : %d", session_ctx->i2c_addr);
-    kss_debug_showframe(TAG, cmdbuf, cmdbufLen);
-    kss_debug_showframe(TAG, rspbuf, *pPublicKeyLen);
-    LOGD(TAG, "pPublicKeyLen : %d", *pPublicKeyLen);
-    
     retStatus = DoAPDUTxRx_s_Case4(session_ctx, cmdbuf, cmdbufLen, rspbuf, pPublicKeyLen);
-    LOGD(TAG, "retStatus : %d", retStatus);
-    kss_debug_showframe(TAG, rspbuf, *pPublicKeyLen);
     if (retStatus == SM_OK) {
         if(p1 == 0x01){
             if(*pPublicKeyLen > 2){
@@ -752,7 +743,7 @@ smStatus_t Kose_API_GenerateKey_OnlyGenKey(pKoseSession_t session_ctx, uint8_t p
 {
     uint8_t publicKey[KOSE_MAX_BUF_SIZE_RSP] = {0};
     size_t pPublicKeyLen = 0;
-    LOGI(TAG, "Kose_API_GenerateKey_OnlyGenKey");
+    LOGD(TAG, "Kose_API_GenerateKey_OnlyGenKey");
     return Kose_API_GenerateKey(session_ctx, p1, p2, objectID, acl, publicKey, &pPublicKeyLen);
 }
 
@@ -851,6 +842,114 @@ smStatus_t Kose_API_DecryptData(pKoseSession_t session_ctx,
         {
             *pencryptedDataLen = 0;
         }
+    }
+
+    return retStatus;
+}
+
+smStatus_t Kose_API_DeleteSecureObject(pKoseSession_t session_ctx, uint32_t objectID, uint8_t deleteType)
+{
+    smStatus_t retStatus = SM_NOT_OK;
+
+    tlvHeader_t hdr = {{kKOSE_CLA, kKOSE_INS_DELETE_KEY, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
+    size_t cmdbufLen = 0;
+    uint8_t *pCmdbuf = &cmdbuf[0];
+    int tlvRet       = 0;
+
+    uint8_t *pLc = &pCmdbuf[4];
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    uint8_t bufObjectID[2] = {0};
+        
+    uint32_to_buffer(objectID, 2, bufObjectID);
+    
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    if((deleteType & 0x01) == 0x01){ // The key type of Object ID
+        DataSet_u8buf(&pData, bufObjectID, 1);    // Object Key Type
+        DataSet_u8buf(&pData, &deleteType, 1);
+        tlvRet = lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, 2);
+    }
+    else{
+        DataSet_u8buf(&pData, bufObjectID, sizeof(bufObjectID));    // Object ID
+        DataSet_u8buf(&pData, &deleteType, 1);
+        tlvRet = lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, sizeof(bufObjectID) + 1);
+    }
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    retStatus = DoAPDUTx_s_Case3(session_ctx, cmdbuf, cmdbufLen);
+
+cleanup:
+    return retStatus;
+}
+
+smStatus_t Kose_API_GetKey(pKoseSession_t session_ctx, uint32_t objectID, uint8_t *data, size_t *pdataLen)
+{
+    LOGD(TAG, "Kose_API_GetKey");
+
+    smStatus_t retStatus = SM_NOT_OK;
+    tlvHeader_t hdr = {{kKOSE_CLA, kKOSE_INS_GET_KEY, kKOSE_P1_DEFAULT, kKOSE_P2_DEFAULT}};
+    uint8_t cmdbuf[KOSE_MAX_BUF_SIZE_CMD];
+    size_t cmdbufLen                       = 0;
+    uint8_t *pCmdbuf                       = &cmdbuf[0];
+    uint8_t rspbuf[DATA_BUF_SIZE] = {0};
+    uint8_t *pRspbuf                       = &rspbuf[0];
+    size_t rspbufTotalLen                  = 0;
+    size_t rspIndex                        = 0;
+    size_t rspDataIndex                    = 0;
+    int tlvRet       = 0;
+
+    uint8_t bufObjectID[2] = {0};
+
+    uint32_to_buffer(objectID, 2, bufObjectID);
+    memcpy(hdr.hdr + 2, bufObjectID, sizeof(bufObjectID));
+    
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    pCmdbuf[4] = 0x00;
+    cmdbufLen = sizeof(hdr.hdr) + 1;
+    /*
+    uint8_t *pLc = &pCmdbuf[4];
+    uint8_t *pCmdOffset = &pCmdbuf[5];  // cmd data pointer
+    uint8_t *pData = &pCmdbuf[5];   // total data pointer
+    uint8_t bufObjectID[2] = {0};
+    
+    uint32_to_buffer(objectID, 2, bufObjectID);
+    memcpy(pCmdbuf, hdr.hdr, sizeof(hdr.hdr));
+    DataSet_u8buf(&pData, bufObjectID, sizeof(bufObjectID));    // Object ID
+    tlvRet = lvDataSet_u8buf(&pLc, &cmdbufLen, pCmdOffset, sizeof(bufObjectID));
+    if (0 != tlvRet) {
+        goto cleanup;
+    }
+    cmdbufLen = sizeof(hdr.hdr) + cmdbufLen;
+    */
+
+GetRes:
+    retStatus = DoAPDUTxRx_s_Case2(session_ctx, cmdbuf, cmdbufLen, rspbuf, pdataLen);
+    rspIndex = 0;     
+    if (retStatus == SM_OK) {
+        if(get_u8buf(pRspbuf, &rspIndex, *pdataLen - 2, data + (rspDataIndex), pdataLen) != 0)
+        {
+            *pdataLen = 0;
+        }
+        rspbufTotalLen += *pdataLen;
+        *pdataLen = rspbufTotalLen;
+    }
+    else if((retStatus & 0xFF00) == SM_WRN_RESPONSE_DATA_INCOMPLETE) {
+        if(get_u8buf(pRspbuf, &rspIndex, *pdataLen - 2, data + (rspDataIndex), pdataLen) != 0)
+        {
+            *pdataLen = 0;
+        }
+        rspbufTotalLen += *pdataLen;
+        *pdataLen = rspbufTotalLen;
+
+        rspDataIndex += rspIndex;
+        memcpy(cmdbuf, (uint8_t*)"\x00\xC0\x00\x00\x00", 5);
+        cmdbuf[4] = (uint8_t)(retStatus & 0x00FF);
+
+        goto GetRes;
     }
 
     return retStatus;

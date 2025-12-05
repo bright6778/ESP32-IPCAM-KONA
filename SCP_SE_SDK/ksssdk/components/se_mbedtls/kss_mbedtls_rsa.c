@@ -166,7 +166,6 @@ static int kss_rsakey_verify(void *ctx,
 
     kssObject = (kss_object_t *)pax_ctx->pKSSObject;
 
-    //LOG_I("%s: Verify using key '0x%08lX'", __FUNCTION__, pax_ctx->pKSSObject->keyId);
     status = kss_asymmetric_context_init(
         &asymVerifyCtx, kssObject->keyStore->session, kssObject, algorithm, kMode_KSS_Verify);
     if (status != kStatus_KSS_Success) {

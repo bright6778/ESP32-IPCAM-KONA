@@ -18,7 +18,7 @@
 
 /** Version of the KSS API */
 #define KOSE_SDK_VERSION_MAJOR    1
-#define KOSE_SDK_VERSION_MINOR    1
+#define KOSE_SDK_VERSION_MINOR    2
 #define KOSE_SDK_VERSION_PATCH    0
 #define KOSE_SDK_VERSION_STRING   STR(KOSE_SDK_VERSION_MAJOR) "." STR(KOSE_SDK_VERSION_MINOR) "." STR(KOSE_SDK_VERSION_PATCH)
 
@@ -1020,6 +1020,25 @@ kss_status_t kss_key_store_data(
 kss_status_t kss_key_store_open_key(kss_key_store_t *keyStore, kss_object_t *keyObject);
 
 /**
+ * @brief      Delete / destroy allocated keyObect .
+ *
+ * @param      keyStore   The key store
+ * @param      keyObject  The key object to be deleted
+ * @param      deleteType 0x00: Physically deletes the key / 0x01: Logically deletes the key (the key's flag is disabled, meaning it can be recovered).
+ *                        0x10(All Key type): Physically deletes the key / 0x11(All Key type): Logically deletes the key (the key's flag is disabled, meaning it can be recovered).  
+ *
+ * @return     The kss status.
+ */
+kss_status_t kss_key_store_erase_key(kss_key_store_t *keyStore, kss_object_t *keyObject, uint8_t deleteType);
+
+/** @brief This function exports plain key[] from key store (if constraints and user id allows reading) */
+kss_status_t kss_key_store_get_key(
+    kss_key_store_t *keyStore, kss_object_t *keyObject, uint8_t *data, size_t *dataLen);
+
+kss_status_t kss_key_store_get_key_list(
+    kss_key_store_t *keyStore, uint8_t *datalist, size_t *dataListLen);
+
+/**
  * @brief      The referenced key cannot be updated any more.
  *
  * @param      keyStore   The key store
@@ -1966,4 +1985,5 @@ kss_status_t kss_rng_get_random(kss_rng_context_t *context, uint8_t *random_data
  * @return  status
  */
 kss_status_t kss_rng_context_free(kss_rng_context_t *context);
+
 #endif
